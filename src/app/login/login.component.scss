@@ -932,3 +932,157 @@
     display: none !important;
   }
 }
+
+// ===== CBS PEWOSA Portal Entry Overrides =====
+.login-wrapper {
+  background: #eef3f8;
+}
+
+.hero-panel {
+  flex: 0 0 58%;
+  background:
+    linear-gradient(135deg, rgb(18 43 94 / 92%), rgb(30 69 147 / 86%)),
+    url('../../assets/images/cover_image_resized.webp') no-repeat center center;
+  background-size: cover;
+
+  .hero-overlay {
+    background:
+      linear-gradient(90deg, rgb(10 25 56 / 55%), rgb(10 25 56 / 20%)),
+      radial-gradient(circle at 20% 20%, rgb(241 196 15 / 22%), transparent 28rem);
+  }
+
+  .hero-content {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5rem;
+  }
+}
+
+.portal-entry {
+  position: relative;
+  z-index: 2;
+  max-width: 560px;
+  color: #fff;
+}
+
+.portal-entry-logo {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.75rem;
+  box-shadow: 0 20px 45px rgb(0 0 0 / 20%);
+}
+
+.portal-entry-copy {
+  margin-top: 2rem;
+}
+
+.portal-entry-kicker {
+  margin: 0 0 0.75rem;
+  color: #f1c40f;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.portal-entry-title {
+  margin: 0;
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.08;
+}
+
+.portal-entry-text {
+  max-width: 500px;
+  margin: 1.25rem 0 0;
+  color: rgb(255 255 255 / 88%);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.portal-entry-status {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+
+  span {
+    padding: 0.65rem 0.85rem;
+    color: #fff;
+    background: rgb(255 255 255 / 12%);
+    border: 1px solid rgb(255 255 255 / 22%);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+}
+
+.login-panel {
+  background: #f8fafc;
+}
+
+.login-header {
+  justify-content: flex-end;
+  padding: 1rem 1.25rem;
+}
+
+.login-card-container {
+  justify-content: center;
+  padding: 1.5rem 2rem 2.5rem;
+}
+
+.login-card {
+  width: min(100%, 430px);
+  border-radius: 8px;
+  border: 1px solid #d9e2ef;
+  box-shadow: 0 24px 60px rgb(30 69 147 / 14%);
+}
+
+.logo-section {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e6edf5;
+  text-align: center;
+}
+
+.logo-image {
+  max-height: 88px;
+  object-fit: contain;
+}
+
+.login-heading {
+  margin: 1rem 0 0.35rem;
+  color: #122b5e;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.login-subheading {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.resources-section,
+.resources-branding,
+.resources-links {
+  display: none;
+}
+
+/* stylelint-disable-next-line media-feature-range-notation -- Safari compatibility */
+@media (max-width: 959px) {
+  .login-wrapper {
+    background: linear-gradient(180deg, #122b5e 0, #eef3f8 34%);
+  }
+
+  .login-panel {
+    background: transparent;
+  }
+
+  .login-card-container {
+    padding: 1rem;
+  }
+}
