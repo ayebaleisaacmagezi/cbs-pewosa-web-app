@@ -9,9 +9,9 @@
 /* ############ Light mode palettes ################ */
 
 $primary-palette: (
-  100: #55d187,
-  500: #0b6b3a,
-  700: #064e2b,
+  100: #dbe7ff,
+  500: #1e4593,
+  700: #122b5e,
   contrast: (
     100: rgb(0 0 0 / 87%),
     500: white,
@@ -21,8 +21,8 @@ $primary-palette: (
 
 $accent-palette: (
   100: #fff3bf,
-  500: #f4c542,
-  700: #b7791f,
+  500: #f1c40f,
+  700: #d4ac0d,
   contrast: (
     100: rgb(0 0 0 / 87%),
     500: rgb(0 0 0 / 87%),
@@ -33,23 +33,23 @@ $accent-palette: (
 /* ############ Dark mode palettes ################ */
 
 $dark-primary-palette: (
-  100: #55d187,
-  500: #1f9d55,
-  700: #0b6b3a,
+  100: #dbe7ff,
+  500: #4f7bd1,
+  700: #1e4593,
   contrast: (
-    100: white,
-    500: rgb(255 255 255 / 87%),
-    700: rgb(255 255 255 / 87%)
+    100: rgb(0 0 0 / 87%),
+    500: white,
+    700: white
   )
 );
 
 $dark-accent-palette: (
   100: #fff3bf,
-  500: #f4c542,
-  700: #b7791f,
+  500: #f1c40f,
+  700: #d4ac0d,
   contrast: (
-    100: white,
-    500: white,
-    700: white
+    100: rgb(0 0 0 / 87%),
+    500: rgb(0 0 0 / 87%),
+    700: rgb(0 0 0 / 87%)
   )
 );
