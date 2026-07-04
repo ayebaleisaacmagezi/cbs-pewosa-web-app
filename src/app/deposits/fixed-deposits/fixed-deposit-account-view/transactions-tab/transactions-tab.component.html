@@ -124,7 +124,7 @@
             <button
               mat-menu-item
               (click)="routeEdit($event)"
-              [routerLink]="['/', 'journal-entry', 'view', 'S' + transaction.id]"
+              [routerLink]="['/', 'accounting', 'journal-entry', 'view', 'S' + transaction.id]"
             >
               <mat-icon><fa-icon icon="table-cells" size="sm"></fa-icon></mat-icon>
               <span>{{ 'tooltips.View Journal Entries' | translate }}</span>
