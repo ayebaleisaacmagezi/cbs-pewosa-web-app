@@ -40,6 +40,7 @@ import { FindPipe } from '../../../../pipes/find.pipe';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { LoanProductService } from '../../services/loan-product.service';
 import { LoanProductBaseComponent } from '../../common/loan-product-base.component';
+import { DirectivesModule } from 'app/directives/directives.module';
 
 @Component({
   selector: 'mifosx-loan-product-terms-step',
@@ -64,7 +65,8 @@ import { LoanProductBaseComponent } from '../../common/loan-product-base.compone
     MatRow,
     MatStepperPrevious,
     MatStepperNext,
-    FindPipe
+    FindPipe,
+    DirectivesModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -124,6 +126,8 @@ export class LoanProductTermsStepComponent extends LoanProductBaseComponent impl
         maxPrincipal: this.loanProductsTemplate.maxPrincipal,
         minNumberOfRepayments: this.loanProductsTemplate.minNumberOfRepayments,
         numberOfRepayments: this.loanProductsTemplate.numberOfRepayments,
+        loanTerm:
+          (this.loanProductsTemplate.numberOfRepayments || 0) * (this.loanProductsTemplate.repaymentEvery || 0) || null,
         maxNumberOfRepayments: this.loanProductsTemplate.maxNumberOfRepayments,
         isLinkedToFloatingInterestRates: this.loanProductsTemplate.isLinkedToFloatingInterestRates,
         minInterestRatePerPeriod: this.loanProductsTemplate.minInterestRatePerPeriod,
@@ -244,6 +248,13 @@ export class LoanProductTermsStepComponent extends LoanProductBaseComponent impl
           [
             Validators.required,
             Validators.pattern('^[1-9]\\d*$')
+          ]
+        ],
+        loanTerm: [
+          '',
+          [
+            Validators.required,
+            Validators.min(1)
           ]
         ],
         maxNumberOfRepayments: [
@@ -497,6 +508,19 @@ export class LoanProductTermsStepComponent extends LoanProductBaseComponent impl
         }
         this.validateAdvancedPaymentStrategyControls();
       });
+
+      this.loanProductTermsForm.get('loanTerm')!.valueChanges.subscribe(() => this.calculateNumberOfRepayments());
+      this.loanProductTermsForm.get('repaymentEvery')!.valueChanges.subscribe(() => this.calculateNumberOfRepayments());
+    }
+  }
+
+  calculateNumberOfRepayments(): void {
+    const loanTerm = Number(this.loanProductTermsForm.get('loanTerm')?.value);
+    const repaymentEvery = Number(this.loanProductTermsForm.get('repaymentEvery')?.value);
+    if (loanTerm > 0 && repaymentEvery > 0) {
+      this.loanProductTermsForm
+        .get('numberOfRepayments')
+        ?.patchValue(Math.ceil(loanTerm / repaymentEvery), { emitEvent: false });
     }
   }
 
@@ -629,6 +653,7 @@ export class LoanProductTermsStepComponent extends LoanProductBaseComponent impl
 
   get loanProductTerms() {
     const formValue = this.loanProductTermsForm.getRawValue();
+    delete formValue.loanTerm;
     // Normalize decimal separators: convert comma to dot for backend compatibility
     const normalizeDecimal = (value: any) => {
       if (typeof value === 'string' && value.includes(',')) {

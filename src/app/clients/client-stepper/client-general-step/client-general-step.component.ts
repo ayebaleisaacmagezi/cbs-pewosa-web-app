@@ -18,7 +18,7 @@ import {
   inject
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, Validators, FormControl, ValidationErrors } from '@angular/forms';
 import { filter, switchMap } from 'rxjs/operators';
 import { ClientsService } from 'app/clients/clients.service';
 import { Dates } from 'app/core/utils/dates';
@@ -94,6 +94,15 @@ export class ClientGeneralStepComponent implements OnInit {
   genderOptions: any;
   /** Saving Product Options */
   savingProductOptions: any;
+  /** Common East African calling codes, with Uganda selected by default. */
+  readonly mobileCountryCodes = [
+    '+256',
+    '+254',
+    '+255',
+    '+250',
+    '+211',
+    '+243'
+  ];
 
   /**
    * @param {FormBuilder} formBuilder Form Builder
@@ -132,7 +141,17 @@ export class ClientGeneralStepComponent implements OnInit {
       accountNo: [''],
       externalId: [''],
       genderId: [''],
-      mobileNo: [''],
+      mobileCountryCode: [
+        '+256',
+        Validators.required
+      ],
+      mobileNo: [
+        '',
+        [
+          Validators.required,
+          (control: AbstractControl) => this.validateMobileNumber(control)
+        ]
+      ],
       emailAddress: [
         '',
         Validators.email
@@ -172,6 +191,7 @@ export class ClientGeneralStepComponent implements OnInit {
       .subscribe((legalFormId: number) => {
         this.legalFormChangeEvent.emit({ legalForm: legalFormId });
         if (legalFormId === LegalFormId.PERSON) {
+          this.createClientForm.get('genderId')?.setValidators(Validators.required);
           this.createClientForm.removeControl('fullname');
           this.createClientForm.removeControl('clientNonPersonDetails');
           this.createClientForm.addControl(
@@ -190,6 +210,8 @@ export class ClientGeneralStepComponent implements OnInit {
             ])
           );
         } else {
+          this.createClientForm.get('genderId')?.clearValidators();
+          this.createClientForm.get('genderId')?.reset('');
           this.createClientForm.removeControl('firstname');
           this.createClientForm.removeControl('middlename');
           this.createClientForm.removeControl('lastname');
@@ -214,6 +236,7 @@ export class ClientGeneralStepComponent implements OnInit {
             })
           );
         }
+        this.createClientForm.get('genderId')?.updateValueAndValidity();
       });
     this.createClientForm.get('legalFormId').patchValue(LegalFormId.PERSON);
     this.createClientForm
@@ -252,11 +275,35 @@ export class ClientGeneralStepComponent implements OnInit {
     return legalFormId === LegalFormId.PERSON ? values[0] : values[1];
   }
 
+  validateMobileNumber(control: AbstractControl): ValidationErrors | null {
+    const digits = String(control.value || '')
+      .replace(/\D/g, '')
+      .replace(/^0/, '');
+    if (!digits) {
+      return null;
+    }
+    if (/^(\d)\1+$/.test(digits)) {
+      return { invalidMobileNumber: true };
+    }
+    return this.createClientForm?.get('mobileCountryCode')?.value === '+256'
+      ? /^[37]\d{8}$/.test(digits)
+        ? null
+        : { invalidMobileNumber: true }
+      : /^\d{6,12}$/.test(digits)
+        ? null
+        : { invalidMobileNumber: true };
+  }
+
   /**
    * Client General Details
    */
   get clientGeneralDetails() {
     const generalDetails = this.createClientForm.getRawValue();
+    const countryCode = generalDetails.mobileCountryCode;
+    if (generalDetails.mobileNo) {
+      generalDetails.mobileNo = countryCode + String(generalDetails.mobileNo).replace(/\D/g, '').replace(/^0/, '');
+    }
+    delete generalDetails.mobileCountryCode;
     const dateFormat = this.settingsService.dateFormat;
     const locale = this.settingsService.language.code;
     for (const key in generalDetails) {

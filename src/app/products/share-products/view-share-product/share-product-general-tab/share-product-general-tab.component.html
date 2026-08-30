@@ -80,12 +80,12 @@
   </div>
 
   <div class="flex-fill layout-row">
-    <span class="flex-40">{{ 'labels.inputs.Nominal/Unit Price' | translate }}:</span>
+    <span class="flex-40">{{ 'labels.inputs.Share Price' | translate }}:</span>
     <span class="flex-60">{{ shareProduct.unitPrice | formatNumber }}</span>
   </div>
 
   <div class="flex-fill layout-row">
-    <span class="flex-40">{{ 'labels.inputs.Capital Value' | translate }}:</span>
+    <span class="flex-40">{{ 'labels.inputs.Share Capital Value or Projected Share Value' | translate }}:</span>
     <span class="flex-60">{{ shareProduct.shareCapital | formatNumber }}</span>
   </div>
 
@@ -141,7 +141,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="shareValue">
-          <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Nominal/Unit Price' | translate }}</th>
+          <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Share Price' | translate }}</th>
           <td mat-cell *matCellDef="let marketPrice">
             {{ marketPrice.shareValue | formatNumber }}
           </td>

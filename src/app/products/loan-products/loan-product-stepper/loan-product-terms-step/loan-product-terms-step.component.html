@@ -18,7 +18,15 @@
 
     <mat-form-field class="flex-31">
       <mat-label>{{ 'labels.inputs.Minimum' | translate }}</mat-label>
-      <input type="number" matInput formControlName="minPrincipal" [min]="1" step="0.01" />
+      <input
+        type="text"
+        inputmode="decimal"
+        matInput
+        formControlName="minPrincipal"
+        [min]="1"
+        step="0.01"
+        mifosxFormatAmount="UGX::1.0-2"
+      />
       <mat-error *ngIf="loanProductTermsForm.get('minPrincipal')?.hasError('min')">
         {{ 'labels.commons.Minimum Value must be' | translate }}
         <strong>{{ loanProductTermsForm.get('minPrincipal')?.errors?.['min']?.min || 1 }}</strong>
@@ -27,7 +35,16 @@
 
     <mat-form-field class="flex-31">
       <mat-label>{{ 'labels.inputs.Default' | translate }}</mat-label>
-      <input type="number" matInput formControlName="principal" required [min]="1" step="0.01" />
+      <input
+        type="text"
+        inputmode="decimal"
+        matInput
+        formControlName="principal"
+        required
+        [min]="1"
+        step="0.01"
+        mifosxFormatAmount="UGX::1.0-2"
+      />
       <mat-error
         *ngIf="
           loanProductTermsForm.get('principal')?.hasError('required') &&
@@ -46,7 +63,15 @@
 
     <mat-form-field class="flex-31">
       <mat-label>{{ 'labels.inputs.Maximum' | translate }}</mat-label>
-      <input type="number" matInput formControlName="maxPrincipal" [min]="1" step="0.01" />
+      <input
+        type="text"
+        inputmode="decimal"
+        matInput
+        formControlName="maxPrincipal"
+        [min]="1"
+        step="0.01"
+        mifosxFormatAmount="UGX::1.0-2"
+      />
       <mat-error *ngIf="loanProductTermsForm.get('maxPrincipal')?.hasError('min')">
         {{ 'labels.commons.Minimum Value must be' | translate }}
         <strong>{{ loanProductTermsForm.get('maxPrincipal')?.errors?.['min']?.min || 1 }}</strong>
@@ -198,8 +223,17 @@
       </mat-form-field>
 
       <mat-form-field class="flex-31">
+        <mat-label>{{ 'labels.inputs.Loan Term' | translate }}</mat-label>
+        <input type="number" matInput formControlName="loanTerm" required [min]="1" />
+        <mat-error>
+          {{ 'labels.inputs.Loan Term' | translate }} {{ 'labels.commons.is' | translate }}
+          <strong>{{ 'labels.commons.required' | translate }}</strong>
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field class="flex-31">
         <mat-label>{{ 'labels.inputs.Default' | translate }}</mat-label>
-        <input type="number" matInput formControlName="numberOfRepayments" required [min]="1" />
+        <input type="number" matInput formControlName="numberOfRepayments" required [min]="1" readonly />
         <mat-error>
           {{ 'labels.catalogs.Default' | translate }} {{ 'labels.inputs.Number of repayments' | translate }}
           {{ 'labels.commons.is' | translate }}

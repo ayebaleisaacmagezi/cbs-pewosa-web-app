@@ -193,13 +193,19 @@
     @if (createClientForm.value.legalFormId === LegalFormId.PERSON) {
       <mat-form-field class="flex-48">
         <mat-label>{{ 'labels.inputs.Gender' | translate }}</mat-label>
-        <mat-select formControlName="genderId">
+        <mat-select formControlName="genderId" required>
           @for (gender of genderOptions; track gender) {
             <mat-option [value]="gender.id">
               {{ gender.name }}
             </mat-option>
           }
         </mat-select>
+        @if (createClientForm.controls.genderId.hasError('required')) {
+          <mat-error>
+            {{ 'labels.inputs.Gender' | translate }} {{ 'labels.commons.is' | translate }}
+            <strong>{{ 'labels.commons.required' | translate }}</strong>
+          </mat-error>
+        }
       </mat-form-field>
     }
 
@@ -222,9 +228,31 @@
 
     <mat-divider class="flex-98"></mat-divider>
 
-    <mat-form-field class="flex-48">
+    <mat-form-field class="flex-23">
+      <mat-label>{{ 'labels.inputs.Country Code' | translate }}</mat-label>
+      <mat-select
+        formControlName="mobileCountryCode"
+        required
+        (selectionChange)="createClientForm.controls.mobileNo.updateValueAndValidity()"
+      >
+        @for (countryCode of mobileCountryCodes; track countryCode) {
+          <mat-option [value]="countryCode">{{ countryCode }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="flex-23">
       <mat-label>{{ 'labels.inputs.Mobile No' | translate }}</mat-label>
-      <input matInput type="text" formControlName="mobileNo" />
+      <input matInput type="tel" inputmode="numeric" formControlName="mobileNo" required />
+      @if (createClientForm.controls.mobileNo.hasError('required')) {
+        <mat-error>
+          {{ 'labels.inputs.Mobile No' | translate }} {{ 'labels.commons.is' | translate }}
+          <strong>{{ 'labels.commons.required' | translate }}</strong>
+        </mat-error>
+      }
+      @if (createClientForm.controls.mobileNo.hasError('invalidMobileNumber')) {
+        <mat-error>{{ 'error.Mobile number not valid' | translate }}</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field class="flex-48">

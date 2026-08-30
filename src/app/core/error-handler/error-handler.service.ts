@@ -145,7 +145,7 @@ export class ErrorHandlerService {
       `${errorMessage.title}: ${errorMessage.message}`,
       errorMessage.action || this.translateService.instant('labels.buttons.Close'),
       {
-        duration: 5000,
+        duration: 10000,
         horizontalPosition: 'center',
         verticalPosition: 'top',
         panelClass: ['error-snackbar']

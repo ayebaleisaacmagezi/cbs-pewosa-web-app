@@ -44,7 +44,9 @@ export class LoanProductCurrencyStepComponent implements OnInit {
 
   ngOnInit() {
     this.currencyData = this.loanProductsTemplate.currencyOptions;
-    const currency = this.loanProductsTemplate.currency ? this.loanProductsTemplate.currency : this.currencyData[0];
+    const currency = this.loanProductsTemplate.currency
+      ? this.loanProductsTemplate.currency
+      : this.currencyData.find((option: any) => option.code === 'UGX') || this.currencyData[0];
 
     let decimalPlacesValue = '';
     if (this.loanProductService.isWorkingCapital && !this.loanProductsTemplate.id) {
