@@ -76,6 +76,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
   username: string;
   /** Tenant name */
   tenant: string;
+  /** Display name of the signed-in staff member. */
+  staffDisplayName: string;
+  /** Shows the focused workspace to users whose only operational role is Loan Officer. */
+  isLoanOfficerWorkspace = false;
+  /** Shows the focused workspace to users whose only operational role is Cashier. */
+  isCashierWorkspace = false;
   /** Activity Form. */
   activityForm: any;
   /** Search Text. */
@@ -104,12 +110,41 @@ export class HomeComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     const credentials = this.authenticationService.getCredentials();
     this.username = credentials.username;
+    this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.tenant = this.tenantIdentifier();
+    this.isCashierWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'cashier');
+    this.isLoanOfficerWorkspace =
+      !this.isCashierWorkspace && this.shouldShowFocusedWorkspace(credentials.roles, 'loan officer');
     this.setFilteredActivities();
-    if (!this.authenticationService.hasDialogBeenShown()) {
+    if (!this.isLoanOfficerWorkspace && !this.isCashierWorkspace && !this.authenticationService.hasDialogBeenShown()) {
       this.dialog.open(WarningDialogComponent);
       this.authenticationService.showDialog();
     }
+  }
+
+  /**
+   * Keeps managers and administrators on the full home screen when they also
+   * carry the Loan Officer role. Dedicated loan officers get the simpler view.
+   */
+  private shouldShowFocusedWorkspace(roles: any, workspaceRole: string): boolean {
+    if (!Array.isArray(roles)) {
+      return false;
+    }
+
+    const roleNames = roles.map((role: any) => {
+      const name = typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '';
+      return name.trim().toLowerCase();
+    });
+    const elevatedRoles = [
+      'super user',
+      'general manager',
+      'deputy gm',
+      'branch manager',
+      'accountant',
+      'it officer'
+    ];
+
+    return roleNames.includes(workspaceRole) && !roleNames.some((role: string) => elevatedRoles.includes(role));
   }
 
   /**
@@ -152,6 +187,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
    * To show popover.
    */
   ngAfterViewInit() {
+    if (this.isLoanOfficerWorkspace || this.isCashierWorkspace) {
+      return;
+    }
+
     if (this.configurationWizardService.showHome) {
       setTimeout(() => {
         this.showPopover(this.templateButtonDashboard, this.buttonDashboard.nativeElement, 'bottom', true);
