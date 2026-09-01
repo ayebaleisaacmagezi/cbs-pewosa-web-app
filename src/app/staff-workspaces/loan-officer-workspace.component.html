@@ -1,7 +1,7 @@
 <main class="staff-workspace">
   <header class="workspace-hero">
     <div>
-      <span class="eyebrow">Loan Officer workspace</span>
+      <span class="eyebrow">Loan Officer portal</span>
       <h1>Welcome, {{ credentials?.staffDisplayName || credentials?.username }}</h1>
       <p>Create members and groups, inspect products and prepare loan applications.</p>
     </div>
@@ -29,6 +29,10 @@
     </div>
   }
 
+  @if (loading) {
+    <div class="notice loading-notice"><mat-icon>sync</mat-icon> Loading information from Fineract…</div>
+  }
+
   @if (activeView === 'home') {
     <section class="section-title">
       <h2>What would you like to do?</h2>
@@ -36,12 +40,16 @@
     </section>
     <div class="action-grid">
       <button class="action-tile" (click)="setView('create-member')">
+        <span class="action-icon"><mat-icon>person_add</mat-icon></span>
         <strong>Create a member</strong><small>Register and activate a new SACCO member.</small></button
       ><button class="action-tile" (click)="setView('groups')">
+        <span class="action-icon"><mat-icon>group_add</mat-icon></span>
         <strong>Create a group</strong><small>Attach existing members from your office.</small></button
       ><button class="action-tile" (click)="setView('members')">
+        <span class="action-icon"><mat-icon>account_circle</mat-icon></span>
         <strong>Check member products</strong><small>Review savings, shares, loans and fees.</small></button
       ><button class="action-tile" (click)="setView('applications')">
+        <span class="action-icon"><mat-icon>description</mat-icon></span>
         <strong>View loan applications</strong><small>Follow applications assigned to you.</small>
       </button>
     </div>

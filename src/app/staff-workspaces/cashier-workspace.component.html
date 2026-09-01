@@ -80,6 +80,12 @@
         >Available cash: <b>UGX {{ availableCash | number }}</b></span
       >
     </div>
+    @if (!drawerReady) {
+      <div class="cashier-alert">
+        Deposits, cash fees and cash share purchases can still be recorded. Chief Teller cash is required only before a
+        withdrawal.
+      </div>
+    }
     <section class="workstation">
       <aside class="work-panel member-panel">
         <header class="panel-head">

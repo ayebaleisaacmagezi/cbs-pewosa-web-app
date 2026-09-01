@@ -6,27 +6,30 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ClientsService } from 'app/clients/clients.service';
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
+import { LoanOfficerWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
 import { Dates } from 'app/core/utils/dates';
 import { GroupsService } from 'app/groups/groups.service';
 import { LoansService } from 'app/loans/loans.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 
-type LoanOfficerView = 'home' | 'members' | 'create-member' | 'groups' | 'applications';
-
 @Component({
   selector: 'mifosx-loan-officer-workspace',
   standalone: true,
   imports: [...STANDALONE_SHARED_IMPORTS],
   templateUrl: './loan-officer-workspace.component.html',
-  styleUrls: ['./staff-workspace.scss']
+  styleUrls: [
+    './staff-workspace.scss',
+    './loan-officer-workspace.component.scss'
+  ]
 })
 export class LoanOfficerWorkspaceComponent implements OnInit {
   private authenticationService = inject(AuthenticationService);
@@ -38,9 +41,12 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private formBuilder = inject(FormBuilder);
+  private workspaceNavigation = inject(WorkspaceNavigationService);
+  private changeDetectorRef = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   credentials = this.authenticationService.getCredentials();
-  activeView: LoanOfficerView = 'home';
+  activeView: LoanOfficerWorkspaceView = 'home';
   clientTemplate: any = null;
   clients: any[] = [];
   selectedClient: any = null;
@@ -115,21 +121,26 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
-      const view = params.get('view') as LoanOfficerView | null;
+      const view = params.get('view') as LoanOfficerWorkspaceView | null;
       if (view && [
           'home',
           'members',
           'create-member',
           'groups',
           'applications'
-        ].includes(view)) this.setView(view);
+        ].includes(view)) this.workspaceNavigation.setLoanOfficerView(view);
+    });
+    this.workspaceNavigation.loanOfficerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+      this.setView(view);
+      this.changeDetectorRef.markForCheck();
     });
     this.loadTemplate();
     this.loadApplications();
     this.loadGroups();
   }
 
-  setView(view: LoanOfficerView): void {
+  setView(view: LoanOfficerWorkspaceView): void {
+    this.workspaceNavigation.setLoanOfficerView(view);
     this.activeView = view;
     this.message = '';
     if (view === 'applications') this.loadApplications();

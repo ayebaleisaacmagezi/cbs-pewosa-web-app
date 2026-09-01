@@ -112,6 +112,7 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
   /** Sidenav collapse event. */
   @Output() collapse = new EventEmitter<boolean>();
   cashierWorkspace = false;
+  loanOfficerWorkspace = false;
   cashierName = '';
   cashierOffice = '';
 
@@ -136,6 +137,8 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
     ];
     this.cashierWorkspace =
       roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role));
+    this.loanOfficerWorkspace =
+      roleNames.includes('loan officer') && !roleNames.some((role: string) => elevatedRoles.includes(role));
     this.cashierName = credentials?.staffDisplayName || credentials?.username || 'Cashier';
     this.cashierOffice = credentials?.officeName || '';
     this.isHandset$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((isHandset) => {

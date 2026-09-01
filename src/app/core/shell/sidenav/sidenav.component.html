@@ -12,7 +12,7 @@
     'sidebar-compact': sidenavCollapsed
   }"
 >
-  @if (workspaceRole === 'cashier') {
+  @if (workspaceRole === 'cashier' || workspaceRole === 'loan-officer') {
     <div class="cashier-side-panel">
       <div
         class="cashier-brand"
@@ -22,12 +22,22 @@
         (keydown.enter)="openWorkspaceView('home')"
       >
         <img src="assets/images/kcps-logo.png" alt="CBS PEWOSA logo" />
-        <div><strong>CBS PEWOSA</strong><small>Cashier workspace</small></div>
+        <div>
+          <strong>CBS PEWOSA</strong
+          ><small>{{ workspaceRole === 'cashier' ? 'Cashier portal' : 'Loan Officer portal' }}</small>
+        </div>
       </div>
-      <div class="cashier-nav-title">Workspace</div>
-      <nav class="cashier-nav" aria-label="Cashier navigation">
+      <div class="cashier-nav-title">{{ workspaceRole === 'cashier' ? 'Cashier operations' : 'Loan operations' }}</div>
+      <nav
+        class="cashier-nav"
+        [attr.aria-label]="workspaceRole === 'cashier' ? 'Cashier navigation' : 'Loan Officer navigation'"
+      >
         @for (link of workspaceLinks; track link.view) {
-          <button type="button" [class.active]="isWorkspaceViewActive(link.view)" (click)="openWorkspaceView(link.view)">
+          <button
+            type="button"
+            [class.active]="isWorkspaceViewActive(link.view)"
+            (click)="openWorkspaceView(link.view)"
+          >
             <mat-icon>{{
               link.view === 'home'
                 ? 'home'
@@ -37,7 +47,15 @@
                     ? 'account_balance_wallet'
                     : link.view === 'records'
                       ? 'history'
-                      : 'receipt'
+                      : link.view === 'receipts'
+                        ? 'receipt'
+                        : link.view === 'members'
+                          ? 'group'
+                          : link.view === 'create-member'
+                            ? 'person_add'
+                            : link.view === 'groups'
+                              ? 'groups'
+                              : 'description'
             }}</mat-icon>
             <span>{{ link.label }}</span>
           </button>
@@ -48,7 +66,7 @@
           <span class="cashier-avatar">{{ staffInitials }}</span>
           <span class="cashier-profile-copy"
             ><strong>{{ staffDisplayName }}</strong
-            ><small>Cashier · {{ officeName }}</small></span
+            ><small>{{ workspaceRole === 'cashier' ? 'Cashier' : 'Loan Officer' }} · {{ officeName }}</small></span
           >
           <button type="button" mat-icon-button matTooltip="Sign out" (click)="logout()">
             <fa-icon icon="sign-out-alt"></fa-icon>

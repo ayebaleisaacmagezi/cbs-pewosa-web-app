@@ -101,7 +101,10 @@ export class ShellComponent implements OnInit, AfterViewInit {
       'accountant',
       'it officer'
     ];
-    if (roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role))) {
+    if (
+      (roleNames.includes('cashier') || roleNames.includes('loan officer')) &&
+      !roleNames.some((role: string) => elevatedRoles.includes(role))
+    ) {
       this.sidenavCollapsed = false;
     }
     this.progressBarService.updateProgressBar.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((mode: string) => {

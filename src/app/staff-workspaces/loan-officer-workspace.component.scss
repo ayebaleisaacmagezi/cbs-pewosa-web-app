@@ -1,0 +1,102 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 68px);
+  background: #f4f7fc;
+  font-family: Roboto, 'Helvetica Neue', sans-serif;
+}
+
+.staff-workspace {
+  padding: 30px 34px 48px;
+}
+
+.workspace-hero {
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 15%, rgb(255 255 255 / 14%) 0 90px, transparent 91px),
+    linear-gradient(120deg, #17366f, #2854a1);
+}
+
+.workspace-hero h1 {
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.workspace-tabs {
+  position: sticky;
+  z-index: 4;
+  top: 0;
+  box-shadow: 0 8px 24px rgb(28 49 87 / 7%);
+}
+
+.workspace-tabs button {
+  min-height: 42px;
+  padding-inline: 18px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.action-tile {
+  min-height: 150px;
+  padding: 24px;
+  box-shadow: 0 8px 24px rgb(28 49 87 / 6%);
+}
+
+.action-tile strong {
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.action-tile small {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.action-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  color: #2854a1;
+  background: #e9f0fd;
+}
+
+.panel {
+  border-radius: 18px;
+}
+
+.section-title h2 {
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.loading-notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.member-row,
+.record-row {
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.member-row:hover,
+.record-row:hover {
+  border-color: #a9bfe6;
+  box-shadow: 0 6px 18px rgb(35 76 152 / 8%);
+}
+
+@media (max-width: 680px) {
+  .staff-workspace {
+    padding: 18px 14px 32px;
+  }
+
+  .workspace-tabs {
+    position: static;
+  }
+}

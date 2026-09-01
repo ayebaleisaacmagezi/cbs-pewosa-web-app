@@ -46,7 +46,11 @@ import { MatIcon } from '@angular/material/icon';
 import { MatLine } from '@angular/material/grid-list';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { remittanceConfig } from '../../../remittances/remittance.config';
-import { CashierWorkspaceView, WorkspaceNavigationService } from '../workspace-navigation.service';
+import {
+  CashierWorkspaceView,
+  LoanOfficerWorkspaceView,
+  WorkspaceNavigationService
+} from '../workspace-navigation.service';
 
 import { catchError, finalize, of, take } from 'rxjs';
 
@@ -143,6 +147,13 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         this.activeWorkspaceView = view;
         this.changeDetectorRef.markForCheck();
       });
+    } else if (this.workspaceRole === 'loan-officer') {
+      const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
+      if (this.isLoanOfficerView(requestedView)) this.workspaceNavigation.setLoanOfficerView(requestedView);
+      this.workspaceNavigation.loanOfficerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+        this.activeWorkspaceView = view;
+        this.changeDetectorRef.markForCheck();
+      });
     }
     this.setMappedAcitivites();
   }
@@ -198,9 +209,19 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceNavigation.setCashierView(view);
       return;
     }
-    void this.router.navigate(['/staff-workspaces', this.workspaceRole], {
-      queryParams: { view }
-    });
+    if (this.workspaceRole === 'loan-officer' && this.isLoanOfficerView(view)) {
+      this.workspaceNavigation.setLoanOfficerView(view);
+      return;
+    }
+    void this.router.navigate(
+      [
+        '/staff-workspaces',
+        this.workspaceRole
+      ],
+      {
+        queryParams: { view }
+      }
+    );
   }
 
   isWorkspaceViewActive(view: string): boolean {
@@ -209,6 +230,12 @@ export class SidenavComponent implements OnInit, AfterViewInit {
 
   private isCashierView(view: string | undefined): view is CashierWorkspaceView {
     return view === 'home' || view === 'transactions' || view === 'drawer' || view === 'records' || view === 'receipts';
+  }
+
+  private isLoanOfficerView(view: string | undefined): view is LoanOfficerWorkspaceView {
+    return (
+      view === 'home' || view === 'members' || view === 'create-member' || view === 'groups' || view === 'applications'
+    );
   }
 
   get staffInitials(): string {

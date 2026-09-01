@@ -221,10 +221,6 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   prepareTransaction(): void {
-    if (!this.drawerReady) {
-      this.showMessage('Your cashier drawer is not ready. Ask the Chief Teller to assign and fund it first.', 'error');
-      return;
-    }
     const form = this.transactionForm.getRawValue();
     const amount = Number(form.amount || 0);
     if (this.selectedAction === 'shares' && (!form.shareAccountId || Number(form.requestedShares || 0) < 1)) {
@@ -242,7 +238,14 @@ export class CashierWorkspaceComponent implements OnInit {
       this.showMessage('Choose a savings account and enter a valid amount.', 'error');
       return;
     }
-    if (this.selectedAction === 'withdrawal' && this.drawer && amount > Number(this.drawer.netCash || 0)) {
+    if (this.selectedAction === 'withdrawal' && !this.drawerReady) {
+      this.showMessage(
+        'Cash withdrawals require an active teller drawer. Ask the Chief Teller to complete your setup.',
+        'error'
+      );
+      return;
+    }
+    if (this.selectedAction === 'withdrawal' && amount > this.availableCash) {
       this.showMessage('The drawer does not have enough cash for this withdrawal.', 'error');
       return;
     }
