@@ -6,9 +6,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { MatIcon } from '@angular/material/icon';
 import { catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
 
 import { ClientsService } from 'app/clients/clients.service';
@@ -19,15 +21,19 @@ import { SavingsService } from 'app/savings/savings.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { SharesService } from 'app/shares/shares.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
+import { CashierWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
 
 type CashierAction = 'deposit' | 'withdrawal' | 'shares' | 'fee';
 
 @Component({
   selector: 'mifosx-cashier-workspace',
   standalone: true,
-  imports: [...STANDALONE_SHARED_IMPORTS],
+  imports: [
+    ...STANDALONE_SHARED_IMPORTS,
+    MatIcon
+  ],
   templateUrl: './cashier-workspace.component.html',
-  styleUrls: ['./staff-workspace.scss']
+  styleUrls: ['./cashier-workspace.component.scss']
 })
 export class CashierWorkspaceComponent implements OnInit {
   private authenticationService = inject(AuthenticationService);
@@ -39,9 +45,12 @@ export class CashierWorkspaceComponent implements OnInit {
   private dates = inject(Dates);
   private formBuilder = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private workspaceNavigation = inject(WorkspaceNavigationService);
+  private destroyRef = inject(DestroyRef);
+  private changeDetectorRef = inject(ChangeDetectorRef);
 
   credentials = this.authenticationService.getCredentials();
-  activeView: 'transactions' | 'drawer' | 'records' = 'transactions';
+  activeView: CashierWorkspaceView = 'transactions';
   selectedAction: CashierAction = 'deposit';
   clients: any[] = [];
   selectedClient: any = null;
@@ -84,18 +93,63 @@ export class CashierWorkspaceComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe((params) => {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const view = params.get('view');
-      if (view === 'transactions' || view === 'drawer' || view === 'records') this.setView(view);
+      if (
+        view === 'home' ||
+        view === 'transactions' ||
+        view === 'drawer' ||
+        view === 'records' ||
+        view === 'receipts'
+      ) {
+        this.workspaceNavigation.setCashierView(view);
+      }
+    });
+    this.workspaceNavigation.cashierView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+      this.setView(view);
+      this.changeDetectorRef.markForCheck();
     });
     this.loadDrawer();
   }
 
-  setView(view: 'transactions' | 'drawer' | 'records'): void {
+  setView(view: CashierWorkspaceView): void {
     this.activeView = view;
-    if (view !== 'transactions' && this.tellerId && this.cashierId) {
-      this.refreshDrawerSummary();
-    }
+  }
+
+  startTransaction(action: CashierAction): void {
+    this.workspaceNavigation.setCashierView('transactions');
+    this.selectAction(action);
+  }
+
+  get cashierName(): string {
+    return this.credentials?.staffDisplayName || this.credentials?.username || 'Cashier';
+  }
+
+  get cashierInitials(): string {
+    return this.cashierName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part: string) => part[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  get drawerRecords(): any[] {
+    return this.drawer?.cashierTransactions?.pageItems || this.drawer?.cashierTransactions || [];
+  }
+
+  get availableCash(): number {
+    return Number(this.drawer?.netCash || 0);
+  }
+
+  get actionTitle(): string {
+    return {
+      deposit: 'Cash deposit',
+      withdrawal: 'Cash withdrawal',
+      shares: 'Share purchase',
+      fee: 'Fee payment'
+    }[this.selectedAction];
   }
 
   selectAction(action: CashierAction): void {

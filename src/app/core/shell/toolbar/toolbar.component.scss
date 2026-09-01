@@ -118,3 +118,63 @@
 .white-text-language {
   margin-top: 27px;
 }
+
+#mifosx-toolbar.cashier-workspace-toolbar {
+  min-height: 68px;
+  padding: 8px 20px;
+  background: linear-gradient(110deg, #17366f, #244d9a);
+  box-shadow: 0 4px 16px rgb(23 54 111 / 18%);
+}
+
+.cashier-toolbar-title,
+.cashier-toolbar-session {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  strong,
+  small {
+    display: block;
+  }
+
+  strong {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  small {
+    margin-top: 3px;
+    color: rgb(255 255 255 / 72%);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+}
+
+.cashier-toolbar-icon,
+.cashier-toolbar-avatar {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 10px;
+  color: #fff;
+  background: rgb(255 255 255 / 10%);
+}
+
+.cashier-toolbar-avatar {
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (width <= 600px) {
+  .cashier-toolbar-title small,
+  .cashier-toolbar-session span:last-child {
+    display: none;
+  }
+}

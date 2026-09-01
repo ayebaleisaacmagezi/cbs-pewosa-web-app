@@ -33,42 +33,22 @@ export class ClientsService {
    * Searches client fields while preserving the authenticated user's office scope.
    */
   searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
-    const filterFields = [
-      'displayName',
-      'accountNo',
-      'externalId',
-      'mobileNo'
-    ];
-    const requests = filterFields.map((field) => {
-      const httpParams = new HttpParams()
-        .set(field, query)
-        .set('officeId', officeId.toString())
-        .set('paged', 'true')
-        .set('limit', '50')
-        .set('orderBy', 'displayName')
-        .set('sortOrder', 'ASC');
-      return this.http.get('/clients', { params: httpParams }).pipe(catchError(() => of({ pageItems: [] })));
-    });
+    const request = {
+      request: { text: query.trim() },
+      page: 0,
+      size: 50,
+      sorts: [{ direction: 'ASC', property: 'displayName' }]
+    };
 
-    return forkJoin(requests).pipe(
-      map((responses: any[]) => {
-        const normalizedQuery = query.trim().toLowerCase();
-        const matches = responses.flatMap((response: any) => response?.pageItems || response || []);
-        return matches
-          .filter((client: any) =>
-            [
-              client.displayName,
-              client.accountNo,
-              client.externalId,
-              client.mobileNo
-            ]
-              .filter(Boolean)
-              .some((value: any) => String(value).toLowerCase().includes(normalizedQuery))
-          )
-          .filter(
-            (client: any, index: number, clients: any[]) => clients.findIndex((item) => item.id === client.id) === index
-          );
-      })
+    return this.http.post('/v2/clients/search', request).pipe(
+      map((response: any) =>
+        (response?.content || [])
+          .filter((client: any) => Number(client.officeId) === Number(officeId))
+          .map((client: any) => ({
+            ...client,
+            accountNo: client.accountNumber
+          }))
+      )
     );
   }
 

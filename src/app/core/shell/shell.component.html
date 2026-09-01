@@ -16,6 +16,7 @@
       'sidebar-full': !sidenavCollapsed,
       'sidebar-compact': sidenavCollapsed
     }"
+    [style.width]="sidenavCollapsed ? '4rem' : '15rem'"
     [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
     [mode]="(isHandset$ | async) ? 'over' : 'side'"
     [opened]="(isHandset$ | async) === false"
@@ -26,7 +27,11 @@
   <!-- Content -->
   <mat-sidenav-content class="sidenav">
     <!-- Toolbar -->
-    <mifosx-toolbar [sidenav]="sidenav" (collapse)="toggleCollapse($event)"></mifosx-toolbar>
+    <mifosx-toolbar
+      [sidenav]="sidenav"
+      [sidenavCollapsed]="sidenavCollapsed"
+      (collapse)="toggleCollapse($event)"
+    ></mifosx-toolbar>
     <!-- Progress Bar -->
     @if (progressBarMode !== 'none') {
       <div>

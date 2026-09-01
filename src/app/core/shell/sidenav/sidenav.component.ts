@@ -16,8 +16,11 @@ import {
   ElementRef,
   ViewChild,
   AfterViewInit,
+  ChangeDetectorRef,
+  DestroyRef,
   inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
@@ -43,6 +46,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatLine } from '@angular/material/grid-list';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { remittanceConfig } from '../../../remittances/remittance.config';
+import { CashierWorkspaceView, WorkspaceNavigationService } from '../workspace-navigation.service';
 
 import { catchError, finalize, of, take } from 'rxjs';
 
@@ -76,6 +80,9 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   private configurationWizardService = inject(ConfigurationWizardService);
   private popoverService = inject(PopoverService);
   private documentationLinks = inject(DocumentationLinksService);
+  private workspaceNavigation = inject(WorkspaceNavigationService);
+  private changeDetectorRef = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   /** True if sidenav is in collapsed state. */
   @Input() sidenavCollapsed: boolean;
@@ -83,6 +90,8 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   tooltipPosition = 'after';
   /** Username of authenticated user. */
   username: string;
+  staffDisplayName: string;
+  officeName: string;
   /** Array of all user activities */
   userActivity: string[];
   /** Mapped Activites */
@@ -95,6 +104,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | null = null;
   /** Role-specific navigation links. */
   workspaceLinks: { label: string; view: string }[] = [];
+  activeWorkspaceView = '';
 
   /* Refernce of logo */
   @ViewChild('logo') logo: ElementRef<any>;
@@ -123,7 +133,17 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     const credentials = this.authenticationService.getCredentials();
     this.username = credentials.username;
+    this.staffDisplayName = credentials.staffDisplayName || credentials.username;
+    this.officeName = credentials.officeName;
     this.setWorkspaceNavigation(credentials.roles);
+    if (this.workspaceRole === 'cashier') {
+      const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
+      if (this.isCashierView(requestedView)) this.workspaceNavigation.setCashierView(requestedView);
+      this.workspaceNavigation.cashierView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+        this.activeWorkspaceView = view;
+        this.changeDetectorRef.markForCheck();
+      });
+    }
     this.setMappedAcitivites();
   }
 
@@ -154,9 +174,11 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     } else if (roleNames.includes('cashier')) {
       this.workspaceRole = 'cashier';
       this.workspaceLinks = [
+        { label: 'Cashier home', view: 'home' },
         { label: 'Member transactions', view: 'transactions' },
-        { label: 'My drawer', view: 'drawer' },
-        { label: 'My records', view: 'records' }
+        { label: 'Teller drawer', view: 'drawer' },
+        { label: "Today's transactions", view: 'records' },
+        { label: 'Receipts', view: 'receipts' }
       ];
     } else if (roleNames.includes('loan officer')) {
       this.workspaceRole = 'loan-officer';
@@ -168,6 +190,35 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: 'Loan applications', view: 'applications' }
       ];
     }
+  }
+
+  openWorkspaceView(view: string): void {
+    if (!this.workspaceRole) return;
+    if (this.workspaceRole === 'cashier' && this.isCashierView(view)) {
+      this.workspaceNavigation.setCashierView(view);
+      return;
+    }
+    void this.router.navigate(['/staff-workspaces', this.workspaceRole], {
+      queryParams: { view }
+    });
+  }
+
+  isWorkspaceViewActive(view: string): boolean {
+    return this.activeWorkspaceView === view;
+  }
+
+  private isCashierView(view: string | undefined): view is CashierWorkspaceView {
+    return view === 'home' || view === 'transactions' || view === 'drawer' || view === 'records' || view === 'receipts';
+  }
+
+  get staffInitials(): string {
+    return (this.staffDisplayName || this.username || 'C')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part: string) => part[0])
+      .join('')
+      .toUpperCase();
   }
 
   /**

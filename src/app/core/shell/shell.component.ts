@@ -37,6 +37,7 @@ import { ContentComponent } from './content/content.component';
 import { FooterComponent } from '../../shared/footer/footer.component';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { environment } from '../../../environments/environment';
+import { AuthenticationService } from '../authentication/authentication.service';
 
 /**
  * Shell component.
@@ -65,6 +66,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private progressBarService = inject(ProgressBarService);
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
+  private authenticationService = inject(AuthenticationService);
 
   /** Host for the lazily-loaded Copilot panel. */
   @ViewChild('copilotHost', { read: ViewContainerRef }) copilotHost?: ViewContainerRef;
@@ -83,6 +85,25 @@ export class ShellComponent implements OnInit, AfterViewInit {
    * Subscribes to progress bar to update its mode.
    */
   ngOnInit() {
+    const roles = this.authenticationService.getCredentials()?.roles;
+    const roleNames = Array.isArray(roles)
+      ? roles.map((role: any) =>
+          String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
+            .trim()
+            .toLowerCase()
+        )
+      : [];
+    const elevatedRoles = [
+      'super user',
+      'general manager',
+      'deputy gm',
+      'branch manager',
+      'accountant',
+      'it officer'
+    ];
+    if (roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role))) {
+      this.sidenavCollapsed = false;
+    }
     this.progressBarService.updateProgressBar.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((mode: string) => {
       this.progressBarMode = mode;
       this.cdr.detectChanges();

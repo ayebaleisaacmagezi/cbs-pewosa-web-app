@@ -88,7 +88,7 @@ export class BreadcrumbComponent implements AfterViewInit {
   private destroyRef = inject(DestroyRef);
 
   /** Array of breadcrumbs. */
-  breadcrumbs: Breadcrumb[];
+  breadcrumbs: Breadcrumb[] = [];
   /* Reference of breadcrumb */
   @ViewChild('breadcrumb') breadcrumb: ElementRef<any>;
   /* Template for popover on breadcrumb */

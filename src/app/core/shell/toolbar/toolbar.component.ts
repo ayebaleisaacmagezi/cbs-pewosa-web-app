@@ -105,17 +105,39 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
     .pipe(map((result) => result.matches));
 
   /** Sets the initial state of sidenav as collapsed. Not collapsed if false. */
-  sidenavCollapsed = true;
+  @Input() sidenavCollapsed = true;
 
   /** Instance of sidenav. */
   @Input() sidenav: MatSidenav;
   /** Sidenav collapse event. */
   @Output() collapse = new EventEmitter<boolean>();
+  cashierWorkspace = false;
+  cashierName = '';
+  cashierOffice = '';
 
   /**
    * Subscribes to breakpoint for handset.
    */
   ngOnInit() {
+    const credentials = this.authenticationService.getCredentials();
+    const roles = Array.isArray(credentials?.roles) ? credentials.roles : [];
+    const roleNames = roles.map((role: any) =>
+      String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
+        .trim()
+        .toLowerCase()
+    );
+    const elevatedRoles = [
+      'super user',
+      'general manager',
+      'deputy gm',
+      'branch manager',
+      'accountant',
+      'it officer'
+    ];
+    this.cashierWorkspace =
+      roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role));
+    this.cashierName = credentials?.staffDisplayName || credentials?.username || 'Cashier';
+    this.cashierOffice = credentials?.officeName || '';
     this.isHandset$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((isHandset) => {
       if (isHandset && this.sidenavCollapsed) {
         this.toggleSidenavCollapse(false);
@@ -138,8 +160,18 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
    * Toggles the current collapsed state of sidenav.
    */
   toggleSidenavCollapse(sidenavCollapsed?: boolean) {
-    this.sidenavCollapsed = sidenavCollapsed || !this.sidenavCollapsed;
+    this.sidenavCollapsed = sidenavCollapsed ?? !this.sidenavCollapsed;
     this.collapse.emit(this.sidenavCollapsed);
+  }
+
+  get cashierInitials(): string {
+    return this.cashierName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part: string) => part[0])
+      .join('')
+      .toUpperCase();
   }
 
   /**

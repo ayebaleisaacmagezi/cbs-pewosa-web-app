@@ -6,7 +6,12 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<mat-toolbar class="layout-row" color="primary" id="mifosx-toolbar">
+<mat-toolbar
+  class="layout-row"
+  color="primary"
+  id="mifosx-toolbar"
+  [class.cashier-workspace-toolbar]="cashierWorkspace"
+>
   @if (!sidenavCollapsed) {
     <button
       mat-icon-button
@@ -35,99 +40,120 @@
     </button>
   }
 
-  <div class="tab-nav-bar">
-    <a
-      #institution
-      class="tab-link"
-      [matMenuTriggerFor]="institutionMenu"
-      #institutionMenuTrigger="matMenuTrigger"
+  @if (cashierWorkspace) {
+    <div class="cashier-toolbar-title">
+      <span class="cashier-toolbar-icon"><mat-icon>point_of_sale</mat-icon></span>
+      <span><strong>Cashier</strong><small>Serve members and manage your teller drawer</small></span>
+    </div>
+    <span class="toolbar-spacer"></span>
+    <div class="cashier-toolbar-session">
+      <span class="cashier-toolbar-avatar">{{ cashierInitials }}</span>
+      <span
+        ><strong>{{ cashierName }}</strong
+        ><small>Cashier · {{ cashierOffice }}</small></span
+      >
+    </div>
+  } @else {
+    <div class="tab-nav-bar">
+      <a
+        #institution
+        class="tab-link"
+        [matMenuTriggerFor]="institutionMenu"
+        #institutionMenuTrigger="matMenuTrigger"
+        tabindex="0"
+        *mifosxHasPermission="['READ_CLIENT', 'READ_GROUP', 'READ_CENTER']"
+      >
+        <fa-icon class="mr-05" icon="university" size="lg"></fa-icon>
+        {{ 'labels.menus.Institution' | translate }}
+      </a>
+
+      <span class="hide-lt-md">
+        <a
+          #accounting
+          class="tab-link accounting-link"
+          [routerLink]="['/accounting']"
+          tabindex="0"
+          *mifosxHasPermission="[
+            'READ_JOURNALENTRY',
+            'READ_GLACCOUNT',
+            'READ_GLCLOSURE',
+            'READ_ACCOUNTINGRULE',
+            'READ_PROVISIONINGCRITERIA'
+          ]"
+        >
+          <fa-icon class="mr-05" icon="money-bill-alt" size="lg"></fa-icon>
+          {{ 'labels.menus.Accounting' | translate }}
+        </a>
+        <a
+          #reports
+          class="tab-link"
+          [matMenuTriggerFor]="reportsMenu"
+          #reportsMenuTrigger="matMenuTrigger"
+          tabindex="0"
+          *mifosxHasPermission="'READ_REPORT'"
+        >
+          <fa-icon class="mr-05" icon="chart-bar" size="lg"></fa-icon>
+          {{ 'labels.menus.Reports' | translate }}
+        </a>
+        <a
+          #admin
+          class="tab-link"
+          [matMenuTriggerFor]="adminMenu"
+          #adminMenuTrigger="matMenuTrigger"
+          tabindex="0"
+          *mifosxHasPermission="['READ_USER', 'READ_ROLE']"
+        >
+          <fa-icon class="mr-05" icon="shield-alt" size="lg"></fa-icon>
+          {{ 'labels.menus.Admin' | translate }}
+        </a>
+        <a
+          #configWizard
+          class="tab-link"
+          (click)="openDialog()"
+          tabindex="0"
+          *mifosxHasPermission="'READ_CONFIG_WIZARD'"
+        >
+          <fa-icon class="mr-05" icon="info" size="lg"></fa-icon>
+          {{ 'labels.menus.Configuration Wizard' | translate }}
+        </a>
+      </span>
+    </div>
+
+    <span class="toolbar-spacer"></span>
+
+    <div #globalSearch class="white-text-search">
+      <mifosx-search-tool tabindex="0"></mifosx-search-tool>
+    </div>
+
+    <div #languageSelector class="white-text-language">
+      <mifosx-language-selector class="ml-1 language hide-lt-md" tabindex="0"></mifosx-language-selector>
+    </div>
+
+    <button
+      mat-icon-button
+      [matMenuTriggerFor]="languageMenu"
+      class="show-lt-md"
       tabindex="0"
-      *mifosxHasPermission="['READ_CLIENT', 'READ_GROUP', 'READ_CENTER']"
+      [attr.aria-label]="'labels.menus.Language Selector' | translate"
+      matTooltip="{{ 'labels.menus.Language Selector' | translate }}"
     >
-      <fa-icon class="mr-05" icon="university" size="lg"></fa-icon>
-      {{ 'labels.menus.Institution' | translate }}
-    </a>
-
-    <span class="hide-lt-md">
-      <a
-        #accounting
-        class="tab-link accounting-link"
-        [routerLink]="['/accounting']"
-        tabindex="0"
-        *mifosxHasPermission="[
-          'READ_JOURNALENTRY',
-          'READ_GLACCOUNT',
-          'READ_GLCLOSURE',
-          'READ_ACCOUNTINGRULE',
-          'READ_PROVISIONINGCRITERIA'
-        ]"
-      >
-        <fa-icon class="mr-05" icon="money-bill-alt" size="lg"></fa-icon>
-        {{ 'labels.menus.Accounting' | translate }}
-      </a>
-      <a
-        #reports
-        class="tab-link"
-        [matMenuTriggerFor]="reportsMenu"
-        #reportsMenuTrigger="matMenuTrigger"
-        tabindex="0"
-        *mifosxHasPermission="'READ_REPORT'"
-      >
-        <fa-icon class="mr-05" icon="chart-bar" size="lg"></fa-icon>
-        {{ 'labels.menus.Reports' | translate }}
-      </a>
-      <a
-        #admin
-        class="tab-link"
-        [matMenuTriggerFor]="adminMenu"
-        #adminMenuTrigger="matMenuTrigger"
-        tabindex="0"
-        *mifosxHasPermission="['READ_USER', 'READ_ROLE']"
-      >
-        <fa-icon class="mr-05" icon="shield-alt" size="lg"></fa-icon>
-        {{ 'labels.menus.Admin' | translate }}
-      </a>
-      <a #configWizard class="tab-link" (click)="openDialog()" tabindex="0" *mifosxHasPermission="'READ_CONFIG_WIZARD'">
-        <fa-icon class="mr-05" icon="info" size="lg"></fa-icon>
-        {{ 'labels.menus.Configuration Wizard' | translate }}
-      </a>
-    </span>
-  </div>
-
-  <span class="toolbar-spacer"></span>
-
-  <div #globalSearch class="white-text-search">
-    <mifosx-search-tool tabindex="0"></mifosx-search-tool>
-  </div>
-
-  <div #languageSelector class="white-text-language">
-    <mifosx-language-selector class="ml-1 language hide-lt-md" tabindex="0"></mifosx-language-selector>
-  </div>
-
-  <button
-    mat-icon-button
-    [matMenuTriggerFor]="languageMenu"
-    class="show-lt-md"
-    tabindex="0"
-    [attr.aria-label]="'labels.menus.Language Selector' | translate"
-    matTooltip="{{ 'labels.menus.Language Selector' | translate }}"
-  >
-    <mat-icon>language</mat-icon>
-  </button>
-
-  <div #notifications>
-    <mifosx-notifications-tray #notificationsTray class="hide-lt-md" tabindex="0"></mifosx-notifications-tray>
-  </div>
-
-  <div #themeToggle>
-    <mifosx-theme-toggle tabindex="0"></mifosx-theme-toggle>
-  </div>
-
-  <div #appMenu>
-    <button mat-icon-button class="ml-1 img-button" [matMenuTriggerFor]="applicationMenu" tabindex="0">
-      <img src="assets/images/user_placeholder.png" [alt]="'labels.headings.User Profile' | translate" />
+      <mat-icon>language</mat-icon>
     </button>
-  </div>
+
+    <div #notifications>
+      <mifosx-notifications-tray #notificationsTray class="hide-lt-md" tabindex="0"></mifosx-notifications-tray>
+    </div>
+
+    <div #themeToggle>
+      <mifosx-theme-toggle tabindex="0"></mifosx-theme-toggle>
+    </div>
+
+    <div #appMenu>
+      <button mat-icon-button class="ml-1 img-button" [matMenuTriggerFor]="applicationMenu" tabindex="0">
+        <img src="assets/images/user_placeholder.png" [alt]="'labels.headings.User Profile' | translate" />
+      </button>
+    </div>
+  }
 </mat-toolbar>
 
 <!-- Language selector menu for small screen view -->

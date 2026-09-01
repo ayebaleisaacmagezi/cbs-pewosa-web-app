@@ -10,7 +10,7 @@
   <div class="page-header">
     <div class="title-row">
       <span #breadcrumb class="breadcrumb-title">
-        {{ getTranslate(breadcrumbs[breadcrumbs?.length - 1].label) }}
+        {{ breadcrumbs.length ? getTranslate(breadcrumbs[breadcrumbs.length - 1].label) : '' }}
       </span>
     </div>
 
