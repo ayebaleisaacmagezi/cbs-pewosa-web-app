@@ -11,14 +11,17 @@ import { BehaviorSubject } from 'rxjs';
 
 export type CashierWorkspaceView = 'home' | 'transactions' | 'drawer' | 'records' | 'receipts';
 export type LoanOfficerWorkspaceView = 'home' | 'members' | 'create-member' | 'groups' | 'applications';
+export type ChiefTellerWorkspaceView = 'drawers' | 'movement' | 'records';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceNavigationService {
   private cashierViewSubject = new BehaviorSubject<CashierWorkspaceView>('transactions');
   private loanOfficerViewSubject = new BehaviorSubject<LoanOfficerWorkspaceView>('home');
+  private chiefTellerViewSubject = new BehaviorSubject<ChiefTellerWorkspaceView>('drawers');
 
   readonly cashierView$ = this.cashierViewSubject.asObservable();
   readonly loanOfficerView$ = this.loanOfficerViewSubject.asObservable();
+  readonly chiefTellerView$ = this.chiefTellerViewSubject.asObservable();
 
   setCashierView(view: CashierWorkspaceView): void {
     if (this.cashierViewSubject.value !== view) this.cashierViewSubject.next(view);
@@ -26,5 +29,9 @@ export class WorkspaceNavigationService {
 
   setLoanOfficerView(view: LoanOfficerWorkspaceView): void {
     if (this.loanOfficerViewSubject.value !== view) this.loanOfficerViewSubject.next(view);
+  }
+
+  setChiefTellerView(view: ChiefTellerWorkspaceView): void {
+    if (this.chiefTellerViewSubject.value !== view) this.chiefTellerViewSubject.next(view);
   }
 }

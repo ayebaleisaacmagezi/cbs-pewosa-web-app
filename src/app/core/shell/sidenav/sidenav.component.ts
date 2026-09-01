@@ -48,6 +48,7 @@ import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { remittanceConfig } from '../../../remittances/remittance.config';
 import {
   CashierWorkspaceView,
+  ChiefTellerWorkspaceView,
   LoanOfficerWorkspaceView,
   WorkspaceNavigationService
 } from '../workspace-navigation.service';
@@ -154,6 +155,13 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         this.activeWorkspaceView = view;
         this.changeDetectorRef.markForCheck();
       });
+    } else if (this.workspaceRole === 'chief-teller') {
+      const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
+      if (this.isChiefTellerView(requestedView)) this.workspaceNavigation.setChiefTellerView(requestedView);
+      this.workspaceNavigation.chiefTellerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+        this.activeWorkspaceView = view;
+        this.changeDetectorRef.markForCheck();
+      });
     }
     this.setMappedAcitivites();
   }
@@ -173,8 +181,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       'accountant',
       'it officer'
     ];
-    if (roleNames.some((role: string) => elevatedRoles.includes(role))) return;
-
     if (roleNames.includes('chief teller')) {
       this.workspaceRole = 'chief-teller';
       this.workspaceLinks = [
@@ -182,7 +188,11 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: 'Allocate or recover', view: 'movement' },
         { label: 'Drawer records', view: 'records' }
       ];
-    } else if (roleNames.includes('cashier')) {
+      return;
+    }
+    if (roleNames.some((role: string) => elevatedRoles.includes(role))) return;
+
+    if (roleNames.includes('cashier')) {
       this.workspaceRole = 'cashier';
       this.workspaceLinks = [
         { label: 'Cashier home', view: 'home' },
@@ -213,6 +223,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceNavigation.setLoanOfficerView(view);
       return;
     }
+    if (this.workspaceRole === 'chief-teller' && this.isChiefTellerView(view)) {
+      this.workspaceNavigation.setChiefTellerView(view);
+      return;
+    }
     void this.router.navigate(
       [
         '/staff-workspaces',
@@ -238,6 +252,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     );
   }
 
+  private isChiefTellerView(view: string | undefined): view is ChiefTellerWorkspaceView {
+    return view === 'drawers' || view === 'movement' || view === 'records';
+  }
+
   get staffInitials(): string {
     return (this.staffDisplayName || this.username || 'C')
       .split(/\s+/)
@@ -246,6 +264,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       .map((part: string) => part[0])
       .join('')
       .toUpperCase();
+  }
+
+  get workspaceHomeView(): string {
+    return this.workspaceRole === 'chief-teller' ? 'drawers' : 'home';
   }
 
   /**

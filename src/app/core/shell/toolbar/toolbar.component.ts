@@ -113,6 +113,7 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
   @Output() collapse = new EventEmitter<boolean>();
   cashierWorkspace = false;
   loanOfficerWorkspace = false;
+  chiefTellerWorkspace = false;
   cashierName = '';
   cashierOffice = '';
 
@@ -139,6 +140,7 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
       roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role));
     this.loanOfficerWorkspace =
       roleNames.includes('loan officer') && !roleNames.some((role: string) => elevatedRoles.includes(role));
+    this.chiefTellerWorkspace = roleNames.includes('chief teller');
     this.cashierName = credentials?.staffDisplayName || credentials?.username || 'Cashier';
     this.cashierOffice = credentials?.officeName || '';
     this.isHandset$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((isHandset) => {

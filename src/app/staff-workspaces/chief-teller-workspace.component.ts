@@ -6,12 +6,15 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { MatIcon } from '@angular/material/icon';
 import { finalize } from 'rxjs';
 
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
+import { ChiefTellerWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
 import { Dates } from 'app/core/utils/dates';
 import { OrganizationService } from 'app/organization/organization.service';
 import { SettingsService } from 'app/settings/settings.service';
@@ -22,9 +25,15 @@ type DrawerAction = 'allocate' | 'settle';
 @Component({
   selector: 'mifosx-chief-teller-workspace',
   standalone: true,
-  imports: [...STANDALONE_SHARED_IMPORTS],
+  imports: [
+    ...STANDALONE_SHARED_IMPORTS,
+    MatIcon
+  ],
   templateUrl: './chief-teller-workspace.component.html',
-  styleUrls: ['./staff-workspace.scss']
+  styleUrls: [
+    './staff-workspace.scss',
+    './chief-teller-workspace.component.scss'
+  ]
 })
 export class ChiefTellerWorkspaceComponent implements OnInit {
   private authenticationService = inject(AuthenticationService);
@@ -33,9 +42,12 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   private dates = inject(Dates);
   private formBuilder = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private workspaceNavigation = inject(WorkspaceNavigationService);
+  private changeDetectorRef = inject(ChangeDetectorRef);
+  private destroyRef = inject(DestroyRef);
 
   credentials = this.authenticationService.getCredentials();
-  activeView: 'drawers' | 'movement' | 'records' = 'drawers';
+  activeView: ChiefTellerWorkspaceView = 'drawers';
   tellers: any[] = [];
   cashiers: any[] = [];
   selectedTeller: any = null;
@@ -66,12 +78,19 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
       const view = params.get('view');
-      if (view === 'drawers' || view === 'movement' || view === 'records') this.setView(view);
+      if (view === 'drawers' || view === 'movement' || view === 'records') {
+        this.workspaceNavigation.setChiefTellerView(view);
+      }
+    });
+    this.workspaceNavigation.chiefTellerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+      this.setView(view);
+      this.changeDetectorRef.markForCheck();
     });
     this.loadTellers();
   }
 
-  setView(view: 'drawers' | 'movement' | 'records'): void {
+  setView(view: ChiefTellerWorkspaceView): void {
+    this.workspaceNavigation.setChiefTellerView(view);
     this.activeView = view;
   }
 

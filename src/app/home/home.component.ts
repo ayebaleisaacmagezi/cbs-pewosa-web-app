@@ -161,6 +161,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       'it officer'
     ];
 
+    if (workspaceRole === 'chief teller') {
+      return roleNames.includes(workspaceRole);
+    }
+
     return roleNames.includes(workspaceRole) && !roleNames.some((role: string) => elevatedRoles.includes(role));
   }
 

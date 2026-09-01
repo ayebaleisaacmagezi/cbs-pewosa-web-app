@@ -1,7 +1,7 @@
 <main class="staff-workspace">
   <header class="workspace-hero">
     <div>
-      <span class="eyebrow">Chief Teller workspace</span>
+      <span class="eyebrow">Chief Teller portal</span>
       <h1>Cash control for {{ credentials?.officeName }}</h1>
       <p>Allocate, recover and reconcile cash without opening the technical administration screens.</p>
     </div>
@@ -25,7 +25,17 @@
     </div>
   }
 
-  <section class="panel" style="margin-bottom: 18px">
+  @if (loading) {
+    <div class="notice loading-notice"><mat-icon>sync</mat-icon> Loading teller information from Fineract…</div>
+  }
+
+  <section class="panel drawer-selector">
+    <div class="selector-heading">
+      <span class="selector-icon"><mat-icon>point_of_sale</mat-icon></span>
+      <div>
+        <strong>Select cashier drawer</strong><small>Choose who you are allocating to or recovering from.</small>
+      </div>
+    </div>
     <div class="form-grid">
       <mat-form-field
         ><mat-label>Teller</mat-label
@@ -53,15 +63,19 @@
     </section>
     <div class="summary-grid">
       <div class="summary-card">
+        <span class="summary-icon allocation"><mat-icon>south_west</mat-icon></span>
         <span>Allocated</span><strong>UGX {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
       </div>
       <div class="summary-card">
+        <span class="summary-icon cash-in"><mat-icon>arrow_downward</mat-icon></span>
         <span>Cash in</span><strong>UGX {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
+        <span class="summary-icon cash-out"><mat-icon>arrow_upward</mat-icon></span>
         <span>Cash out</span><strong>UGX {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
+        <span class="summary-icon settlement"><mat-icon>north_east</mat-icon></span>
         <span>Settled</span><strong>UGX {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
       </div>
     </div>

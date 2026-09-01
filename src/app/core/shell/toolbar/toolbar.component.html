@@ -10,7 +10,7 @@
   class="layout-row"
   color="primary"
   id="mifosx-toolbar"
-  [class.cashier-workspace-toolbar]="cashierWorkspace || loanOfficerWorkspace"
+  [class.cashier-workspace-toolbar]="cashierWorkspace || loanOfficerWorkspace || chiefTellerWorkspace"
 >
   @if (!sidenavCollapsed) {
     <button
@@ -40,17 +40,21 @@
     </button>
   }
 
-  @if (cashierWorkspace || loanOfficerWorkspace) {
+  @if (cashierWorkspace || loanOfficerWorkspace || chiefTellerWorkspace) {
     <div class="cashier-toolbar-title">
       <span class="cashier-toolbar-icon"
-        ><mat-icon>{{ cashierWorkspace ? 'point_of_sale' : 'request_quote' }}</mat-icon></span
+        ><mat-icon>{{
+          cashierWorkspace ? 'point_of_sale' : chiefTellerWorkspace ? 'account_balance' : 'request_quote'
+        }}</mat-icon></span
       >
       <span
-        ><strong>{{ cashierWorkspace ? 'Cashier' : 'Loan Officer' }}</strong
+        ><strong>{{ cashierWorkspace ? 'Cashier' : chiefTellerWorkspace ? 'Chief Teller' : 'Loan Officer' }}</strong
         ><small>{{
           cashierWorkspace
             ? 'Serve members and manage your teller drawer'
-            : 'Manage members, groups and loan applications'
+            : chiefTellerWorkspace
+              ? 'Control cashier drawers, allocations and recoveries'
+              : 'Manage members, groups and loan applications'
         }}</small></span
       >
     </div>
@@ -59,7 +63,10 @@
       <span class="cashier-toolbar-avatar">{{ cashierInitials }}</span>
       <span
         ><strong>{{ cashierName }}</strong
-        ><small>{{ cashierWorkspace ? 'Cashier' : 'Loan Officer' }} · {{ cashierOffice }}</small></span
+        ><small
+          >{{ cashierWorkspace ? 'Cashier' : chiefTellerWorkspace ? 'Chief Teller' : 'Loan Officer' }} ·
+          {{ cashierOffice }}</small
+        ></span
       >
     </div>
   } @else {

@@ -102,8 +102,9 @@ export class ShellComponent implements OnInit, AfterViewInit {
       'it officer'
     ];
     if (
-      (roleNames.includes('cashier') || roleNames.includes('loan officer')) &&
-      !roleNames.some((role: string) => elevatedRoles.includes(role))
+      roleNames.includes('chief teller') ||
+      ((roleNames.includes('cashier') || roleNames.includes('loan officer')) &&
+        !roleNames.some((role: string) => elevatedRoles.includes(role)))
     ) {
       this.sidenavCollapsed = false;
     }
