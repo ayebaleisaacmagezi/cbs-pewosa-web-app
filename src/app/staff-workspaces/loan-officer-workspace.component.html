@@ -1,0 +1,276 @@
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">Loan Officer workspace</span>
+      <h1>Welcome, {{ credentials?.staffDisplayName || credentials?.username }}</h1>
+      <p>Create members and groups, inspect products and prepare loan applications.</p>
+    </div>
+    <div class="hero-stat">
+      <span>Assigned applications</span><strong>{{ applications.length }}</strong
+      ><small>{{ credentials?.officeName }}</small>
+    </div>
+  </header>
+
+  <nav class="workspace-tabs" aria-label="Loan Officer sections">
+    <button mat-button [class.active]="activeView === 'home'" (click)="setView('home')">Overview</button>
+    <button mat-button [class.active]="activeView === 'members'" (click)="setView('members')">Members</button>
+    <button mat-button [class.active]="activeView === 'create-member'" (click)="setView('create-member')">
+      Create member
+    </button>
+    <button mat-button [class.active]="activeView === 'groups'" (click)="setView('groups')">Groups</button>
+    <button mat-button [class.active]="activeView === 'applications'" (click)="setView('applications')">
+      Loan applications
+    </button>
+  </nav>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  @if (activeView === 'home') {
+    <section class="section-title">
+      <h2>What would you like to do?</h2>
+      <p>Choose a task to begin.</p>
+    </section>
+    <div class="action-grid">
+      <button class="action-tile" (click)="setView('create-member')">
+        <strong>Create a member</strong><small>Register and activate a new SACCO member.</small></button
+      ><button class="action-tile" (click)="setView('groups')">
+        <strong>Create a group</strong><small>Attach existing members from your office.</small></button
+      ><button class="action-tile" (click)="setView('members')">
+        <strong>Check member products</strong><small>Review savings, shares, loans and fees.</small></button
+      ><button class="action-tile" (click)="setView('applications')">
+        <strong>View loan applications</strong><small>Follow applications assigned to you.</small>
+      </button>
+    </div>
+  }
+
+  @if (activeView === 'members') {
+    <div class="workspace-grid">
+      <section class="panel">
+        <div class="section-title">
+          <h2>Find member</h2>
+          <p>Search within {{ credentials?.officeName }}.</p>
+        </div>
+        <mat-form-field class="full-width"
+          ><mat-label>Name, phone or account number</mat-label
+          ><input matInput [formControl]="memberSearchControl" (keyup.enter)="searchMembers()"
+        /></mat-form-field>
+        <div class="button-row">
+          <button mat-raised-button color="primary" (click)="searchMembers()">Search</button>
+        </div>
+        <div class="search-results">
+          @for (client of clients; track client.id) {
+            <div class="member-row">
+              <button (click)="openMember(client)">
+                <strong>{{ client.displayName }}</strong
+                ><small>{{ client.accountNo }} · {{ client.officeName }}</small>
+              </button>
+              @if (selectedClient?.id === client.id) {
+                <span class="status-pill">Open</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-title">
+          <h2>{{ selectedClient?.displayName || 'Member products' }}</h2>
+          <p>
+            {{
+              selectedClient
+                ? selectedClient.accountNo + ' · ' + selectedClient.status?.value
+                : 'Select a member to inspect their products.'
+            }}
+          </p>
+        </div>
+        @if (selectedClient && accounts) {
+          <div class="product-grid">
+            <div class="product-card">
+              <span>Savings</span><strong>{{ accounts.savingsAccounts?.length || 0 }}</strong
+              ><small
+                >UGX {{ accounts.savingsAccounts?.[0]?.accountBalance || 0 | number }} shown on first account</small
+              >
+            </div>
+            <div class="product-card">
+              <span>Shares</span><strong>{{ accounts.shareAccounts?.length || 0 }}</strong
+              ><small>Attached share accounts</small>
+            </div>
+            <div class="product-card">
+              <span>Loans</span><strong>{{ accounts.loanAccounts?.length || 0 }}</strong
+              ><small>Applications and active loans</small>
+            </div>
+            <div class="product-card">
+              <span>Outstanding fees</span><strong>{{ charges.length }}</strong
+              ><small>Pending member charges</small>
+            </div>
+          </div>
+          <div class="button-row">
+            <button mat-raised-button color="primary" (click)="startLoan()">Start loan application</button
+            ><button mat-button [routerLink]="['/clients', selectedClient.id, 'general']">
+              Open full member record
+            </button>
+          </div>
+        } @else {
+          <div class="empty-state">No member selected.</div>
+        }
+      </section>
+    </div>
+  }
+
+  @if (activeView === 'create-member') {
+    <section class="panel">
+      <div class="section-title">
+        <h2>Create a member</h2>
+        <p>The member will be created in {{ credentials?.officeName }} and assigned to you.</p>
+      </div>
+      <form [formGroup]="memberForm">
+        <div class="form-grid">
+          <mat-form-field
+            ><mat-label>First name</mat-label><input matInput formControlName="firstname" /></mat-form-field
+          ><mat-form-field><mat-label>Last name</mat-label><input matInput formControlName="lastname" /></mat-form-field
+          ><mat-form-field
+            ><mat-label>Phone number</mat-label
+            ><input matInput formControlName="mobileNo" placeholder="+256…" /></mat-form-field
+          ><mat-form-field
+            ><mat-label>National ID / external reference</mat-label
+            ><input matInput formControlName="externalId" /></mat-form-field
+          ><mat-form-field
+            ><mat-label>Date of birth</mat-label
+            ><input matInput [matDatepicker]="birthPicker" formControlName="dateOfBirth" /><mat-datepicker-toggle
+              matSuffix
+              [for]="birthPicker"
+            ></mat-datepicker-toggle
+            ><mat-datepicker #birthPicker></mat-datepicker></mat-form-field
+          ><mat-form-field
+            ><mat-label>Gender</mat-label
+            ><mat-select formControlName="genderId">
+              @for (gender of clientTemplate?.genderOptions || []; track gender.id) {
+                <mat-option [value]="gender.id">{{ gender.name }}</mat-option>
+              }
+            </mat-select></mat-form-field
+          ><mat-form-field class="full-width"
+            ><mat-label>Residential address</mat-label><input matInput formControlName="addressLine1" /></mat-form-field
+          ><mat-form-field
+            ><mat-label>Activation date</mat-label
+            ><input
+              matInput
+              [matDatepicker]="activationPicker"
+              formControlName="activationDate" /><mat-datepicker-toggle
+              matSuffix
+              [for]="activationPicker"
+            ></mat-datepicker-toggle
+            ><mat-datepicker #activationPicker></mat-datepicker></mat-form-field
+          ><mat-checkbox formControlName="active">Activate member immediately</mat-checkbox>
+        </div>
+        <div class="button-row">
+          <button mat-raised-button color="primary" type="button" (click)="createMember()" [disabled]="submitting">
+            {{ submitting ? 'Creating…' : 'Create member' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  }
+
+  @if (activeView === 'groups') {
+    <div class="workspace-grid">
+      <section class="panel">
+        <div class="section-title">
+          <h2>Create a group</h2>
+          <p>Attach existing members from {{ credentials?.officeName }}.</p>
+        </div>
+        <form [formGroup]="groupForm">
+          <mat-form-field class="full-width"
+            ><mat-label>Group name</mat-label><input matInput formControlName="name" /></mat-form-field
+          ><mat-form-field class="full-width"
+            ><mat-label>Activation date</mat-label
+            ><input
+              matInput
+              [matDatepicker]="groupActivationPicker"
+              formControlName="activationDate" /><mat-datepicker-toggle
+              matSuffix
+              [for]="groupActivationPicker"
+            ></mat-datepicker-toggle
+            ><mat-datepicker #groupActivationPicker></mat-datepicker
+          ></mat-form-field>
+        </form>
+        <mat-form-field class="full-width"
+          ><mat-label>Find members to attach</mat-label
+          ><input matInput [formControl]="groupMemberSearchControl" (keyup.enter)="searchGroupMembers()"
+        /></mat-form-field>
+        <div class="button-row"><button mat-button (click)="searchGroupMembers()">Search members</button></div>
+        <div class="search-results">
+          @for (client of groupMemberResults; track client.id) {
+            <div class="member-row">
+              <div>
+                <strong>{{ client.displayName }}</strong
+                ><small>{{ client.accountNo }}</small>
+              </div>
+              <button mat-button (click)="addGroupMember(client)">Attach</button>
+            </div>
+          }
+        </div>
+        @if (selectedGroupMembers.length) {
+          <div class="notice">
+            <strong>Attached members</strong>
+            @for (member of selectedGroupMembers; track member.id) {
+              <div class="member-row">
+                <span>{{ member.displayName }}</span
+                ><button mat-button (click)="removeGroupMember(member)">Remove</button>
+              </div>
+            }
+          </div>
+        }
+        <div class="button-row">
+          <button mat-raised-button color="primary" (click)="createGroup()" [disabled]="submitting">
+            Create group
+          </button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="section-title">
+          <h2>Groups in your office</h2>
+          <p>Recently loaded from Fineract.</p>
+        </div>
+        <div class="records-list">
+          @for (group of groups; track group.id) {
+            <div class="record-row">
+              <div>
+                <strong>{{ group.name }}</strong
+                ><small>{{ group.officeName }} · {{ group.status?.value }}</small>
+              </div>
+              <button mat-button [routerLink]="['/groups', group.id, 'general']">Open</button>
+            </div>
+          } @empty {
+            <div class="empty-state">No groups were returned.</div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (activeView === 'applications') {
+    <section class="section-title">
+      <h2>My loan applications</h2>
+      <p>Applications assigned to your staff record.</p>
+    </section>
+    <section class="panel records-list">
+      @for (application of applications; track application.id) {
+        <div class="record-row">
+          <div>
+            <strong>{{ application.clientName || application.groupName || application.accountNo }}</strong
+            ><small
+              >{{ application.loanProductName }} · {{ application.status?.value }} · UGX
+              {{ application.principal || application.approvedPrincipal | number }}</small
+            >
+          </div>
+          <button mat-button (click)="openApplication(application)">Open</button>
+        </div>
+      } @empty {
+        <div class="empty-state">No loan applications were returned.</div>
+      }
+    </section>
+  }
+</main>

@@ -1,0 +1,152 @@
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">Chief Teller workspace</span>
+      <h1>Cash control for {{ credentials?.officeName }}</h1>
+      <p>Allocate, recover and reconcile cash without opening the technical administration screens.</p>
+    </div>
+    <div class="hero-stat">
+      <span>Selected cashier cash</span><strong>UGX {{ cashierSummary?.netCash || 0 | number }}</strong
+      ><small>{{ selectedCashier?.staffName || selectedCashier?.cashierName || 'Choose a cashier' }}</small>
+    </div>
+  </header>
+
+  <nav class="workspace-tabs" aria-label="Chief Teller sections">
+    <button mat-button [class.active]="activeView === 'drawers'" (click)="setView('drawers')">Cashier drawers</button>
+    <button mat-button [class.active]="activeView === 'movement'" (click)="setView('movement')">
+      Allocate or recover
+    </button>
+    <button mat-button [class.active]="activeView === 'records'" (click)="setView('records')">Drawer records</button>
+  </nav>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  <section class="panel" style="margin-bottom: 18px">
+    <div class="form-grid">
+      <mat-form-field
+        ><mat-label>Teller</mat-label
+        ><mat-select [value]="selectedTeller" (selectionChange)="selectTeller($event.value)">
+          @for (teller of tellers; track teller.id) {
+            <mat-option [value]="teller">{{ teller.name }}</mat-option>
+          }
+        </mat-select></mat-form-field
+      >
+      <mat-form-field
+        ><mat-label>Cashier</mat-label
+        ><mat-select [value]="selectedCashier" (selectionChange)="selectCashier($event.value)">
+          @for (cashier of cashiers; track cashier.id) {
+            <mat-option [value]="cashier">{{ cashier.staffName || cashier.cashierName }}</mat-option>
+          }
+        </mat-select></mat-form-field
+      >
+    </div>
+  </section>
+
+  @if (activeView === 'drawers') {
+    <section class="section-title">
+      <h2>Current drawer position</h2>
+      <p>These totals come directly from Fineract teller records.</p>
+    </section>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span>Allocated</span><strong>UGX {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Cash in</span><strong>UGX {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Cash out</span><strong>UGX {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Settled</span><strong>UGX {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
+      </div>
+    </div>
+    <div class="button-row">
+      <button mat-raised-button color="primary" (click)="chooseMovement('allocate')">Allocate cash</button
+      ><button mat-raised-button (click)="chooseMovement('settle')">Recover cash</button>
+    </div>
+  }
+
+  @if (activeView === 'movement') {
+    <section class="workspace-grid">
+      <div class="panel">
+        <div class="section-title">
+          <h2>{{ selectedAction === 'allocate' ? 'Allocate cash' : 'Recover cash' }}</h2>
+          <p>{{ selectedCashier?.staffName || selectedCashier?.cashierName || 'Select a cashier above.' }}</p>
+        </div>
+        <div class="workspace-tabs">
+          <button mat-button [class.active]="selectedAction === 'allocate'" (click)="chooseMovement('allocate')">
+            Allocate</button
+          ><button mat-button [class.active]="selectedAction === 'settle'" (click)="chooseMovement('settle')">
+            Recover
+          </button>
+        </div>
+        <form [formGroup]="movementForm">
+          <mat-form-field class="full-width"
+            ><mat-label>Amount (UGX)</mat-label
+            ><input matInput type="number" formControlName="txnAmount" /></mat-form-field
+          ><mat-form-field class="full-width"
+            ><mat-label>Reason</mat-label><input matInput formControlName="txnNote"
+          /></mat-form-field>
+          <div class="button-row">
+            <button mat-raised-button color="primary" type="button" (click)="prepareMovement()">Review</button>
+          </div>
+        </form>
+        @if (pendingMovement) {
+          <div class="confirmation">
+            <strong>Confirm {{ pendingMovement.action }}</strong>
+            <p>{{ pendingMovement.cashier }} · UGX {{ pendingMovement.amount | number }}</p>
+            <p>{{ pendingMovement.note }}</p>
+            <div class="button-row">
+              <button mat-button (click)="cancelMovement()">Go back</button
+              ><button mat-raised-button color="primary" (click)="confirmMovement()" [disabled]="submitting">
+                Confirm and record
+              </button>
+            </div>
+          </div>
+        }
+        @if (lastReference) {
+          <div class="notice success">Recorded successfully. Reference: {{ lastReference }}</div>
+        }
+      </div>
+      <div class="panel">
+        <div class="section-title">
+          <h2>Control check</h2>
+          <p>Verify the physical cash before confirming.</p>
+        </div>
+        <div class="summary-card">
+          <span>Expected cashier cash</span><strong>UGX {{ cashierSummary?.netCash || 0 | number }}</strong>
+        </div>
+        <div class="notice">
+          Allocation increases the cashier drawer. Recovery reduces it and records the settlement.
+        </div>
+      </div>
+    </section>
+  }
+
+  @if (activeView === 'records') {
+    <section class="section-title">
+      <h2>Drawer records</h2>
+      <p>Allocation, member cash movements and settlements for the selected cashier.</p>
+    </section>
+    <section class="panel records-list">
+      @for (record of cashierSummary?.cashierTransactions?.pageItems || []; track record.id || $index) {
+        <div class="record-row">
+          <div>
+            <strong>{{ record.entityType || record.transactionType || 'Drawer movement' }}</strong
+            ><small
+              >{{ record.txnDate || record.transactionDate }} · {{ record.txnNote || record.note || 'No note' }}</small
+            >
+          </div>
+          <div>UGX {{ record.amount || record.txnAmount || 0 | number }}</div>
+        </div>
+      } @empty {
+        <div class="empty-state">No drawer records were returned.</div>
+      }
+    </section>
+  }
+</main>

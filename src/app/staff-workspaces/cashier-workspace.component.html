@@ -1,0 +1,221 @@
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">Cashier workspace</span>
+      <h1>Welcome, {{ credentials?.staffDisplayName || credentials?.username }}</h1>
+      <p>Receive and pay member money from one focused workspace.</p>
+    </div>
+    <div class="hero-stat">
+      <span>Expected drawer cash</span>
+      <strong>UGX {{ drawer?.netCash || 0 | number }}</strong>
+      <small>{{ drawerReady ? 'Drawer ready' : 'Setup required' }}</small>
+    </div>
+  </header>
+
+  <nav class="workspace-tabs" aria-label="Cashier sections">
+    <button mat-button [class.active]="activeView === 'transactions'" (click)="setView('transactions')">
+      Member transactions
+    </button>
+    <button mat-button [class.active]="activeView === 'drawer'" (click)="setView('drawer')">My drawer</button>
+    <button mat-button [class.active]="activeView === 'records'" (click)="setView('records')">My records</button>
+  </nav>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  @if (activeView === 'transactions') {
+    <section class="section-title">
+      <h2>Choose a transaction</h2>
+      <p>Find the member, select their account and confirm the money before posting.</p>
+    </section>
+
+    <div class="action-grid">
+      <button class="action-tile" [class.selected]="selectedAction === 'deposit'" (click)="selectAction('deposit')">
+        <strong>Deposit cash</strong><small>Receive cash into an active savings account.</small>
+      </button>
+      <button
+        class="action-tile"
+        [class.selected]="selectedAction === 'withdrawal'"
+        (click)="selectAction('withdrawal')"
+      >
+        <strong>Withdraw cash</strong><small>Pay cash from an active savings account.</small>
+      </button>
+      <button class="action-tile" [class.selected]="selectedAction === 'shares'" (click)="selectAction('shares')">
+        <strong>Share purchase</strong><small>Apply additional shares to an active share account.</small>
+      </button>
+      <button class="action-tile" [class.selected]="selectedAction === 'fee'" (click)="selectAction('fee')">
+        <strong>Receive a fee</strong><small>Pay an outstanding charge on the member record.</small>
+      </button>
+    </div>
+
+    <div class="workspace-grid" style="margin-top: 18px">
+      <section class="panel">
+        <div class="section-title">
+          <h2>Find member</h2>
+          <p>Search within {{ credentials?.officeName }}.</p>
+        </div>
+        <mat-form-field class="full-width">
+          <mat-label>Name, phone or account number</mat-label>
+          <input matInput [formControl]="searchControl" (keyup.enter)="searchMembers()" />
+        </mat-form-field>
+        <div class="button-row">
+          <button mat-raised-button color="primary" (click)="searchMembers()" [disabled]="loading">Search</button>
+        </div>
+        <div class="search-results">
+          @for (client of clients; track client.id) {
+            <div class="member-row">
+              <button (click)="selectClient(client)">
+                <strong>{{ client.displayName }}</strong
+                ><small>{{ client.accountNo }} · {{ client.officeName }}</small>
+              </button>
+              @if (selectedClient?.id === client.id) {
+                <span class="status-pill">Selected</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="section-title">
+          <h2>{{ selectedClient?.displayName || 'Transaction details' }}</h2>
+          <p>{{ selectedClient ? selectedClient.accountNo : 'Select a member to continue.' }}</p>
+        </div>
+        @if (selectedClient && accounts) {
+          <form [formGroup]="transactionForm">
+            @if (selectedAction === 'deposit' || selectedAction === 'withdrawal') {
+              <mat-form-field class="full-width"
+                ><mat-label>Savings account</mat-label
+                ><mat-select formControlName="savingsAccountId">
+                  @for (account of savingsAccounts; track account.id) {
+                    <mat-option [value]="account.id"
+                      >{{ account.productName }} · {{ account.accountNo }} · UGX
+                      {{ account.accountBalance || 0 | number }}</mat-option
+                    >
+                  }
+                </mat-select></mat-form-field
+              >
+            }
+            @if (selectedAction === 'shares') {
+              <mat-form-field class="full-width"
+                ><mat-label>Share account</mat-label
+                ><mat-select formControlName="shareAccountId">
+                  @for (account of shareAccounts; track account.id) {
+                    <mat-option [value]="account.id">{{ account.productName }} · {{ account.accountNo }}</mat-option>
+                  }
+                </mat-select></mat-form-field
+              >
+              <mat-form-field class="full-width"
+                ><mat-label>Number of shares</mat-label><input matInput type="number" formControlName="requestedShares"
+              /></mat-form-field>
+              <div class="notice">
+                Savings-funded share purchases remain unavailable until the backend provides one safe, atomic
+                transaction.
+              </div>
+            }
+            @if (selectedAction === 'fee') {
+              <mat-form-field class="full-width"
+                ><mat-label>Outstanding fee</mat-label
+                ><mat-select formControlName="chargeId">
+                  @for (charge of charges; track charge.id) {
+                    <mat-option [value]="charge.id"
+                      >{{ charge.name }} · UGX {{ charge.amountOutstanding || charge.amount | number }}</mat-option
+                    >
+                  }
+                </mat-select></mat-form-field
+              >
+            }
+            @if (selectedAction !== 'shares') {
+              <mat-form-field class="full-width"
+                ><mat-label>Amount (UGX)</mat-label><input matInput type="number" formControlName="amount"
+              /></mat-form-field>
+            }
+            <mat-form-field class="full-width"
+              ><mat-label>Note</mat-label><input matInput formControlName="note"
+            /></mat-form-field>
+            <div class="button-row">
+              <button mat-raised-button color="primary" type="button" (click)="prepareTransaction()">
+                Review transaction
+              </button>
+            </div>
+          </form>
+        } @else {
+          <div class="empty-state">No member selected.</div>
+        }
+
+        @if (pendingTransaction) {
+          <div class="confirmation">
+            <strong>Confirm before posting</strong>
+            <p>
+              {{ pendingTransaction.member }} · {{ pendingTransaction.action }} ·
+              {{
+                pendingTransaction.action === 'shares'
+                  ? pendingTransaction.requestedShares + ' share(s)'
+                  : 'UGX ' + (pendingTransaction.amount | number)
+              }}
+            </p>
+            <div class="button-row">
+              <button mat-button (click)="cancelPending()">Go back</button
+              ><button mat-raised-button color="primary" (click)="confirmTransaction()" [disabled]="submitting">
+                {{ submitting ? 'Recording…' : 'Confirm and record' }}
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (receipt) {
+          <div class="confirmation">
+            <strong>Transaction recorded</strong>
+            <p>Reference: {{ receipt.reference }}</p>
+            <p>{{ receipt.member }} · {{ receipt.action }} · {{ receipt.amount }}</p>
+            <div class="button-row"><button mat-button (click)="printReceipt()">Print receipt</button></div>
+          </div>
+        }
+      </section>
+    </div>
+  }
+
+  @if (activeView === 'drawer') {
+    <section class="section-title">
+      <h2>My teller drawer</h2>
+      <p>Cash allocated by the Chief Teller and movements recorded against your drawer.</p>
+    </section>
+    <div class="summary-grid">
+      <div class="summary-card">
+        <span>Cash allocated</span><strong>UGX {{ drawer?.sumCashAllocation || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Cash received</span><strong>UGX {{ drawer?.sumInwardCash || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Cash paid out</span><strong>UGX {{ drawer?.sumOutwardCash || 0 | number }}</strong>
+      </div>
+      <div class="summary-card">
+        <span>Cash settled</span><strong>UGX {{ drawer?.sumCashSettlement || 0 | number }}</strong>
+      </div>
+    </div>
+  }
+
+  @if (activeView === 'records') {
+    <section class="section-title">
+      <h2>My records</h2>
+      <p>Fineract records for this cashier drawer.</p>
+    </section>
+    <section class="panel records-list">
+      @for (record of drawer?.cashierTransactions?.pageItems || []; track record.id || $index) {
+        <div class="record-row">
+          <div>
+            <strong>{{ record.entityType || record.transactionType || 'Drawer transaction' }}</strong
+            ><small>{{ record.txnDate || record.transactionDate }}</small>
+          </div>
+          <div>UGX {{ record.amount || record.txnAmount || 0 | number }}</div>
+        </div>
+      } @empty {
+        <div class="empty-state">No drawer records were returned.</div>
+      }
+    </section>
+  }
+</main>

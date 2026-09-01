@@ -82,6 +82,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   isLoanOfficerWorkspace = false;
   /** Shows the focused workspace to users whose only operational role is Cashier. */
   isCashierWorkspace = false;
+  /** Shows the focused workspace to dedicated Chief Teller users. */
+  isChiefTellerWorkspace = false;
   /** Activity Form. */
   activityForm: any;
   /** Search Text. */
@@ -112,9 +114,24 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.username = credentials.username;
     this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.tenant = this.tenantIdentifier();
+    this.isChiefTellerWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'chief teller');
     this.isCashierWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'cashier');
     this.isLoanOfficerWorkspace =
-      !this.isCashierWorkspace && this.shouldShowFocusedWorkspace(credentials.roles, 'loan officer');
+      !this.isChiefTellerWorkspace &&
+      !this.isCashierWorkspace &&
+      this.shouldShowFocusedWorkspace(credentials.roles, 'loan officer');
+    if (this.isChiefTellerWorkspace) {
+      this.router.navigate(['/staff-workspaces/chief-teller'], { replaceUrl: true });
+      return;
+    }
+    if (this.isCashierWorkspace) {
+      this.router.navigate(['/staff-workspaces/cashier'], { replaceUrl: true });
+      return;
+    }
+    if (this.isLoanOfficerWorkspace) {
+      this.router.navigate(['/staff-workspaces/loan-officer'], { replaceUrl: true });
+      return;
+    }
     this.setFilteredActivities();
     if (!this.isLoanOfficerWorkspace && !this.isCashierWorkspace && !this.authenticationService.hasDialogBeenShown()) {
       this.dialog.open(WarningDialogComponent);
@@ -187,7 +204,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
    * To show popover.
    */
   ngAfterViewInit() {
-    if (this.isLoanOfficerWorkspace || this.isCashierWorkspace) {
+    if (this.isLoanOfficerWorkspace || this.isCashierWorkspace || this.isChiefTellerWorkspace) {
       return;
     }
 

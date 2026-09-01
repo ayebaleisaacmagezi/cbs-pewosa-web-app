@@ -91,6 +91,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   frequentActivities: any[] = frequentActivities;
   /** Whether remittance feature is enabled */
   mifosRemittanceEnabled = remittanceConfig.isRemittanceEnabled;
+  /** Focused operational workspace for dedicated staff roles. */
+  workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | null = null;
+  /** Role-specific navigation links. */
+  workspaceLinks: { label: string; view: string }[] = [];
 
   /* Refernce of logo */
   @ViewChild('logo') logo: ElementRef<any>;
@@ -119,7 +123,51 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   ngOnInit() {
     const credentials = this.authenticationService.getCredentials();
     this.username = credentials.username;
+    this.setWorkspaceNavigation(credentials.roles);
     this.setMappedAcitivites();
+  }
+
+  private setWorkspaceNavigation(roles: any): void {
+    if (!Array.isArray(roles)) return;
+    const roleNames = roles.map((role: any) =>
+      String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
+        .trim()
+        .toLowerCase()
+    );
+    const elevatedRoles = [
+      'super user',
+      'general manager',
+      'deputy gm',
+      'branch manager',
+      'accountant',
+      'it officer'
+    ];
+    if (roleNames.some((role: string) => elevatedRoles.includes(role))) return;
+
+    if (roleNames.includes('chief teller')) {
+      this.workspaceRole = 'chief-teller';
+      this.workspaceLinks = [
+        { label: 'Cashier drawers', view: 'drawers' },
+        { label: 'Allocate or recover', view: 'movement' },
+        { label: 'Drawer records', view: 'records' }
+      ];
+    } else if (roleNames.includes('cashier')) {
+      this.workspaceRole = 'cashier';
+      this.workspaceLinks = [
+        { label: 'Member transactions', view: 'transactions' },
+        { label: 'My drawer', view: 'drawer' },
+        { label: 'My records', view: 'records' }
+      ];
+    } else if (roleNames.includes('loan officer')) {
+      this.workspaceRole = 'loan-officer';
+      this.workspaceLinks = [
+        { label: 'Overview', view: 'home' },
+        { label: 'Members', view: 'members' },
+        { label: 'Create member', view: 'create-member' },
+        { label: 'Groups', view: 'groups' },
+        { label: 'Loan applications', view: 'applications' }
+      ];
+    }
   }
 
   /**

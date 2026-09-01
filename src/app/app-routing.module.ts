@@ -81,6 +81,10 @@ const routes: Routes = [
     loadChildren: () => import('./settings/settings.module').then((m) => m.SettingsModule)
   },
   {
+    path: 'staff-workspaces',
+    loadChildren: () => import('./staff-workspaces/staff-workspaces.routes').then((m) => m.STAFF_WORKSPACE_ROUTES)
+  },
+  {
     path: 'system',
     loadChildren: () => import('./system/system.module').then((m) => m.SystemModule)
   },

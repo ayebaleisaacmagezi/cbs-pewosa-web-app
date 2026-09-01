@@ -28,6 +28,19 @@ import { BreachSchedule } from './models/working-capital-loan-account.model';
 })
 export class LoansService {
   private http = inject(HttpClient);
+
+  /**
+   * Returns loan applications assigned to a loan officer without loading the office navigation screen.
+   */
+  getLoansForOfficer(loanOfficerId: number, offset: number = 0, limit: number = 100): Observable<any> {
+    const httpParams = new HttpParams()
+      .set('loanOfficerId', loanOfficerId.toString())
+      .set('offset', offset.toString())
+      .set('limit', limit.toString())
+      .set('orderBy', 'submittedOnDate')
+      .set('sortOrder', 'DESC');
+    return this.http.get('/loans', { params: httpParams });
+  }
   private settingsService = inject(SettingsService);
   private dateUtils = inject(Dates);
 

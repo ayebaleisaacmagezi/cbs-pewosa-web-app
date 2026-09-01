@@ -11,7 +11,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams, HttpBackend, HttpHeaders } from '@angular/common/http';
 
 /** rxjs Imports */
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, forkJoin, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
@@ -28,6 +28,49 @@ export class ClientsService {
 
   /** Separate HttpClient that bypasses interceptors (for external API calls) */
   private externalHttp = new HttpClient(this.httpBackend);
+
+  /**
+   * Searches client fields while preserving the authenticated user's office scope.
+   */
+  searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
+    const filterFields = [
+      'displayName',
+      'accountNo',
+      'externalId',
+      'mobileNo'
+    ];
+    const requests = filterFields.map((field) => {
+      const httpParams = new HttpParams()
+        .set(field, query)
+        .set('officeId', officeId.toString())
+        .set('paged', 'true')
+        .set('limit', '50')
+        .set('orderBy', 'displayName')
+        .set('sortOrder', 'ASC');
+      return this.http.get('/clients', { params: httpParams }).pipe(catchError(() => of({ pageItems: [] })));
+    });
+
+    return forkJoin(requests).pipe(
+      map((responses: any[]) => {
+        const normalizedQuery = query.trim().toLowerCase();
+        const matches = responses.flatMap((response: any) => response?.pageItems || response || []);
+        return matches
+          .filter((client: any) =>
+            [
+              client.displayName,
+              client.accountNo,
+              client.externalId,
+              client.mobileNo
+            ]
+              .filter(Boolean)
+              .some((value: any) => String(value).toLowerCase().includes(normalizedQuery))
+          )
+          .filter(
+            (client: any, index: number, clients: any[]) => clients.findIndex((item) => item.id === client.id) === index
+          );
+      })
+    );
+  }
 
   getFilteredClients(
     orderBy: string,

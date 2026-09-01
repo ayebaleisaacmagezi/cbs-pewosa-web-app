@@ -188,3 +188,17 @@
     }
   }
 }
+.focused-workspace-nav {
+  padding-top: 0.5rem;
+
+  mat-list-item {
+    margin: 0.15rem 0;
+    border-left: 4px solid transparent;
+  }
+
+  mat-list-item.active-menu {
+    border-left-color: #2854a1;
+    background: #eaf1ff;
+    color: #224c98;
+  }
+}
