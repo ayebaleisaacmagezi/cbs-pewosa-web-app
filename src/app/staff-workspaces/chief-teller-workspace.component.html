@@ -37,18 +37,26 @@
       </div>
     </div>
     <div class="form-grid">
+      <mat-form-field appearance="outline"
+        ><mat-label>Search tellers</mat-label><mat-icon matPrefix>search</mat-icon
+        ><input matInput [formControl]="tellerSearchControl" placeholder="Name or office"
+      /></mat-form-field>
       <mat-form-field
         ><mat-label>Teller</mat-label
         ><mat-select [value]="selectedTeller" (selectionChange)="selectTeller($event.value)">
-          @for (teller of tellers; track teller.id) {
+          @for (teller of filteredTellers; track teller.id) {
             <mat-option [value]="teller">{{ teller.name }}</mat-option>
           }
         </mat-select></mat-form-field
       >
+      <mat-form-field appearance="outline"
+        ><mat-label>Search cashiers</mat-label><mat-icon matPrefix>search</mat-icon
+        ><input matInput [formControl]="cashierSearchControl" placeholder="Cashier name"
+      /></mat-form-field>
       <mat-form-field
         ><mat-label>Cashier</mat-label
         ><mat-select [value]="selectedCashier" (selectionChange)="selectCashier($event.value)">
-          @for (cashier of cashiers; track cashier.id) {
+          @for (cashier of filteredCashiers; track cashier.id) {
             <mat-option [value]="cashier">{{ cashier.staffName || cashier.cashierName }}</mat-option>
           }
         </mat-select></mat-form-field

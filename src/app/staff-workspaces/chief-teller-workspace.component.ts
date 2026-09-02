@@ -74,6 +74,24 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       Validators.required
     ]
   });
+  tellerSearchControl = this.formBuilder.control('');
+  cashierSearchControl = this.formBuilder.control('');
+
+  get filteredTellers(): any[] {
+    const query = (this.tellerSearchControl.value || '').trim().toLowerCase();
+    if (!query) return this.tellers;
+    return this.tellers.filter((teller: any) =>
+      `${teller.name || ''} ${teller.officeName || ''}`.toLowerCase().includes(query)
+    );
+  }
+
+  get filteredCashiers(): any[] {
+    const query = (this.cashierSearchControl.value || '').trim().toLowerCase();
+    if (!query) return this.cashiers;
+    return this.cashiers.filter((cashier: any) =>
+      `${cashier.staffName || ''} ${cashier.cashierName || ''}`.toLowerCase().includes(query)
+    );
+  }
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
@@ -122,14 +140,16 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     this.selectedTeller = teller;
     this.selectedCashier = null;
     this.cashierSummary = null;
+    this.cashierSearchControl.setValue('');
     this.loading = true;
     this.organizationService
       .getCashiers(teller.id)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (response: any) => {
-          this.cashiers = response?.pageItems || response || [];
+          this.cashiers = Array.isArray(response) ? response : response?.cashiers || response?.pageItems || [];
           if (this.cashiers.length) this.selectCashier(this.cashiers[0]);
+          else this.showMessage('No Cashier is assigned to the selected Teller.', 'error');
         },
         error: () => this.showMessage('Cashiers assigned to this teller could not be loaded.', 'error')
       });
