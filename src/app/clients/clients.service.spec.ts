@@ -36,6 +36,42 @@ describe('ClientsService', () => {
   });
 
   describe('Client CRUD Operations', () => {
+    it('should exclude unrelated same-office results from client search', async () => {
+      const resultPromise = firstValueFrom(service.searchClientsInOffice('ra', 1));
+
+      const req = httpMock.expectOne((r) => r.url === '/v2/clients/search' && r.method === 'POST');
+      expect(req.request.body.request.text).toBe('Ra');
+
+      req.flush({
+        content: [
+          { id: 1, displayName: 'Rajabu Ssemakula', accountNumber: '000001', officeId: 1 },
+          { id: 2, displayName: 'Amina Kato', accountNumber: '000002', officeId: 1 },
+          { id: 4, displayName: 'Amara Namuli', accountNumber: '000004', officeId: 1 },
+          { id: 3, displayName: 'Robert Test', accountNumber: '000003', officeId: 2 }
+        ]
+      });
+
+      const result = await resultPromise;
+      expect(result).toEqual([
+        expect.objectContaining({ id: 1, displayName: 'Rajabu Ssemakula', accountNo: '000001' })
+      ]);
+    });
+
+    it('should match client phone, account number, and external ID', async () => {
+      const cases = [
+        { query: '0772', client: { id: 1, displayName: 'Amina', mobileNo: '0772000111', officeId: 1 } },
+        { query: '000621', client: { id: 2, displayName: 'Amina', accountNumber: '000621', officeId: 1 } },
+        { query: 'member-7', client: { id: 3, displayName: 'Amina', externalId: 'MEMBER-7', officeId: 1 } }
+      ];
+
+      for (const testCase of cases) {
+        const resultPromise = firstValueFrom(service.searchClientsInOffice(testCase.query, 1));
+        const req = httpMock.expectOne((r) => r.url === '/v2/clients/search' && r.method === 'POST');
+        req.flush({ content: [testCase.client] });
+        expect(await resultPromise).toHaveLength(1);
+      }
+    });
+
     it('should fetch clients with correct HttpParams (GET /clients)', async () => {
       const mockResponse = { totalFilteredRecords: 1, pageItems: [{ id: 1 }] };
       const resultPromise = firstValueFrom(service.getClients('displayName', 'ASC', 0, 10));

@@ -33,8 +33,9 @@ export class ClientsService {
    * Searches client fields while preserving the authenticated user's office scope.
    */
   searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
+    const normalizedQuery = this.normalizeClientSearchValue(query);
     const request = {
-      request: { text: query.trim() },
+      request: { text: this.formatFineractNameSearchValue(query) },
       page: 0,
       size: 50,
       sorts: [{ direction: 'ASC', property: 'displayName' }]
@@ -44,12 +45,44 @@ export class ClientsService {
       map((response: any) =>
         (response?.content || [])
           .filter((client: any) => Number(client.officeId) === Number(officeId))
+          .filter((client: any) => this.clientMatchesSearch(client, normalizedQuery))
           .map((client: any) => ({
             ...client,
             accountNo: client.accountNumber
           }))
       )
     );
+  }
+
+  private clientMatchesSearch(client: any, query: string): boolean {
+    const searchableValues = [
+      client.displayName,
+      client.firstname,
+      client.fullname,
+      client.accountNumber,
+      client.accountNo,
+      client.externalId,
+      client.mobileNo
+    ];
+
+    return searchableValues.some((value) => this.normalizeClientSearchValue(value).startsWith(query));
+  }
+
+  private normalizeClientSearchValue(value: unknown): string {
+    return String(value ?? '')
+      .trim()
+      .toLocaleLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private formatFineractNameSearchValue(value: string): string {
+    const trimmedValue = value.trim();
+    if (!/^[a-zA-Z\s'-]+$/.test(trimmedValue)) return trimmedValue;
+
+    return trimmedValue
+      .toLocaleLowerCase()
+      .replace(/(^|[\s'-])([a-z])/g, (_match, separator, letter) => `${separator}${letter.toLocaleUpperCase()}`);
   }
 
   getFilteredClients(

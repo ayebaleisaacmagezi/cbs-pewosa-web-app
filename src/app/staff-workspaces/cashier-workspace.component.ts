@@ -362,7 +362,12 @@ export class CashierWorkspaceComponent implements OnInit {
           tellerList.map((teller: any) =>
             this.organizationService.getCashiers(teller.id).pipe(
               catchError(() => of([])),
-              switchMap((cashiers: any) => of({ teller, cashiers: cashiers?.pageItems || cashiers || [] }))
+              switchMap((cashiers: any) =>
+                of({
+                  teller,
+                  cashiers: cashiers?.cashiers || cashiers?.pageItems || (Array.isArray(cashiers) ? cashiers : [])
+                })
+              )
             )
           )
         ).subscribe((results: any[]) => {
