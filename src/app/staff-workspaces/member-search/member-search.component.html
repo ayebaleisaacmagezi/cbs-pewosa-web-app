@@ -1,0 +1,60 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="member-search" [attr.aria-busy]="searchState === 'loading'">
+  <mat-icon aria-hidden="true">search</mat-icon>
+  <input
+    matInput
+    type="search"
+    autocomplete="off"
+    [formControl]="searchControl"
+    [attr.aria-label]="'Search members by name, phone or account' | translate"
+    [placeholder]="'Name, phone or account' | translate"
+  />
+</div>
+
+<div class="search-response" role="region" [attr.aria-label]="'Member search results' | translate">
+  @if (searchState === 'results') {
+    <div class="member-results">
+      @for (member of members; track member.id) {
+        <button type="button" class="member-option" (click)="selectMember(member)">
+          <span class="member-avatar">{{ member.displayName?.charAt(0) }}</span>
+          <span class="member-details">
+            <strong>{{ member.displayName }}</strong>
+            <small>{{ member.accountNo }} · {{ member.mobileNo || member.officeName }}</small>
+          </span>
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </button>
+      }
+    </div>
+  } @else if (searchState === 'loading') {
+    <div class="search-status" role="status" aria-live="polite">
+      <span class="search-spinner" aria-hidden="true"></span>
+      <span>
+        <strong>{{ 'Finding members' | translate }}</strong>
+        <small>{{ 'Checking member records' | translate }}</small>
+      </span>
+    </div>
+  } @else if (searchState === 'empty') {
+    <div class="search-status" role="status" aria-live="polite">
+      <mat-icon aria-hidden="true">person_off</mat-icon>
+      <span>
+        <strong>{{ 'No members matched that search' | translate }}</strong>
+        <small>{{ 'Try another name, phone number or account number' | translate }}</small>
+      </span>
+    </div>
+  } @else if (searchState === 'error') {
+    <div class="search-status" role="status" aria-live="polite">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>
+        <strong>{{ 'Member search is unavailable' | translate }}</strong>
+        <small>{{ 'Please try again or ask an administrator to check your permissions' | translate }}</small>
+      </span>
+    </div>
+  }
+</div>

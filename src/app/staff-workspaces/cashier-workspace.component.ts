@@ -22,15 +22,16 @@ import { SettingsService } from 'app/settings/settings.service';
 import { SharesService } from 'app/shares/shares.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { CashierWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
+import { MemberSearchComponent } from './member-search/member-search.component';
 
 type CashierAction = 'deposit' | 'withdrawal' | 'shares' | 'fee';
-
 @Component({
   selector: 'mifosx-cashier-workspace',
   standalone: true,
   imports: [
     ...STANDALONE_SHARED_IMPORTS,
-    MatIcon
+    MatIcon,
+    MemberSearchComponent
   ],
   templateUrl: './cashier-workspace.component.html',
   styleUrls: ['./cashier-workspace.component.scss']
@@ -52,7 +53,6 @@ export class CashierWorkspaceComponent implements OnInit {
   credentials = this.authenticationService.getCredentials();
   activeView: CashierWorkspaceView = 'transactions';
   selectedAction: CashierAction = 'deposit';
-  clients: any[] = [];
   selectedClient: any = null;
   accounts: any = null;
   charges: any[] = [];
@@ -66,11 +66,7 @@ export class CashierWorkspaceComponent implements OnInit {
   messageType: 'error' | 'success' | '' = '';
   pendingTransaction: any = null;
   receipt: any = null;
-
-  searchControl = this.formBuilder.control('', [
-    Validators.required,
-    Validators.minLength(2)
-  ]);
+  private memberDetailsRequestId = 0;
   transactionForm = this.formBuilder.group({
     savingsAccountId: [
       '',
@@ -166,47 +162,53 @@ export class CashierWorkspaceComponent implements OnInit {
     });
   }
 
-  searchMembers(): void {
-    if (this.searchControl.invalid) {
-      this.showMessage('Enter at least two letters or numbers to find a member.', 'error');
-      return;
-    }
-    this.loading = true;
+  resetMemberSelection(): void {
+    this.memberDetailsRequestId += 1;
+    this.selectedClient = null;
+    this.accounts = null;
+    this.charges = [];
+    this.pendingTransaction = null;
+    this.receipt = null;
     this.message = '';
-    this.clientsService
-      .searchClientsInOffice(this.searchControl.value || '', this.credentials.officeId)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: (response: any) => {
-          this.clients = response || [];
-          if (!this.clients.length) this.showMessage('No member matched that search.', 'error');
-        },
-        error: () =>
-          this.showMessage(
-            'Members could not be loaded. Ask an administrator to check your member permissions.',
-            'error'
-          )
-      });
+    this.loading = false;
+    this.transactionForm.reset({
+      savingsAccountId: '',
+      shareAccountId: '',
+      chargeId: '',
+      amount: null,
+      requestedShares: null,
+      note: ''
+    });
   }
 
   selectClient(client: any): void {
+    const requestId = ++this.memberDetailsRequestId;
     this.loading = true;
     this.selectedClient = client;
+    this.accounts = null;
+    this.charges = [];
     this.pendingTransaction = null;
     this.receipt = null;
     forkJoin({
       accounts: this.clientsService.getClientAccountData(client.id),
       charges: this.clientsService.getClientChargesData(client.id).pipe(catchError(() => of([])))
     })
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          if (requestId === this.memberDetailsRequestId) this.loading = false;
+        })
+      )
       .subscribe({
         next: ({ accounts, charges }: any) => {
+          if (requestId !== this.memberDetailsRequestId) return;
           this.accounts = accounts;
           this.charges = charges?.pageItems || charges || [];
           this.message = '';
         },
-        error: () =>
-          this.showMessage('This member’s accounts could not be opened. Check your account permissions.', 'error')
+        error: () => {
+          if (requestId !== this.memberDetailsRequestId) return;
+          this.showMessage('This member’s accounts could not be opened. Check your account permissions.', 'error');
+        }
       });
   }
 

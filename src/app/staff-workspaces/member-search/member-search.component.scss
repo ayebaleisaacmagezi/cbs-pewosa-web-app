@@ -1,0 +1,138 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.member-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid #244d9a;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.member-search:focus-within {
+  box-shadow: 0 0 0 4px rgb(36 77 154 / 16%);
+}
+
+.member-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  outline: 0;
+  color: #17213a;
+  background: transparent;
+}
+
+.member-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 1px solid #dbe3f0;
+  color: #17213a;
+  background: #fff;
+  text-align: left;
+}
+
+.member-option:last-child {
+  border-bottom: 0;
+}
+
+.member-option:hover,
+.member-option:focus-visible {
+  background: #f6f8fd;
+}
+
+.member-option > mat-icon {
+  flex: 0 0 auto;
+  color: #68758c;
+}
+
+.search-response {
+  min-height: 48px;
+  margin-top: 8px;
+}
+
+.member-results {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+}
+
+.member-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.member-avatar {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 8px;
+  color: #244d9a;
+  background: #e8effc;
+  font-weight: 500;
+}
+
+.member-details strong,
+.member-details small,
+.search-status strong,
+.search-status small {
+  display: block;
+}
+
+.member-details small,
+.search-status small {
+  color: #68758c;
+  font-size: 12px;
+}
+
+.search-status {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  color: #68758c;
+  background: #f6f8fd;
+  font-size: 12px;
+}
+
+.search-status mat-icon {
+  flex: 0 0 auto;
+  color: #244d9a;
+}
+
+.search-spinner {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 3px solid #cddbf2;
+  border-top-color: #244d9a;
+  border-radius: 50%;
+  animation: member-search-spin 0.8s linear infinite;
+}
+
+@keyframes member-search-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-spinner {
+    animation: none;
+  }
+}

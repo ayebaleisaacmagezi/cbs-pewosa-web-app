@@ -59,12 +59,6 @@ a {
   }
 }
 
-.cashier-hero {
-  background:
-    radial-gradient(circle at 88% 16%, rgb(255 255 255 / 18%) 0, rgb(255 255 255 / 0%) 32%),
-    linear-gradient(135deg, #176b49, #0e4935);
-}
-
 .loan-officer-eyebrow {
   display: inline-flex;
   padding: 8px 16px;
@@ -194,18 +188,6 @@ a {
   }
 }
 
-.cashier-drawer-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.cashier-process li > span {
-  color: #0e4935;
-  background: #dcf5e8;
-}
-
 .loan-process {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, calc((100% - 48px) / 4)));
@@ -266,10 +248,5 @@ a {
   .action-card {
     min-height: auto;
     padding: 16px;
-  }
-
-  .cashier-drawer-heading {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
