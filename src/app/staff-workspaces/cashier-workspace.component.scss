@@ -557,6 +557,21 @@ th {
   text-align: center;
 }
 
+@media print {
+  .cashier-page > :not(.receipt-overlay) {
+    display: none !important;
+  }
+
+  .receipt-overlay {
+    position: static !important;
+    background: transparent !important;
+  }
+
+  .receipt-modal > div:last-child {
+    display: none !important;
+  }
+}
+
 .receipt-overlay {
   position: fixed;
   inset: 0;

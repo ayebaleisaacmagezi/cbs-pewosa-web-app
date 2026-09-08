@@ -205,6 +205,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceRole = 'loan-officer';
       this.workspaceLinks = [
         { label: 'Overview', view: 'home' },
+        { label: 'Start loan application', view: 'new-loan' },
         { label: 'Members', view: 'members' },
         { label: 'Create member', view: 'create-member' },
         { label: 'Groups', view: 'groups' },
@@ -248,7 +249,12 @@ export class SidenavComponent implements OnInit, AfterViewInit {
 
   private isLoanOfficerView(view: string | undefined): view is LoanOfficerWorkspaceView {
     return (
-      view === 'home' || view === 'members' || view === 'create-member' || view === 'groups' || view === 'applications'
+      view === 'home' ||
+      view === 'new-loan' ||
+      view === 'members' ||
+      view === 'create-member' ||
+      view === 'groups' ||
+      view === 'applications'
     );
   }
 

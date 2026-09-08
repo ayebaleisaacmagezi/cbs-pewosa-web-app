@@ -403,7 +403,7 @@
                 <td><span class="posted-pill">Posted</span></td>
                 <td>
                   @if (activeView === 'receipts') {
-                    <button type="button" class="table-action" (click)="printReceipt()">Print</button>
+                    <button type="button" class="table-action" (click)="printReceipt(record)">Print</button>
                   }
                 </td>
               </tr>
@@ -425,6 +425,7 @@
         <h2>Transaction posted</h2>
         <p>{{ receipt.member }} · {{ receipt.action }} · {{ receipt.amount }}</p>
         <strong class="receipt-code">{{ receipt.reference }}</strong>
+        <p>{{ receipt.date }}</p>
         <div>
           <button type="button" class="secondary-button" (click)="printReceipt()">Print receipt</button
           ><button type="button" class="primary-button" (click)="receipt = null">New transaction</button>

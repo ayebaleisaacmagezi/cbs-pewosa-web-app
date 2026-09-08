@@ -89,6 +89,9 @@ export class CashierWorkspaceComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.transactionForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.pendingTransaction = null;
+    });
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const view = params.get('view');
       if (
@@ -149,6 +152,7 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   selectAction(action: CashierAction): void {
+    if (this.submitting) return;
     this.selectedAction = action;
     this.pendingTransaction = null;
     this.receipt = null;
@@ -163,6 +167,7 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   resetMemberSelection(): void {
+    if (this.submitting) return;
     this.memberDetailsRequestId += 1;
     this.selectedClient = null;
     this.accounts = null;
@@ -181,14 +186,16 @@ export class CashierWorkspaceComponent implements OnInit {
     });
   }
 
-  selectClient(client: any): void {
+  selectClient(client: any, preserveReceipt = false): void {
+    if (this.submitting && !preserveReceipt) return;
     const requestId = ++this.memberDetailsRequestId;
     this.loading = true;
     this.selectedClient = client;
     this.accounts = null;
     this.charges = [];
     this.pendingTransaction = null;
-    this.receipt = null;
+    if (!preserveReceipt) this.receipt = null;
+    this.transactionForm.reset();
     forkJoin({
       accounts: this.clientsService.getClientAccountData(client.id),
       charges: this.clientsService.getClientChargesData(client.id).pipe(catchError(() => of([])))
@@ -223,6 +230,8 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   prepareTransaction(): void {
+    if (this.submitting || !this.selectedClient || !this.accounts || this.loading) return;
+    this.pendingTransaction = null;
     const form = this.transactionForm.getRawValue();
     const amount = Number(form.amount || 0);
     if (this.selectedAction === 'shares' && (!form.shareAccountId || Number(form.requestedShares || 0) < 1)) {
@@ -253,10 +262,12 @@ export class CashierWorkspaceComponent implements OnInit {
     }
 
     this.pendingTransaction = {
+      ...form,
       action: this.selectedAction,
       amount,
       requestedShares: Number(form.requestedShares || 0),
       member: this.selectedClient?.displayName,
+      clientId: this.selectedClient.id,
       accountId: form.savingsAccountId || form.shareAccountId,
       chargeId: form.chargeId
     };
@@ -270,33 +281,30 @@ export class CashierWorkspaceComponent implements OnInit {
   confirmTransaction(): void {
     if (!this.pendingTransaction || this.submitting) return;
     this.submitting = true;
-    const form = this.transactionForm.getRawValue();
+    const form = this.pendingTransaction;
+    const action: CashierAction = form.action;
     const dateFormat = this.settingsService.dateFormat;
     const locale = this.settingsService.language.code;
     const transactionDate = this.dates.formatDate(this.settingsService.businessDate, dateFormat);
     let request$;
 
-    if (this.selectedAction === 'deposit' || this.selectedAction === 'withdrawal') {
+    if (action === 'deposit' || action === 'withdrawal') {
       request$ = this.savingsService.getSavingsTransactionTemplateResource(form.savingsAccountId).pipe(
         switchMap((template: any) => {
           const paymentType =
             (template?.paymentTypeOptions || []).find((item: any) => item.isCashPayment) ||
             template?.paymentTypeOptions?.[0];
-          return this.savingsService.executeSavingsAccountTransactionsCommand(
-            form.savingsAccountId,
-            this.selectedAction,
-            {
-              transactionDate,
-              transactionAmount: Number(form.amount),
-              paymentTypeId: paymentType?.id,
-              note: form.note,
-              dateFormat,
-              locale
-            }
-          );
+          return this.savingsService.executeSavingsAccountTransactionsCommand(form.savingsAccountId, action, {
+            transactionDate,
+            transactionAmount: Number(form.amount),
+            paymentTypeId: paymentType?.id,
+            note: form.note,
+            dateFormat,
+            locale
+          });
         })
       );
-    } else if (this.selectedAction === 'shares') {
+    } else if (action === 'shares') {
       request$ = this.sharesService.getSharesAccountData(form.shareAccountId, true).pipe(
         switchMap((shareAccount: any) =>
           this.sharesService.executeSharesAccountCommand(form.shareAccountId, 'applyadditionalshares', {
@@ -309,7 +317,7 @@ export class CashierWorkspaceComponent implements OnInit {
         )
       );
     } else {
-      request$ = this.clientsService.payClientCharge(this.selectedClient.id, form.chargeId, {
+      request$ = this.clientsService.payClientCharge(form.clientId, form.chargeId, {
         amount: Number(form.amount),
         transactionDate,
         dateFormat,
@@ -321,14 +329,14 @@ export class CashierWorkspaceComponent implements OnInit {
       next: (response: any) => {
         this.receipt = {
           reference: response?.changes?.transactionId || response?.resourceId || response?.transactionId || 'Recorded',
-          member: this.selectedClient.displayName,
-          action: this.selectedAction,
-          amount: this.selectedAction === 'shares' ? `${form.requestedShares} share(s)` : Number(form.amount),
+          member: form.member,
+          action,
+          amount: action === 'shares' ? `${form.requestedShares} share(s)` : Number(form.amount),
           date: transactionDate
         };
         this.pendingTransaction = null;
         this.showMessage('The transaction was recorded successfully.', 'success');
-        this.selectClient(this.selectedClient);
+        this.selectClient(this.selectedClient, true);
         this.refreshDrawerSummary();
       },
       error: () =>
@@ -339,7 +347,21 @@ export class CashierWorkspaceComponent implements OnInit {
     });
   }
 
-  printReceipt(): void {
+  printReceipt(record?: any): void {
+    if (record) {
+      const date = record.txnDate || record.transactionDate;
+      this.receipt = {
+        reference: record.transactionId ?? record.id,
+        member: record.clientName || record.entityName || '',
+        action: record.entityType || record.transactionType?.value || record.transactionType,
+        amount: record.amount ?? record.txnAmount ?? 0,
+        date: Array.isArray(date)
+          ? this.dates.formatDate(new Date(date[0], date[1] - 1, date[2]), this.settingsService.dateFormat)
+          : date
+      };
+    }
+    if (!this.receipt) return;
+    this.changeDetectorRef.detectChanges();
     window.print();
   }
 
@@ -353,7 +375,12 @@ export class CashierWorkspaceComponent implements OnInit {
     }
     this.organizationService.getTellers().subscribe({
       next: (tellers: any) => {
-        const tellerList = tellers?.pageItems || tellers || [];
+        const tellerList = (tellers?.pageItems || tellers || []).filter(
+          (teller: any) =>
+            Number(teller.officeId) === Number(this.credentials.officeId) &&
+            (Number(teller.status?.id ?? teller.status) === 300 || teller.status === 'ACTIVE') &&
+            this.assignmentIsCurrent(teller)
+        );
         if (!tellerList.length) {
           this.showMessage('No teller drawer has been configured for your office.', 'error');
           return;
@@ -373,7 +400,11 @@ export class CashierWorkspaceComponent implements OnInit {
         ).subscribe((results: any[]) => {
           const match = results
             .flatMap((result: any) => result.cashiers.map((cashier: any) => ({ teller: result.teller, cashier })))
-            .find((item: any) => Number(item.cashier.staffId) === Number(this.credentials.staffId));
+            .find(
+              (item: any) =>
+                Number(item.cashier.staffId) === Number(this.credentials.staffId) &&
+                this.assignmentIsCurrent(item.cashier)
+            );
           if (!match) {
             this.showMessage(
               'You are not assigned to an active cashier drawer. Ask the Chief Teller to assign you.',
@@ -383,7 +414,6 @@ export class CashierWorkspaceComponent implements OnInit {
           }
           this.tellerId = match.teller.id;
           this.cashierId = match.cashier.id;
-          this.drawerReady = true;
           this.refreshDrawerSummary();
         });
       },
@@ -396,6 +426,8 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   private refreshDrawerSummary(): void {
+    this.drawerReady = false;
+    this.drawer = null;
     if (!this.tellerId || !this.cashierId) return;
     this.organizationService.getCashierSummaryAndTransactions(this.tellerId, this.cashierId, 'UGX').subscribe({
       next: (response: any) => {
@@ -409,5 +441,18 @@ export class CashierWorkspaceComponent implements OnInit {
   private showMessage(message: string, type: 'error' | 'success'): void {
     this.message = message;
     this.messageType = type;
+  }
+
+  private assignmentIsCurrent(assignment: any): boolean {
+    const day = (value: any): number => {
+      const date = Array.isArray(value) ? new Date(value[0], value[1] - 1, value[2]) : new Date(value);
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    };
+    const today = day(this.settingsService.businessDate);
+    return (
+      !!assignment.startDate &&
+      day(assignment.startDate) <= today &&
+      (!assignment.endDate || day(assignment.endDate) >= today)
+    );
   }
 }

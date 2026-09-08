@@ -34,22 +34,26 @@ export class ClientsService {
    */
   searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
     const normalizedQuery = this.normalizeClientSearchValue(query);
-    const request = {
-      request: { text: this.formatFineractNameSearchValue(query) },
-      page: 0,
-      size: 50,
-      sorts: [{ direction: 'ASC', property: 'displayName' }]
-    };
+    const httpParams = new HttpParams()
+      .set('query', query.trim())
+      .set('resource', 'clients')
+      .set('exactMatch', 'false');
 
-    return this.http.post('/v2/clients/search', request).pipe(
+    return this.http.get('/search', { params: httpParams }).pipe(
       map((response: any) =>
-        (response?.content || [])
-          .filter((client: any) => Number(client.officeId) === Number(officeId))
-          .filter((client: any) => this.clientMatchesSearch(client, normalizedQuery))
-          .map((client: any) => ({
-            ...client,
-            accountNo: client.accountNumber
+        (Array.isArray(response) ? response : [])
+          .filter((result: any) => result.entityType === 'CLIENT' && Number(result.parentId) === Number(officeId))
+          .map((result: any) => ({
+            id: result.entityId,
+            displayName: result.entityName,
+            accountNo: result.entityAccountNo,
+            accountNumber: result.entityAccountNo,
+            externalId: result.entityExternalId,
+            mobileNo: result.entityMobileNo,
+            officeId: result.parentId,
+            officeName: result.parentName
           }))
+          .filter((client: any) => this.clientMatchesSearch(client, normalizedQuery))
       )
     );
   }
@@ -65,7 +69,7 @@ export class ClientsService {
       client.mobileNo
     ];
 
-    return searchableValues.some((value) => this.normalizeClientSearchValue(value).startsWith(query));
+    return searchableValues.some((value) => this.normalizeClientSearchValue(value).includes(query));
   }
 
   private normalizeClientSearchValue(value: unknown): string {
@@ -74,15 +78,6 @@ export class ClientsService {
       .toLocaleLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
-  }
-
-  private formatFineractNameSearchValue(value: string): string {
-    const trimmedValue = value.trim();
-    if (!/^[a-zA-Z\s'-]+$/.test(trimmedValue)) return trimmedValue;
-
-    return trimmedValue
-      .toLocaleLowerCase()
-      .replace(/(^|[\s'-])([a-z])/g, (_match, separator, letter) => `${separator}${letter.toLocaleUpperCase()}`);
   }
 
   getFilteredClients(

@@ -43,7 +43,7 @@
       /></mat-form-field>
       <mat-form-field
         ><mat-label>Teller</mat-label
-        ><mat-select [value]="selectedTeller" (selectionChange)="selectTeller($event.value)">
+        ><mat-select [value]="selectedTeller" [disabled]="submitting" (selectionChange)="selectTeller($event.value)">
           @for (teller of filteredTellers; track teller.id) {
             <mat-option [value]="teller">{{ teller.name }}</mat-option>
           }
@@ -55,7 +55,11 @@
       /></mat-form-field>
       <mat-form-field
         ><mat-label>Cashier</mat-label
-        ><mat-select [value]="selectedCashier" (selectionChange)="selectCashier($event.value)">
+        ><mat-select
+          [value]="selectedCashier"
+          [disabled]="submitting || loading"
+          (selectionChange)="selectCashier($event.value)"
+        >
           @for (cashier of filteredCashiers; track cashier.id) {
             <mat-option [value]="cashier">{{ cashier.staffName || cashier.cashierName }}</mat-option>
           }

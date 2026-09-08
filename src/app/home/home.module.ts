@@ -19,7 +19,6 @@ import { PipesModule } from '../pipes/pipes.module';
 import { HomeComponent } from './home.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TranslateModule } from '@ngx-translate/core';
-import { WarningDialogComponent } from './warning-dialog/warning-dialog.component';
 import { SessionTimeoutDialogComponent } from './timeout-dialog/session-timeout-dialog.component';
 
 /**
@@ -36,7 +35,6 @@ import { SessionTimeoutDialogComponent } from './timeout-dialog/session-timeout-
     TranslateModule,
     HomeComponent,
     DashboardComponent,
-    WarningDialogComponent,
     SessionTimeoutDialogComponent
   ],
   providers: []

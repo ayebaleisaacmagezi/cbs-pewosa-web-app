@@ -50,12 +50,6 @@ export const environment = {
     redirectUri: loadedEnv.oauthRedirectUri || '',
     scope: loadedEnv.oauthScope || ''
   },
-  warningDialog: {
-    title: 'Warning',
-    content:
-      'This system is for authorized use only. Unauthorized access will result in possible legal action. By accessing this system, you acknowledge that you are authorized to do so and that all data stored and processed here is confidential.',
-    buttonText: 'Close'
-  },
   defaultLanguage: loadedEnv.defaultLanguage || 'en-US',
   supportedLanguages:
     loadedEnv.supportedLanguages || 'cs-CS,de-DE,en-US,es-MX,fr-FR,it-IT,ko-KO,lt-LT,lv-LV,ne-NE,pt-PT,sw-SW',

@@ -10,7 +10,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 export type CashierWorkspaceView = 'home' | 'transactions' | 'drawer' | 'records' | 'receipts';
-export type LoanOfficerWorkspaceView = 'home' | 'members' | 'create-member' | 'groups' | 'applications';
+export type LoanOfficerWorkspaceView = 'home' | 'new-loan' | 'members' | 'create-member' | 'groups' | 'applications';
 export type ChiefTellerWorkspaceView = 'drawers' | 'movement' | 'records';
 
 @Injectable({ providedIn: 'root' })

@@ -60,6 +60,8 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   message = '';
   messageType: 'error' | 'success' | '' = '';
   lastReference: any = null;
+  private cashiersRequestId = 0;
+  private summaryRequestId = 0;
 
   movementForm = this.formBuilder.group({
     txnAmount: [
@@ -94,6 +96,9 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.movementForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.pendingMovement = null;
+    });
     this.route.queryParamMap.subscribe((params) => {
       const view = params.get('view');
       if (view === 'drawers' || view === 'movement' || view === 'records') {
@@ -121,10 +126,9 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
         next: (response: any) => {
           this.tellers = response?.pageItems || response || [];
           const officeTellers = this.tellers.filter(
-            (teller: any) =>
-              !this.credentials?.officeId || Number(teller.officeId) === Number(this.credentials.officeId)
+            (teller: any) => this.credentials?.officeId && Number(teller.officeId) === Number(this.credentials.officeId)
           );
-          this.tellers = officeTellers.length ? officeTellers : this.tellers;
+          this.tellers = officeTellers;
           if (this.tellers.length) this.selectTeller(this.tellers[0]);
           else this.showMessage('No teller has been configured for this office.', 'error');
         },
@@ -137,6 +141,12 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   }
 
   selectTeller(teller: any): void {
+    if (this.submitting) return;
+    const requestId = ++this.cashiersRequestId;
+    this.summaryRequestId += 1;
+    this.cashiers = [];
+    this.pendingMovement = null;
+    this.lastReference = null;
     this.selectedTeller = teller;
     this.selectedCashier = null;
     this.cashierSummary = null;
@@ -144,24 +154,37 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     this.loading = true;
     this.organizationService
       .getCashiers(teller.id)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          if (requestId === this.cashiersRequestId) this.loading = false;
+        })
+      )
       .subscribe({
         next: (response: any) => {
+          if (requestId !== this.cashiersRequestId) return;
           this.cashiers = Array.isArray(response) ? response : response?.cashiers || response?.pageItems || [];
           if (this.cashiers.length) this.selectCashier(this.cashiers[0]);
           else this.showMessage('No Cashier is assigned to the selected Teller.', 'error');
         },
-        error: () => this.showMessage('Cashiers assigned to this teller could not be loaded.', 'error')
+        error: () => {
+          if (requestId === this.cashiersRequestId) {
+            this.showMessage('Cashiers assigned to this teller could not be loaded.', 'error');
+          }
+        }
       });
   }
 
   selectCashier(cashier: any): void {
+    if (this.submitting) return;
     this.selectedCashier = cashier;
+    this.cashierSummary = null;
+    this.lastReference = null;
     this.pendingMovement = null;
     this.refreshSummary();
   }
 
   chooseMovement(action: DrawerAction): void {
+    if (this.submitting) return;
     this.selectedAction = action;
     this.activeView = 'movement';
     this.pendingMovement = null;
@@ -170,6 +193,8 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   }
 
   prepareMovement(): void {
+    if (this.submitting) return;
+    this.pendingMovement = null;
     if (!this.selectedTeller || !this.selectedCashier) {
       this.showMessage('Select a cashier first.', 'error');
       return;
@@ -184,6 +209,8 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       return;
     }
     this.pendingMovement = {
+      tellerId: this.selectedTeller.id,
+      cashierId: this.selectedCashier.id,
       action: this.selectedAction,
       amount,
       cashier: this.selectedCashier.staffName || this.selectedCashier.cashierName,
@@ -195,19 +222,20 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   confirmMovement(): void {
     if (!this.pendingMovement || this.submitting) return;
     this.submitting = true;
+    const movement = this.pendingMovement;
     const dateFormat = this.settingsService.dateFormat;
     const payload = {
       txnDate: this.dates.formatDate(this.settingsService.businessDate, dateFormat),
-      txnAmount: Number(this.movementForm.value.txnAmount),
-      txnNote: this.movementForm.value.txnNote,
+      txnAmount: movement.amount,
+      txnNote: movement.note,
       currencyCode: 'UGX',
       dateFormat,
       locale: this.settingsService.language.code
     };
     const request$ =
-      this.selectedAction === 'allocate'
-        ? this.organizationService.allocateCash(this.selectedTeller.id, this.selectedCashier.id, payload)
-        : this.organizationService.settleCash(this.selectedTeller.id, this.selectedCashier.id, payload);
+      movement.action === 'allocate'
+        ? this.organizationService.allocateCash(movement.tellerId, movement.cashierId, payload)
+        : this.organizationService.settleCash(movement.tellerId, movement.cashierId, payload);
 
     request$.pipe(finalize(() => (this.submitting = false))).subscribe({
       next: (response: any) => {
@@ -215,7 +243,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
         this.pendingMovement = null;
         this.movementForm.reset();
         this.showMessage(
-          this.selectedAction === 'allocate'
+          movement.action === 'allocate'
             ? 'Cash was allocated to the cashier.'
             : 'Cash was recovered from the cashier.',
           'success'
@@ -232,12 +260,20 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   }
 
   refreshSummary(): void {
+    const requestId = ++this.summaryRequestId;
+    this.cashierSummary = null;
     if (!this.selectedTeller || !this.selectedCashier) return;
     this.organizationService
       .getCashierSummaryAndTransactions(this.selectedTeller.id, this.selectedCashier.id, 'UGX')
       .subscribe({
-        next: (response: any) => (this.cashierSummary = response),
-        error: () => this.showMessage('The selected cashier’s drawer summary could not be loaded.', 'error')
+        next: (response: any) => {
+          if (requestId === this.summaryRequestId) this.cashierSummary = response;
+        },
+        error: () => {
+          if (requestId === this.summaryRequestId) {
+            this.showMessage('The selected cashier’s drawer summary could not be loaded.', 'error');
+          }
+        }
       });
   }
 

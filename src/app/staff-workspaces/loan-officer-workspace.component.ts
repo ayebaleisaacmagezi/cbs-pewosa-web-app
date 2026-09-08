@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
+import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 
 import { ClientsService } from 'app/clients/clients.service';
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
@@ -20,11 +21,16 @@ import { GroupsService } from 'app/groups/groups.service';
 import { LoansService } from 'app/loans/loans.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
+import { MemberSearchComponent } from './member-search/member-search.component';
 
 @Component({
   selector: 'mifosx-loan-officer-workspace',
   standalone: true,
-  imports: [...STANDALONE_SHARED_IMPORTS],
+  imports: [
+    ...STANDALONE_SHARED_IMPORTS,
+    FaIconComponent,
+    MemberSearchComponent
+  ],
   templateUrl: './loan-officer-workspace.component.html',
   styleUrls: [
     './staff-workspace.scss',
@@ -50,6 +56,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   clientTemplate: any = null;
   clients: any[] = [];
   selectedClient: any = null;
+  selectedLoanApplicant: any = null;
   accounts: any = null;
   charges: any[] = [];
   applications: any[] = [];
@@ -60,6 +67,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   submitting = false;
   message = '';
   messageType: 'error' | 'success' | '' = '';
+  private memberRequestId = 0;
 
   memberSearchControl = this.formBuilder.control('', [
     Validators.required,
@@ -124,6 +132,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       const view = params.get('view') as LoanOfficerWorkspaceView | null;
       if (view && [
           'home',
+          'new-loan',
           'members',
           'create-member',
           'groups',
@@ -170,22 +179,34 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   }
 
   openMember(client: any): void {
+    const requestId = ++this.memberRequestId;
     this.selectedClient = client;
+    this.accounts = null;
+    this.charges = [];
     this.loading = true;
     forkJoin({
       details: this.clientsService.getClientData(client.id),
       accounts: this.clientsService.getClientAccountData(client.id),
       charges: this.clientsService.getClientChargesData(client.id).pipe(catchError(() => of([])))
     })
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          if (requestId === this.memberRequestId) this.loading = false;
+        })
+      )
       .subscribe({
         next: ({ details, accounts, charges }: any) => {
+          if (requestId !== this.memberRequestId) return;
           this.selectedClient = details;
           this.accounts = accounts;
           this.charges = charges?.pageItems || charges || [];
           this.message = '';
         },
-        error: () => this.showMessage('This member’s products could not be loaded.', 'error')
+        error: () => {
+          if (requestId === this.memberRequestId) {
+            this.showMessage('This member’s products could not be loaded.', 'error');
+          }
+        }
       });
   }
 
@@ -311,10 +332,17 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       ]);
   }
 
+  selectLoanApplicant(client: any): void {
+    this.selectedLoanApplicant = client;
+    this.message = '';
+  }
+
   openApplication(application: any): void {
+    const ownerId = application.clientId || application.groupId;
+    if (!ownerId || !application.id) return;
     this.router.navigate([
-      '/clients',
-      application.clientId,
+      application.clientId ? '/clients' : '/groups',
+      ownerId,
       'loans-accounts',
       application.id,
       'general'
