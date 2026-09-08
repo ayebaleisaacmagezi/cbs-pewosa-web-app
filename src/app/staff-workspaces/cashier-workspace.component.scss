@@ -24,7 +24,8 @@ button {
 .cashier-page {
   max-width: 1500px;
   margin: 0 auto;
-  padding: 18px;
+  padding: 24px;
+  min-width: 0;
 }
 .view-stack {
   display: grid;
@@ -75,7 +76,9 @@ button {
 
 .workstation {
   display: grid;
-  grid-template-columns: 290px minmax(520px, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 960px;
+  margin: 0 auto;
   gap: 16px;
   align-items: start;
 }
@@ -629,15 +632,13 @@ th {
 
 @media (max-width: 1180px) {
   .workstation {
-    grid-template-columns: 270px minmax(480px, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
   .summary-panel {
     grid-column: 1 / -1;
   }
   .summary-panel .panel-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
+    display: block;
   }
 }
 @media (max-width: 850px) {
@@ -658,7 +659,7 @@ th {
 }
 @media (max-width: 600px) {
   .cashier-page {
-    padding: 12px;
+    padding: 16px;
   }
   .drawer-notice {
     align-items: flex-start;
@@ -675,4 +676,56 @@ th {
   .entry-actions {
     grid-column: auto;
   }
+}
+
+.flow-progress,
+.member-context {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto 24px;
+  flex-wrap: wrap;
+}
+.flow-progress {
+  color: #68758c;
+  font-size: 14px;
+  .current {
+    color: #244d9a;
+    font-weight: 700;
+  }
+}
+.member-context {
+  padding: 16px;
+  border: 1px solid #dbe3f0;
+  border-radius: 16px;
+  background: #fff;
+  div {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  strong,
+  small {
+    display: block;
+  }
+  small {
+    color: #68758c;
+  }
+}
+.work-panel {
+  min-width: 0;
+}
+.member-panel .panel-body {
+  min-height: 240px;
+}
+.panel-head p {
+  margin: 8px 0 0;
+  color: #68758c;
+}
+.review-reference {
+  overflow-wrap: anywhere;
+}
+.receipt-modal > div:last-child {
+  flex-wrap: wrap;
 }

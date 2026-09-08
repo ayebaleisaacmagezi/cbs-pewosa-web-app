@@ -6,14 +6,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { Component, DestroyRef, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
 import { catchError, distinctUntilChanged, map, of, switchMap, tap, timer } from 'rxjs';
 
 import { ClientsService } from 'app/clients/clients.service';
+import { Logger } from 'app/core/logger/logger.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
+
+const log = new Logger('MemberSearch');
 
 type MemberSearchState = 'idle' | 'loading' | 'results' | 'empty' | 'error';
 
@@ -36,6 +39,7 @@ export class MemberSearchComponent implements OnInit {
   private clientsService = inject(ClientsService);
   private formBuilder = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private changeDetectorRef = inject(ChangeDetectorRef);
 
   @Input({ required: true }) officeId!: number;
   @Output() memberSelected = new EventEmitter<any>();
@@ -57,13 +61,30 @@ export class MemberSearchComponent implements OnInit {
           this.queryChanged.emit();
           this.members = [];
           this.searchState = query.length >= 2 ? 'loading' : 'idle';
+          this.changeDetectorRef.markForCheck();
         }),
         switchMap((query) => {
           if (query.length < 2) return of(null);
 
           return timer(200).pipe(
-            switchMap(() =>
-              this.clientsService.searchClientsInOffice(query, this.officeId).pipe(
+            switchMap(() => {
+              const startedAt = performance.now();
+              log.debug('Search request started', { officeId: this.officeId });
+
+              return this.clientsService.searchClientsInOffice(query, this.officeId).pipe(
+                tap({
+                  next: (members) =>
+                    log.debug('Search request completed', {
+                      officeId: this.officeId,
+                      durationMs: Math.round(performance.now() - startedAt),
+                      resultCount: members.length
+                    }),
+                  error: () =>
+                    log.error('Search request failed', {
+                      officeId: this.officeId,
+                      durationMs: Math.round(performance.now() - startedAt)
+                    })
+                }),
                 map(
                   (members): MemberSearchOutcome => ({
                     state: members.length ? 'results' : 'empty',
@@ -76,8 +97,8 @@ export class MemberSearchComponent implements OnInit {
                     members: []
                   })
                 )
-              )
-            )
+              );
+            })
           );
         }),
         takeUntilDestroyed(this.destroyRef)
@@ -86,6 +107,7 @@ export class MemberSearchComponent implements OnInit {
         if (!outcome) return;
         this.members = outcome.members;
         this.searchState = outcome.state;
+        this.changeDetectorRef.markForCheck();
       });
   }
 

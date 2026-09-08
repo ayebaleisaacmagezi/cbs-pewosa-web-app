@@ -164,17 +164,25 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
     this.loading = true;
     this.clientsService
       .searchClientsInOffice(this.memberSearchControl.value || '', this.credentials.officeId)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
       .subscribe({
         next: (response: any) => {
           this.clients = response || [];
           if (!this.clients.length) this.showMessage('No member matched that search.', 'error');
+          this.changeDetectorRef.markForCheck();
         },
-        error: () =>
+        error: () => {
           this.showMessage(
             'Members could not be loaded. Ask an administrator to check your member permissions.',
             'error'
-          )
+          );
+          this.changeDetectorRef.markForCheck();
+        }
       });
   }
 

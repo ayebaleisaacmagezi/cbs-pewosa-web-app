@@ -39,29 +39,15 @@ describe('ClientsService', () => {
     it('should return matching clients from the officer office only', async () => {
       const resultPromise = firstValueFrom(service.searchClientsInOffice('ra', 1));
 
-      const req = httpMock.expectOne((r) => r.url === '/search' && r.method === 'GET');
-      expect(req.request.params.get('query')).toBe('ra');
-      expect(req.request.params.get('resource')).toBe('clients');
-      expect(req.request.params.get('exactMatch')).toBe('false');
+      const req = httpMock.expectOne((r) => r.url === '/v2/clients/search' && r.method === 'POST');
+      expect(req.request.body).toEqual({ request: { text: 'ra' }, page: 0, size: 50 });
 
-      req.flush([
-        {
-          entityId: 1,
-          entityName: 'Rajabu Ssemakula',
-          entityAccountNo: '000001',
-          entityType: 'CLIENT',
-          parentId: 1,
-          parentName: 'Head Office'
-        },
-        {
-          entityId: 3,
-          entityName: 'Robert Test',
-          entityAccountNo: '000003',
-          entityType: 'CLIENT',
-          parentId: 2,
-          parentName: 'Branch Office'
-        }
-      ]);
+      req.flush({
+        content: [
+          { id: 1, displayName: 'Rajabu Ssemakula', accountNumber: '000001', officeId: 1, officeName: 'Head Office' },
+          { id: 3, displayName: 'Robert Test', accountNumber: '000003', officeId: 2, officeName: 'Branch Office' }
+        ]
+      });
 
       const result = await resultPromise;
       expect(result).toEqual([
@@ -78,18 +64,8 @@ describe('ClientsService', () => {
 
       for (const testCase of cases) {
         const resultPromise = firstValueFrom(service.searchClientsInOffice(testCase.query, 1));
-        const req = httpMock.expectOne((r) => r.url === '/search' && r.method === 'GET');
-        req.flush([
-          {
-            entityId: testCase.client.id,
-            entityName: testCase.client.displayName,
-            entityAccountNo: testCase.client.accountNumber,
-            entityExternalId: testCase.client.externalId,
-            entityMobileNo: testCase.client.mobileNo,
-            entityType: 'CLIENT',
-            parentId: testCase.client.officeId
-          }
-        ]);
+        const req = httpMock.expectOne((r) => r.url === '/v2/clients/search' && r.method === 'POST');
+        req.flush({ content: [testCase.client] });
         expect(await resultPromise).toHaveLength(1);
       }
     });

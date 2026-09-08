@@ -34,24 +34,14 @@ export class ClientsService {
    */
   searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
     const normalizedQuery = this.normalizeClientSearchValue(query);
-    const httpParams = new HttpParams()
-      .set('query', query.trim())
-      .set('resource', 'clients')
-      .set('exactMatch', 'false');
-
-    return this.http.get('/search', { params: httpParams }).pipe(
+    return this.searchByText(query.trim(), 0, 50).pipe(
       map((response: any) =>
-        (Array.isArray(response) ? response : [])
-          .filter((result: any) => result.entityType === 'CLIENT' && Number(result.parentId) === Number(officeId))
-          .map((result: any) => ({
-            id: result.entityId,
-            displayName: result.entityName,
-            accountNo: result.entityAccountNo,
-            accountNumber: result.entityAccountNo,
-            externalId: result.entityExternalId,
-            mobileNo: result.entityMobileNo,
-            officeId: result.parentId,
-            officeName: result.parentName
+        (Array.isArray(response?.content) ? response.content : [])
+          .filter((client: any) => Number(client.officeId) === Number(officeId))
+          .map((client: any) => ({
+            ...client,
+            accountNo: client.accountNo || client.accountNumber,
+            accountNumber: client.accountNumber || client.accountNo
           }))
           .filter((client: any) => this.clientMatchesSearch(client, normalizedQuery))
       )

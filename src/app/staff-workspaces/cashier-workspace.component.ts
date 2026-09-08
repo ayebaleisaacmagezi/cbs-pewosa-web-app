@@ -203,6 +203,7 @@ export class CashierWorkspaceComponent implements OnInit {
       .pipe(
         finalize(() => {
           if (requestId === this.memberDetailsRequestId) this.loading = false;
+          this.changeDetectorRef.markForCheck();
         })
       )
       .subscribe({

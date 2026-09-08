@@ -121,7 +121,12 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     this.loading = true;
     this.organizationService
       .getTellers()
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          this.loading = false;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
       .subscribe({
         next: (response: any) => {
           this.tellers = response?.pageItems || response || [];
@@ -131,12 +136,15 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
           this.tellers = officeTellers;
           if (this.tellers.length) this.selectTeller(this.tellers[0]);
           else this.showMessage('No teller has been configured for this office.', 'error');
+          this.changeDetectorRef.markForCheck();
         },
-        error: () =>
+        error: () => {
           this.showMessage(
             'Teller drawers could not be loaded. Ask an administrator to check the Chief Teller permissions.',
             'error'
-          )
+          );
+          this.changeDetectorRef.markForCheck();
+        }
       });
   }
 
@@ -157,6 +165,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       .pipe(
         finalize(() => {
           if (requestId === this.cashiersRequestId) this.loading = false;
+          this.changeDetectorRef.markForCheck();
         })
       )
       .subscribe({
@@ -165,10 +174,12 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
           this.cashiers = Array.isArray(response) ? response : response?.cashiers || response?.pageItems || [];
           if (this.cashiers.length) this.selectCashier(this.cashiers[0]);
           else this.showMessage('No Cashier is assigned to the selected Teller.', 'error');
+          this.changeDetectorRef.markForCheck();
         },
         error: () => {
           if (requestId === this.cashiersRequestId) {
             this.showMessage('Cashiers assigned to this teller could not be loaded.', 'error');
+            this.changeDetectorRef.markForCheck();
           }
         }
       });
@@ -267,11 +278,15 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       .getCashierSummaryAndTransactions(this.selectedTeller.id, this.selectedCashier.id, 'UGX')
       .subscribe({
         next: (response: any) => {
-          if (requestId === this.summaryRequestId) this.cashierSummary = response;
+          if (requestId === this.summaryRequestId) {
+            this.cashierSummary = response;
+            this.changeDetectorRef.markForCheck();
+          }
         },
         error: () => {
           if (requestId === this.summaryRequestId) {
             this.showMessage('The selected cashier’s drawer summary could not be loaded.', 'error');
+            this.changeDetectorRef.markForCheck();
           }
         }
       });
