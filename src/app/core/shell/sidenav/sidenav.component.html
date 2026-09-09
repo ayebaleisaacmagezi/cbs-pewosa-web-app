@@ -77,11 +77,9 @@
                               ? 'group'
                               : link.view === 'new-loan'
                                 ? 'note_add'
-                                : link.view === 'create-member'
-                                  ? 'person_add'
-                                  : link.view === 'groups'
-                                    ? 'groups'
-                                    : 'description'
+                                : link.view === 'groups'
+                                  ? 'groups'
+                                  : 'description'
             }}</mat-icon>
             <span>{{ link.label | translate }}</span>
           </button>

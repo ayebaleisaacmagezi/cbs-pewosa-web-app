@@ -207,7 +207,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: 'Overview', view: 'home' },
         { label: 'Start loan application', view: 'new-loan' },
         { label: 'Members', view: 'members' },
-        { label: 'Create member', view: 'create-member' },
         { label: 'Groups', view: 'groups' },
         { label: 'Loan applications', view: 'applications' }
       ];
@@ -218,16 +217,14 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     if (!this.workspaceRole) return;
     if (this.workspaceRole === 'cashier' && this.isCashierView(view)) {
       this.workspaceNavigation.setCashierView(view);
-      return;
-    }
-    if (this.workspaceRole === 'loan-officer' && this.isLoanOfficerView(view)) {
+    } else if (this.workspaceRole === 'loan-officer' && this.isLoanOfficerView(view)) {
       this.workspaceNavigation.setLoanOfficerView(view);
-      return;
-    }
-    if (this.workspaceRole === 'chief-teller' && this.isChiefTellerView(view)) {
+    } else if (this.workspaceRole === 'chief-teller' && this.isChiefTellerView(view)) {
       this.workspaceNavigation.setChiefTellerView(view);
+    } else {
       return;
     }
+
     void this.router.navigate(
       [
         '/staff-workspaces',
@@ -248,14 +245,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   }
 
   private isLoanOfficerView(view: string | undefined): view is LoanOfficerWorkspaceView {
-    return (
-      view === 'home' ||
-      view === 'new-loan' ||
-      view === 'members' ||
-      view === 'create-member' ||
-      view === 'groups' ||
-      view === 'applications'
-    );
+    return view === 'home' || view === 'new-loan' || view === 'members' || view === 'groups' || view === 'applications';
   }
 
   private isChiefTellerView(view: string | undefined): view is ChiefTellerWorkspaceView {

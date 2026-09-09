@@ -51,14 +51,16 @@
 
   @if (loanProductSelected) {
     <div class="layout-row-wrap layout-lt-md-column gap-2percent">
-      <mat-form-field class="flex-48">
-        <mat-label>{{ 'labels.inputs.External id' | translate }}</mat-label>
-        <input
-          matInput
-          formControlName="externalId"
-          matTooltip="{{ 'tooltips.Provides an external id' | translate }}"
-        />
-      </mat-form-field>
+      @if (!hideExternalId) {
+        <mat-form-field class="flex-48">
+          <mat-label>{{ 'labels.inputs.External id' | translate }}</mat-label>
+          <input
+            matInput
+            formControlName="externalId"
+            matTooltip="{{ 'tooltips.Provides an external id' | translate }}"
+          />
+        </mat-form-field>
+      }
       @if (loanProductService.isLoanProduct) {
         <mat-form-field class="flex-48">
           <mat-label>{{ 'labels.inputs.Loan officer' | translate }}</mat-label>

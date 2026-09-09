@@ -22,6 +22,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { UntypedFormGroup, UntypedFormBuilder, Validators, UntypedFormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { SettingsService } from 'app/settings/settings.service';
+import { AuthenticationService } from 'app/core/authentication/authentication.service';
 import { TranslateService } from '@ngx-translate/core';
 
 /** Custom Services */
@@ -69,6 +70,7 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
   private route = inject(ActivatedRoute);
   private translateService = inject(TranslateService);
   private settingsService = inject(SettingsService);
+  private authenticationService = inject(AuthenticationService);
   private commons = inject(Commons);
   private cdr = inject(ChangeDetectorRef);
 
@@ -101,6 +103,7 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
   loansAccountDetailsForm: UntypedFormGroup;
 
   loanId: any = null;
+  hideExternalId = false;
 
   loanProductSelected = false;
   /** Currency data. */
@@ -122,6 +125,14 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
   constructor() {
     super();
     this.loanId = this.route.snapshot.params['loanId'];
+    const roles = this.authenticationService.getCredentials()?.roles || [];
+    const isLoanOfficer = roles.some(
+      (role: any) =>
+        String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
+          .trim()
+          .toLowerCase() === 'loan officer'
+    );
+    this.hideExternalId = isLoanOfficer || this.route.snapshot.queryParamMap?.get('workspace') === 'loan-officer';
     this.createLoansAccountDetailsForm();
   }
 

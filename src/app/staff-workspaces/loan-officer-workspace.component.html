@@ -11,7 +11,6 @@
     <div>
       <span class="eyebrow">Loan Officer portal</span>
       <h1>Welcome, {{ credentials?.staffDisplayName || credentials?.username }}</h1>
-      <p>Create members and groups, inspect products and prepare loan applications.</p>
     </div>
     <div class="hero-stat">
       <span>Assigned applications</span><strong>{{ applications.length }}</strong
@@ -25,9 +24,6 @@
       {{ 'Start loan application' | translate }}
     </button>
     <button mat-button [class.active]="activeView === 'members'" (click)="setView('members')">Members</button>
-    <button mat-button [class.active]="activeView === 'create-member'" (click)="setView('create-member')">
-      Create member
-    </button>
     <button mat-button [class.active]="activeView === 'groups'" (click)="setView('groups')">Groups</button>
     <button mat-button [class.active]="activeView === 'applications'" (click)="setView('applications')">
       Loan applications
@@ -41,7 +37,7 @@
   }
 
   @if (loading) {
-    <div class="notice loading-notice"><mat-icon>sync</mat-icon> Loading information from Fineract…</div>
+    <div class="notice loading-notice"><fa-icon icon="sync"></fa-icon> Loading information from Fineract…</div>
   }
 
   @if (activeView === 'home') {
@@ -54,9 +50,6 @@
         <span class="action-icon" aria-hidden="true"><fa-icon icon="file-alt"></fa-icon></span>
         <strong>{{ 'Start loan application' | translate }}</strong
         ><small>{{ 'Choose a member and begin a new application' | translate }}.</small></button
-      ><button class="action-tile" (click)="setView('create-member')">
-        <span class="action-icon" aria-hidden="true"><fa-icon icon="user"></fa-icon></span>
-        <strong>Create a member</strong><small>Register and activate a new SACCO member.</small></button
       ><button class="action-tile" (click)="setView('groups')">
         <span class="action-icon" aria-hidden="true"><fa-icon icon="users"></fa-icon></span>
         <strong>Create a group</strong><small>Attach existing members from your office.</small></button
@@ -99,7 +92,7 @@
                 {{ selectedLoanApplicant.officeName }}</small
               >
             </div>
-            <mat-icon aria-hidden="true">check_circle</mat-icon>
+            <fa-icon icon="check-circle" aria-hidden="true"></fa-icon>
           </div>
         }
       </div>
@@ -113,7 +106,7 @@
         </div>
         @if (selectedLoanApplicant) {
           <div class="loan-ready-state">
-            <mat-icon aria-hidden="true">description</mat-icon>
+            <fa-icon icon="file-alt" aria-hidden="true"></fa-icon>
             <strong>{{ 'Ready to begin' | translate }}</strong>
             <span>{{ selectedLoanApplicant.displayName }}</span>
           </div>
@@ -129,7 +122,6 @@
           >
             {{ 'Continue to loan details' | translate }}
           </button>
-          <button mat-button (click)="setView('create-member')">{{ 'Create a new member' | translate }}</button>
         </div>
       </div>
     </section>
@@ -206,60 +198,6 @@
         }
       </section>
     </div>
-  }
-
-  @if (activeView === 'create-member') {
-    <section class="panel">
-      <div class="section-title">
-        <h2>Create a member</h2>
-        <p>The member will be created in {{ credentials?.officeName }} and assigned to you.</p>
-      </div>
-      <form [formGroup]="memberForm">
-        <div class="form-grid">
-          <mat-form-field
-            ><mat-label>First name</mat-label><input matInput formControlName="firstname" /></mat-form-field
-          ><mat-form-field><mat-label>Last name</mat-label><input matInput formControlName="lastname" /></mat-form-field
-          ><mat-form-field
-            ><mat-label>Phone number</mat-label
-            ><input matInput formControlName="mobileNo" placeholder="+256…" /></mat-form-field
-          ><mat-form-field
-            ><mat-label>National ID / external reference</mat-label
-            ><input matInput formControlName="externalId" /></mat-form-field
-          ><mat-form-field
-            ><mat-label>Date of birth</mat-label
-            ><input matInput [matDatepicker]="birthPicker" formControlName="dateOfBirth" /><mat-datepicker-toggle
-              matSuffix
-              [for]="birthPicker"
-            ></mat-datepicker-toggle
-            ><mat-datepicker #birthPicker></mat-datepicker></mat-form-field
-          ><mat-form-field
-            ><mat-label>Gender</mat-label
-            ><mat-select formControlName="genderId">
-              @for (gender of clientTemplate?.genderOptions || []; track gender.id) {
-                <mat-option [value]="gender.id">{{ gender.name }}</mat-option>
-              }
-            </mat-select></mat-form-field
-          ><mat-form-field class="full-width"
-            ><mat-label>Residential address</mat-label><input matInput formControlName="addressLine1" /></mat-form-field
-          ><mat-form-field
-            ><mat-label>Activation date</mat-label
-            ><input
-              matInput
-              [matDatepicker]="activationPicker"
-              formControlName="activationDate" /><mat-datepicker-toggle
-              matSuffix
-              [for]="activationPicker"
-            ></mat-datepicker-toggle
-            ><mat-datepicker #activationPicker></mat-datepicker></mat-form-field
-          ><mat-checkbox formControlName="active">Activate member immediately</mat-checkbox>
-        </div>
-        <div class="button-row">
-          <button mat-raised-button color="primary" type="button" (click)="createMember()" [disabled]="submitting">
-            {{ submitting ? 'Creating…' : 'Create member' }}
-          </button>
-        </div>
-      </form>
-    </section>
   }
 
   @if (activeView === 'groups') {

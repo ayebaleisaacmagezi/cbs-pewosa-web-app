@@ -53,7 +53,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
 
   credentials = this.authenticationService.getCredentials();
   activeView: LoanOfficerWorkspaceView = 'home';
-  clientTemplate: any = null;
   clients: any[] = [];
   selectedClient: any = null;
   selectedLoanApplicant: any = null;
@@ -77,41 +76,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
     Validators.required,
     Validators.minLength(2)
   ]);
-  memberForm = this.formBuilder.group({
-    firstname: [
-      '',
-      Validators.required
-    ],
-    lastname: [
-      '',
-      Validators.required
-    ],
-    mobileNo: [
-      '',
-      [
-        Validators.required,
-        Validators.pattern(/^\+?[0-9 ]{9,16}$/)
-      ]
-    ],
-    externalId: [
-      '',
-      Validators.required
-    ],
-    dateOfBirth: [
-      null as Date | null,
-      Validators.required
-    ],
-    genderId: [
-      null as number | null,
-      Validators.required
-    ],
-    addressLine1: [''],
-    active: [true],
-    activationDate: [
-      this.settingsService.businessDate,
-      Validators.required
-    ]
-  });
   groupForm = this.formBuilder.group({
     name: [
       '',
@@ -134,7 +98,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
           'home',
           'new-loan',
           'members',
-          'create-member',
           'groups',
           'applications'
         ].includes(view)) this.workspaceNavigation.setLoanOfficerView(view);
@@ -143,7 +106,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       this.setView(view);
       this.changeDetectorRef.markForCheck();
     });
-    this.loadTemplate();
     this.loadApplications();
     this.loadGroups();
   }
@@ -218,55 +180,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       });
   }
 
-  createMember(): void {
-    if (this.memberForm.invalid || this.submitting) {
-      this.memberForm.markAllAsTouched();
-      this.showMessage('Complete all required member details before saving.', 'error');
-      return;
-    }
-    this.submitting = true;
-    const values = this.memberForm.getRawValue();
-    const dateFormat = this.settingsService.dateFormat;
-    const submittedOnDate = this.dates.formatDate(this.settingsService.businessDate, dateFormat);
-    const payload: any = {
-      officeId: this.credentials?.officeId,
-      staffId: this.credentials?.staffId,
-      firstname: values.firstname?.trim(),
-      lastname: values.lastname?.trim(),
-      mobileNo: values.mobileNo?.replace(/\s/g, ''),
-      externalId: values.externalId?.trim(),
-      dateOfBirth: this.dates.formatDate(values.dateOfBirth, dateFormat),
-      genderId: values.genderId,
-      legalFormId: 1,
-      active: values.active,
-      activationDate: this.dates.formatDate(values.activationDate, dateFormat),
-      submittedOnDate,
-      dateFormat,
-      locale: this.settingsService.language.code
-    };
-    const addressTemplate = this.clientTemplate?.address?.[0];
-    const addressTypeId = addressTemplate?.addressTypeIdOptions?.[0]?.id;
-    if (values.addressLine1 && this.clientTemplate?.isAddressEnabled && addressTypeId) {
-      payload.address = [{ addressTypeId, addressLine1: values.addressLine1 }];
-    }
-
-    this.clientsService
-      .createClient(payload)
-      .pipe(finalize(() => (this.submitting = false)))
-      .subscribe({
-        next: (response: any) => {
-          this.memberForm.reset({ active: true, activationDate: this.settingsService.businessDate });
-          this.showMessage(`Member created successfully. Member reference: ${response.resourceId}`, 'success');
-          this.clientsService.getClientData(response.resourceId).subscribe((client: any) => {
-            this.activeView = 'members';
-            this.openMember(client);
-          });
-        },
-        error: () =>
-          this.showMessage('The member was not created. Check for duplicate phone or identification details.', 'error')
-      });
-  }
-
   searchGroupMembers(): void {
     if (this.groupMemberSearchControl.invalid) return;
     this.clientsService
@@ -332,12 +245,17 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   startLoan(clientId?: any): void {
     const id = clientId || this.selectedClient?.id;
     if (id)
-      this.router.navigate([
-        '/clients',
-        id,
-        'loans-accounts',
-        'create'
-      ]);
+      this.router.navigate(
+        [
+          '/clients',
+          id,
+          'loans-accounts',
+          'create'
+        ],
+        {
+          queryParams: { workspace: 'loan-officer' }
+        }
+      );
   }
 
   selectLoanApplicant(client: any): void {
@@ -355,13 +273,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       application.id,
       'general'
     ]);
-  }
-
-  private loadTemplate(): void {
-    this.clientsService.getClientTemplate().subscribe({
-      next: (template: any) => (this.clientTemplate = template),
-      error: () => this.showMessage('Member setup options could not be loaded.', 'error')
-    });
   }
 
   private loadApplications(): void {
