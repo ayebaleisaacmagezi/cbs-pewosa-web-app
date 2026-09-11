@@ -1,0 +1,147 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">{{ 'Compliance portal' | translate }}</span>
+      <h1>{{ 'CTR and suspicious transaction review' | translate }}</h1>
+      <p>{{ 'Review server-generated cases without changing the underlying financial transaction.' | translate }}</p>
+    </div>
+    <div class="hero-stat">
+      <span>{{ 'Open workload' | translate }}</span
+      ><strong>{{ cases.length }}</strong>
+      <small>{{ credentials?.officeName }}</small>
+    </div>
+  </header>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  <nav class="workspace-tabs" aria-label="Compliance case status">
+    @for (status of ['OPEN', 'IN_REVIEW', 'FILED', 'DISMISSED', 'ESCALATED']; track status) {
+      <button mat-button type="button" [class.active]="statusFilter === status" (click)="loadCases(status)">
+        {{ status }}
+      </button>
+    }
+  </nav>
+
+  <section class="compliance-grid">
+    <mat-card>
+      <mat-card-header
+        ><mat-card-title>{{ 'Compliance cases' | translate }}</mat-card-title></mat-card-header
+      >
+      <mat-card-content class="case-list">
+        @if (loading) {
+          <div class="empty-state">{{ 'Loading compliance cases' | translate }}…</div>
+        } @else {
+          @for (complianceCase of cases; track complianceCase.reference) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="case-row"
+              [class.selected]="selectedCase?.reference === complianceCase.reference"
+              (click)="selectCase(complianceCase)"
+            >
+              <span class="case-type">{{ complianceCase.caseType }}</span>
+              <span
+                ><strong>{{ complianceCase.reference }}</strong
+                ><small>{{ complianceCase.transactionReference }}</small></span
+              >
+              <strong>{{ complianceCase.currencyCode }} {{ complianceCase.amount || 0 | number }}</strong>
+            </button>
+          } @empty {
+            <div class="empty-state">{{ 'No cases were returned for this status.' | translate }}</div>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header
+        ><mat-card-title>{{ 'Case decision' | translate }}</mat-card-title></mat-card-header
+      >
+      <mat-card-content>
+        @if (selectedCase) {
+          <dl class="case-details">
+            <div>
+              <dt>{{ 'Reference' | translate }}</dt>
+              <dd>{{ selectedCase.reference }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'Type' | translate }}</dt>
+              <dd>{{ selectedCase.caseType }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'Status' | translate }}</dt>
+              <dd>{{ selectedCase.status }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'Transaction' | translate }}</dt>
+              <dd>{{ selectedCase.transactionReference }}</dd>
+            </div>
+          </dl>
+          @if (selectedCase.evidence) {
+            <h3>{{ 'System evidence' | translate }}</h3>
+            <pre>{{ selectedCase.evidence | json }}</pre>
+          }
+          <form [formGroup]="decisionForm">
+            <mat-form-field class="full-width" appearance="outline">
+              <mat-label>{{ 'Review note' | translate }}</mat-label>
+              <textarea matInput formControlName="note"></textarea>
+            </mat-form-field>
+          </form>
+          <div class="decision-actions">
+            <button mat-stroked-button type="button" [disabled]="submitting" (click)="updateCase('IN_REVIEW')">
+              {{ 'Move to review' | translate }}
+            </button>
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              [disabled]="submitting"
+              (click)="updateCase('FILED')"
+            >
+              {{ 'Mark required report filed' | translate }}
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="submitting"
+              (click)="updateCase('DISMISSED', 'FALSE_POSITIVE')"
+            >
+              {{ 'Dismiss as false positive' | translate }}
+            </button>
+            <button
+              mat-stroked-button
+              type="button"
+              [disabled]="submitting"
+              (click)="updateCase('DISMISSED', 'NO_REPORT_REQUIRED')"
+            >
+              {{ 'No report required' | translate }}
+            </button>
+            <button
+              mat-raised-button
+              color="warn"
+              type="button"
+              [disabled]="submitting"
+              (click)="updateCase('ESCALATED', 'ESCALATED')"
+            >
+              {{ 'Escalate case' | translate }}
+            </button>
+          </div>
+        } @else {
+          <div class="empty-state">{{ 'Select a compliance case to review its evidence.' | translate }}</div>
+        }
+      </mat-card-content>
+    </mat-card>
+  </section>
+</main>

@@ -63,6 +63,8 @@ export const environment = {
   displayTenantSelector: loadedEnv.displayTenantSelector || 'true',
   /** Production mode - when true, shows minimal hero with only branding at bottom */
   productionMode: loadedEnv.productionMode === 'true' || loadedEnv.productionMode === true || false,
+  productionDiagnosticsEnabled:
+    loadedEnv.productionDiagnosticsEnabled === 'true' || loadedEnv.productionDiagnosticsEnabled === true || false,
   tenantLogoUrl: loadedEnv.tenantLogoUrl || 'assets/images/kcps-logo.png',
   tenantLogoUrlDark: loadedEnv.tenantLogoUrlDark || 'assets/images/kcps-logo.png',
   documentationBaseUrl: loadedEnv.documentationBaseUrl || 'https://mifosforge.jira.com/wiki',

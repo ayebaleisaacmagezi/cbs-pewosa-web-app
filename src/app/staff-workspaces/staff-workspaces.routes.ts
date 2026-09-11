@@ -14,6 +14,18 @@ import { staffWorkspaceGuard } from './staff-workspace.guard';
 export const STAFF_WORKSPACE_ROUTES: Routes = [
   Route.withShell([
     {
+      path: 'cashier/onboarding',
+      loadComponent: () => import('./cashier-onboarding.component').then((m) => m.CashierOnboardingComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Cashier onboarding', workspaceRole: 'cashier' }
+    },
+    {
+      path: 'cashier/onboarding/:reference',
+      loadComponent: () => import('./cashier-onboarding.component').then((m) => m.CashierOnboardingComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Cashier onboarding', workspaceRole: 'cashier' }
+    },
+    {
       path: 'cashier',
       loadComponent: () => import('./cashier-workspace.component').then((m) => m.CashierWorkspaceComponent),
       canActivate: [staffWorkspaceGuard],
@@ -30,6 +42,18 @@ export const STAFF_WORKSPACE_ROUTES: Routes = [
       loadComponent: () => import('./loan-officer-workspace.component').then((m) => m.LoanOfficerWorkspaceComponent),
       canActivate: [staffWorkspaceGuard],
       data: { title: 'Loan Officer workspace', workspaceRole: 'loan officer' }
+    },
+    {
+      path: 'vault-officer',
+      loadComponent: () => import('./vault-officer-workspace.component').then((m) => m.VaultOfficerWorkspaceComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Vault Officer workspace', workspaceRole: 'vault officer' }
+    },
+    {
+      path: 'compliance-officer',
+      loadComponent: () => import('./compliance-workspace.component').then((m) => m.ComplianceWorkspaceComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Compliance Officer workspace', workspaceRole: 'compliance officer' }
     }
   ])
 ];

@@ -103,6 +103,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
     ];
     if (
       roleNames.includes('chief teller') ||
+      roleNames.includes('compliance officer') ||
       ((roleNames.includes('cashier') || roleNames.includes('loan officer')) &&
         !roleNames.some((role: string) => elevatedRoles.includes(role)))
     ) {

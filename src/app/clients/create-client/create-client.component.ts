@@ -180,6 +180,19 @@ export class CreateClientComponent {
     }
 
     this.clientsService.createClient(clientData).subscribe((response: any) => {
+      const onboardingReference = this.route.snapshot.queryParamMap.get('onboardingReference');
+      if (onboardingReference) {
+        this.router.navigate(
+          [
+            '/staff-workspaces/cashier/onboarding',
+            onboardingReference
+          ],
+          {
+            queryParams: { clientId: response.resourceId }
+          }
+        );
+        return;
+      }
       this.router.navigate(
         [
           '../',

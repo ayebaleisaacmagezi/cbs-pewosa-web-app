@@ -7,7 +7,7 @@
  */
 
 /** Angular Imports */
-import { NgModule, Optional, Injector, inject } from '@angular/core';
+import { ErrorHandler, NgModule, Optional, Injector, inject } from '@angular/core';
 import {
   HTTP_INTERCEPTORS,
   HttpClient,
@@ -35,6 +35,7 @@ import { ApiPrefixInterceptor } from './http/api-prefix.interceptor';
 import { ErrorHandlerInterceptor } from './http/error-handler.interceptor';
 import { CacheInterceptor } from './http/cache.interceptor';
 import { AuthenticationInterceptor } from './authentication/authentication.interceptor';
+import { ProductionErrorHandler } from './diagnostics/production-error-handler';
 
 /** Custom Strategies */
 import { RouteReusableStrategy } from './route/route-reusable-strategy';
@@ -70,6 +71,10 @@ import { ContentComponent } from './shell/content/content.component';
   ],
   providers: [
     AuthenticationService,
+    {
+      provide: ErrorHandler,
+      useClass: ProductionErrorHandler
+    },
     AuthenticationGuard,
     AuthenticationInterceptor,
     {

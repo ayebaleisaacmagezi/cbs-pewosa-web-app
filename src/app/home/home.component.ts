@@ -83,6 +83,9 @@ export class HomeComponent implements OnInit, AfterViewInit {
   isCashierWorkspace = false;
   /** Shows the focused workspace to dedicated Chief Teller users. */
   isChiefTellerWorkspace = false;
+  /** Shows the focused workspace to dedicated Vault Officer users. */
+  isVaultOfficerWorkspace = false;
+  isComplianceOfficerWorkspace = false;
   /** Activity Form. */
   activityForm: any;
   /** Search Text. */
@@ -114,6 +117,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.tenant = this.tenantIdentifier();
     this.isChiefTellerWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'chief teller');
+    this.isVaultOfficerWorkspace =
+      !this.isChiefTellerWorkspace && this.shouldShowFocusedWorkspace(credentials.roles, 'vault officer');
+    this.isComplianceOfficerWorkspace =
+      !this.isChiefTellerWorkspace && this.shouldShowFocusedWorkspace(credentials.roles, 'compliance officer');
     this.isCashierWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'cashier');
     this.isLoanOfficerWorkspace =
       !this.isChiefTellerWorkspace &&
@@ -121,6 +128,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.shouldShowFocusedWorkspace(credentials.roles, 'loan officer');
     if (this.isChiefTellerWorkspace) {
       this.router.navigate(['/staff-workspaces/chief-teller'], { replaceUrl: true });
+      return;
+    }
+    if (this.isVaultOfficerWorkspace) {
+      this.router.navigate(['/staff-workspaces/vault-officer'], { replaceUrl: true });
+      return;
+    }
+    if (this.isComplianceOfficerWorkspace) {
+      this.router.navigate(['/staff-workspaces/compliance-officer'], { replaceUrl: true });
       return;
     }
     if (this.isCashierWorkspace) {
@@ -203,7 +218,12 @@ export class HomeComponent implements OnInit, AfterViewInit {
    * To show popover.
    */
   ngAfterViewInit() {
-    if (this.isLoanOfficerWorkspace || this.isCashierWorkspace || this.isChiefTellerWorkspace) {
+    if (
+      this.isLoanOfficerWorkspace ||
+      this.isCashierWorkspace ||
+      this.isChiefTellerWorkspace ||
+      this.isComplianceOfficerWorkspace
+    ) {
       return;
     }
 

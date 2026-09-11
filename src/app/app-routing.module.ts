@@ -105,6 +105,10 @@ const routes: Routes = [
     component: CallbackComponent
   },
   {
+    path: 'diagnostics',
+    loadComponent: () => import('./diagnostics/diagnostics.component').then((m) => m.DiagnosticsComponent)
+  },
+  {
     path: '**',
     component: NotFoundComponent
   }

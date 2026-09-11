@@ -50,6 +50,7 @@ import {
   CashierWorkspaceView,
   ChiefTellerWorkspaceView,
   LoanOfficerWorkspaceView,
+  VaultWorkspaceView,
   WorkspaceNavigationService
 } from '../workspace-navigation.service';
 
@@ -106,7 +107,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   /** Whether remittance feature is enabled */
   mifosRemittanceEnabled = remittanceConfig.isRemittanceEnabled;
   /** Focused operational workspace for dedicated staff roles. */
-  workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | null = null;
+  workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | 'vault-officer' | 'compliance-officer' | null = null;
   /** Role-specific navigation links. */
   workspaceLinks: { label: string; view: string }[] = [];
   activeWorkspaceView = '';
@@ -162,6 +163,13 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         this.activeWorkspaceView = view;
         this.changeDetectorRef.markForCheck();
       });
+    } else if (this.workspaceRole === 'vault-officer') {
+      this.workspaceNavigation.vaultView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+        this.activeWorkspaceView = view;
+        this.changeDetectorRef.markForCheck();
+      });
+    } else if (this.workspaceRole === 'compliance-officer') {
+      this.activeWorkspaceView = 'cases';
     }
     this.setMappedAcitivites();
   }
@@ -186,8 +194,20 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceLinks = [
         { label: 'Cashier drawers', view: 'drawers' },
         { label: 'Allocate or recover', view: 'movement' },
+        { label: 'Approvals', view: 'approvals' },
+        { label: 'Reconciliation', view: 'reconciliation' },
         { label: 'Drawer records', view: 'records' }
       ];
+      return;
+    }
+    if (roleNames.includes('vault officer')) {
+      this.workspaceRole = 'vault-officer';
+      this.workspaceLinks = [{ label: 'Cash movement requests', view: 'requests' }];
+      return;
+    }
+    if (roleNames.includes('compliance officer')) {
+      this.workspaceRole = 'compliance-officer';
+      this.workspaceLinks = [{ label: 'Compliance cases', view: 'cases' }];
       return;
     }
     if (roleNames.some((role: string) => elevatedRoles.includes(role))) return;
@@ -198,6 +218,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: 'Cashier home', view: 'home' },
         { label: 'Member transactions', view: 'transactions' },
         { label: 'Teller drawer', view: 'drawer' },
+        { label: 'Transaction reversals', view: 'reversals' },
         { label: "Today's transactions", view: 'records' },
         { label: 'Receipts', view: 'receipts' }
       ];
@@ -221,6 +242,11 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceNavigation.setLoanOfficerView(view);
     } else if (this.workspaceRole === 'chief-teller' && this.isChiefTellerView(view)) {
       this.workspaceNavigation.setChiefTellerView(view);
+    } else if (this.workspaceRole === 'vault-officer' && this.isVaultView(view)) {
+      this.workspaceNavigation.setVaultView(view);
+    } else if (this.workspaceRole === 'compliance-officer' && view === 'cases') {
+      void this.router.navigate(['/staff-workspaces/compliance-officer']);
+      return;
     } else {
       return;
     }
@@ -241,7 +267,14 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   }
 
   private isCashierView(view: string | undefined): view is CashierWorkspaceView {
-    return view === 'home' || view === 'transactions' || view === 'drawer' || view === 'records' || view === 'receipts';
+    return (
+      view === 'home' ||
+      view === 'transactions' ||
+      view === 'drawer' ||
+      view === 'reversals' ||
+      view === 'records' ||
+      view === 'receipts'
+    );
   }
 
   private isLoanOfficerView(view: string | undefined): view is LoanOfficerWorkspaceView {
@@ -249,7 +282,17 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   }
 
   private isChiefTellerView(view: string | undefined): view is ChiefTellerWorkspaceView {
-    return view === 'drawers' || view === 'movement' || view === 'records';
+    return (
+      view === 'drawers' ||
+      view === 'movement' ||
+      view === 'approvals' ||
+      view === 'reconciliation' ||
+      view === 'records'
+    );
+  }
+
+  private isVaultView(view: string | undefined): view is VaultWorkspaceView {
+    return view === 'requests';
   }
 
   get staffInitials(): string {
@@ -263,7 +306,9 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   }
 
   get workspaceHomeView(): string {
-    return this.workspaceRole === 'chief-teller' ? 'drawers' : 'home';
+    if (this.workspaceRole === 'chief-teller') return 'drawers';
+    if (this.workspaceRole === 'vault-officer') return 'requests';
+    return 'home';
   }
 
   /**

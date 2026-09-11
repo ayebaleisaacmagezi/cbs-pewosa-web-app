@@ -151,12 +151,15 @@ describe('Staff workspace transaction regressions', () => {
     officer.selectLoanApplicant({ id: 12, displayName: 'Amina' });
     officer.startLoan(officer.selectedLoanApplicant.id);
     expect(officer.message).toBe('');
-    expect(navigate).toHaveBeenCalledWith([
-      '/clients',
-      12,
-      'loans-accounts',
-      'create'
-    ]);
+    expect(navigate).toHaveBeenCalledWith(
+      [
+        '/clients',
+        12,
+        'loans-accounts',
+        'create'
+      ],
+      { queryParams: { workspace: 'loan-officer' } }
+    );
   });
 
   it('rejects expired and future assignments, including date boundaries', () => {

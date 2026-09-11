@@ -141,8 +141,67 @@
   box-shadow: 0 6px 18px rgb(35 76 152 / 8%);
 }
 
+.reconciliation-panel {
+  display: grid;
+  gap: 24px;
+}
+
+.reconciliation-head,
+.count-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.reconciliation-head span,
+.reconciliation-head strong {
+  display: block;
+}
+
+.reconciliation-head span:first-child {
+  color: #66738d;
+}
+
+.status-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #244d9a;
+  background: #e9f0fd;
+  font-weight: 700;
+}
+
+.reconciliation-totals {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reconciliation-totals .summary-card {
+  min-height: auto;
+}
+
+.variance-warning {
+  color: #8a4b08;
+  background: #fff7e8;
+}
+
+.reconciliation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.count-row {
+  padding: 12px 0;
+  border-bottom: 1px solid #dbe3f0;
+}
+
 @media (max-width: 850px) {
   .drawer-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .reconciliation-grid,
+  .reconciliation-totals {
     grid-template-columns: 1fr;
   }
 }

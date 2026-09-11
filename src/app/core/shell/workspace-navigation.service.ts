@@ -9,19 +9,22 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type CashierWorkspaceView = 'home' | 'transactions' | 'drawer' | 'records' | 'receipts';
+export type CashierWorkspaceView = 'home' | 'transactions' | 'drawer' | 'reversals' | 'records' | 'receipts';
 export type LoanOfficerWorkspaceView = 'home' | 'new-loan' | 'members' | 'groups' | 'applications';
-export type ChiefTellerWorkspaceView = 'drawers' | 'movement' | 'records';
+export type ChiefTellerWorkspaceView = 'drawers' | 'movement' | 'approvals' | 'reconciliation' | 'records';
+export type VaultWorkspaceView = 'requests';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceNavigationService {
   private cashierViewSubject = new BehaviorSubject<CashierWorkspaceView>('transactions');
   private loanOfficerViewSubject = new BehaviorSubject<LoanOfficerWorkspaceView>('home');
   private chiefTellerViewSubject = new BehaviorSubject<ChiefTellerWorkspaceView>('drawers');
+  private vaultViewSubject = new BehaviorSubject<VaultWorkspaceView>('requests');
 
   readonly cashierView$ = this.cashierViewSubject.asObservable();
   readonly loanOfficerView$ = this.loanOfficerViewSubject.asObservable();
   readonly chiefTellerView$ = this.chiefTellerViewSubject.asObservable();
+  readonly vaultView$ = this.vaultViewSubject.asObservable();
 
   setCashierView(view: CashierWorkspaceView): void {
     if (this.cashierViewSubject.value !== view) this.cashierViewSubject.next(view);
@@ -33,5 +36,9 @@ export class WorkspaceNavigationService {
 
   setChiefTellerView(view: ChiefTellerWorkspaceView): void {
     if (this.chiefTellerViewSubject.value !== view) this.chiefTellerViewSubject.next(view);
+  }
+
+  setVaultView(view: VaultWorkspaceView): void {
+    if (this.vaultViewSubject.value !== view) this.vaultViewSubject.next(view);
   }
 }

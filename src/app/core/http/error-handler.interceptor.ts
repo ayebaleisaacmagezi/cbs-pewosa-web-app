@@ -8,7 +8,14 @@
 
 /** Angular Imports */
 import { Injectable, inject } from '@angular/core';
-import { HttpEvent, HttpInterceptor, HttpHandler, HttpRequest, HttpErrorResponse } from '@angular/common/http';
+import {
+  HttpContextToken,
+  HttpEvent,
+  HttpInterceptor,
+  HttpHandler,
+  HttpRequest,
+  HttpErrorResponse
+} from '@angular/common/http';
 
 /** rxjs Imports */
 import { Observable, throwError } from 'rxjs';
@@ -21,9 +28,12 @@ import { environment } from '../../../environments/environment';
 import { Logger } from '../logger/logger.service';
 import { AlertService } from '../alert/alert.service';
 import { TranslateService } from '@ngx-translate/core';
+import { DiagnosticsService } from '../diagnostics/diagnostics.service';
 
 /** Initialize Logger */
 const log = new Logger('ErrorHandlerInterceptor');
+
+export const SUPPRESS_HTTP_ERROR_ALERT = new HttpContextToken<boolean>(() => false);
 
 /**
  * Http Request interceptor to add a default error handler to requests.
@@ -32,13 +42,24 @@ const log = new Logger('ErrorHandlerInterceptor');
 export class ErrorHandlerInterceptor implements HttpInterceptor {
   private alertService = inject(AlertService);
   private translate = inject(TranslateService);
+  private diagnosticsService = inject(DiagnosticsService);
   private databaseErrorCodes: string[] = [
     'error.msg.data.integrity.issue.entity.duplicated',
     'error.msg.data.integrity.issue'
   ];
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    return next.handle(request).pipe(catchError((error) => this.handleError(error, request)));
+    const correlationId = request.headers.get('X-Correlation-ID') || this.diagnosticsService.newCorrelationId();
+    const tracedRequest = request.clone({ setHeaders: { 'X-Correlation-ID': correlationId } });
+    return next.handle(tracedRequest).pipe(
+      catchError((error) => {
+        if (error instanceof HttpErrorResponse) {
+          this.diagnosticsService.reportHttpFailure(tracedRequest, error, correlationId);
+        }
+        if (tracedRequest.context.get(SUPPRESS_HTTP_ERROR_ALERT)) return throwError(() => error);
+        return this.handleError(error, tracedRequest, correlationId);
+      })
+    );
   }
 
   /**
@@ -59,7 +80,11 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
     return error;
   }
 
-  private handleError(response: HttpErrorResponse, request: HttpRequest<any>): Observable<HttpEvent<any>> {
+  private handleError(
+    response: HttpErrorResponse,
+    request: HttpRequest<any>,
+    correlationId: string
+  ): Observable<HttpEvent<any>> {
     const status = response.status;
     const errorBody = this.parseErrorBody(response.error);
 
@@ -91,6 +116,7 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
         ? `${topLevelMessage} ${nestedMessage}`
         : nestedMessage
       : topLevelMessage;
+    errorMessage = `${errorMessage} (Reference: ${correlationId.slice(0, 8)})`;
     let parameterName: string | null = null;
     if (response.error.errors) {
       if (response.error.errors[0]) {

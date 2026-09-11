@@ -1,0 +1,219 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">{{ 'Cashier onboarding' | translate }}</span>
+      <h1>{{ 'Resumable member onboarding' | translate }}</h1>
+      <p>{{ 'Complete the required identity, beneficiary, payment, account, and enrolment steps.' | translate }}</p>
+    </div>
+    <div class="hero-stat">
+      <span>{{ 'Status' | translate }}</span
+      ><strong>{{ onboarding?.status || 'NOT STARTED' }}</strong>
+      <small>{{ onboarding?.reference || ('A server reference is created when you start.' | translate) }}</small>
+    </div>
+  </header>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  @if (!onboarding) {
+    <mat-card>
+      <mat-card-content>
+        <h2>{{ 'Start or validate a new member' | translate }}</h2>
+        <form [formGroup]="startForm" class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'National ID' | translate }}</mat-label>
+            <input matInput formControlName="nationalId" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'labels.inputs.Mobile No' | translate }}</mat-label>
+            <input matInput formControlName="mobileNo" />
+          </mat-form-field>
+          <button mat-raised-button color="primary" type="button" [disabled]="submitting" (click)="startOnboarding()">
+            {{ 'Check duplicates and start' | translate }}
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-stepper orientation="vertical">
+      <mat-step [completed]="!!onboarding.clientId">
+        <ng-template matStepLabel>{{ 'Member record' | translate }}</ng-template>
+        <p>
+          {{
+            'Use the existing Fineract client form to capture bio-data, address, occupation, employer, and income.'
+              | translate
+          }}
+        </p>
+        @if (onboarding.clientId) {
+          <div class="notice success">{{ 'Member created' | translate }} · {{ onboarding.clientId }}</div>
+        } @else {
+          <button mat-raised-button color="primary" type="button" (click)="openClientRegistration()">
+            {{ 'Capture member bio-data' | translate }}
+          </button>
+        }
+      </mat-step>
+
+      <mat-step>
+        <ng-template matStepLabel>{{ 'Biometrics and documents' | translate }}</ng-template>
+        <form [formGroup]="checklistForm" class="checklist-grid">
+          <mat-checkbox formControlName="bioDataCaptured">{{ 'Bio-data captured' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="photoCaptured">{{ 'Photo captured' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="signatureCaptured">{{ 'Signature captured' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="fingerprintCaptured">{{ 'Fingerprint captured' | translate }}</mat-checkbox>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Authorized unavailable reason' | translate }}</mat-label>
+            <textarea matInput formControlName="unavailableReason"></textarea>
+          </mat-form-field>
+        </form>
+      </mat-step>
+
+      <mat-step [completed]="beneficiaryTotal === 100">
+        <ng-template matStepLabel>{{ 'Beneficiaries' | translate }} · {{ beneficiaryTotal }}%</ng-template>
+        <div class="beneficiary-list">
+          @for (beneficiary of beneficiaries; track $index) {
+            @if (beneficiary.active !== false) {
+              <div>
+                <span
+                  ><strong>{{ beneficiary.fullName }}</strong
+                  ><small>{{ beneficiary.relationship }}</small></span
+                >
+                <span>{{ beneficiary.allocationPercentage }}%</span>
+                <button mat-icon-button type="button" (click)="deactivateBeneficiary($index)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            }
+          }
+        </div>
+        <form [formGroup]="beneficiaryForm" class="form-grid">
+          <mat-form-field appearance="outline"
+            ><mat-label>{{ 'Full name' | translate }}</mat-label
+            ><input matInput formControlName="fullName"
+          /></mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>{{ 'Relationship' | translate }}</mat-label
+            ><input matInput formControlName="relationship"
+          /></mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>{{ 'Mobile number' | translate }}</mat-label
+            ><input matInput formControlName="mobileNo"
+          /></mat-form-field>
+          <mat-form-field appearance="outline"
+            ><mat-label>{{ 'Allocation percentage' | translate }}</mat-label
+            ><input matInput type="number" formControlName="allocationPercentage"
+          /></mat-form-field>
+          <button mat-stroked-button type="button" (click)="addBeneficiary()">
+            <mat-icon>add</mat-icon>{{ 'Add beneficiary' | translate }}
+          </button>
+        </form>
+      </mat-step>
+
+      <mat-step>
+        <ng-template matStepLabel>{{ 'Payments and accounts' | translate }}</ng-template>
+        <form [formGroup]="checklistForm" class="checklist-grid">
+          <mat-checkbox formControlName="membershipFeePaid">{{
+            'Membership fee paid and receipted' | translate
+          }}</mat-checkbox>
+          <mat-checkbox formControlName="annualSubscriptionPaid">{{
+            'Annual subscription paid and receipted' | translate
+          }}</mat-checkbox>
+          <mat-checkbox formControlName="minimumSharesPurchased">{{
+            'Minimum shares purchased' | translate
+          }}</mat-checkbox>
+          <mat-checkbox formControlName="savingsAccountOpened">{{ 'Savings account opened' | translate }}</mat-checkbox>
+        </form>
+        <a
+          mat-raised-button
+          color="primary"
+          routerLink="/staff-workspaces/cashier"
+          [queryParams]="{ view: 'transactions' }"
+        >
+          {{ 'Open member transactions' | translate }}
+        </a>
+        <h3>{{ 'Financial references' | translate }}</h3>
+        <p>
+          {{ 'Record the posted transaction or account reference for every onboarding financial step.' | translate }}
+        </p>
+        <form [formGroup]="financialTrackingForm">
+          <div formArrayName="steps" class="financial-steps">
+            @for (step of financialStepsForm.controls; track $index) {
+              <section [formGroupName]="$index" class="financial-step-row">
+                <strong>{{ financialStepDefinitions[$index].label | translate }}</strong>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Status' | translate }}</mat-label>
+                  <mat-select formControlName="status">
+                    <mat-option value="PENDING">{{ 'Pending' | translate }}</mat-option>
+                    <mat-option value="POSTED">{{ 'Posted' | translate }}</mat-option>
+                    <mat-option value="WAIVED">{{ 'Waived' | translate }}</mat-option>
+                    <mat-option value="NOT_APPLICABLE">{{ 'Not applicable' | translate }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                @if (financialStepDefinitions[$index].stepType === 'SAVINGS_OPENING') {
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'Savings account ID' | translate }}</mat-label>
+                    <input matInput type="number" formControlName="coreEntityId" />
+                  </mat-form-field>
+                } @else {
+                  <mat-form-field appearance="outline">
+                    <mat-label>{{ 'Transaction reference' | translate }}</mat-label>
+                    <input matInput formControlName="transactionReference" />
+                  </mat-form-field>
+                }
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Amount' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="amount" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Currency code' | translate }}</mat-label>
+                  <input matInput formControlName="currencyCode" maxlength="3" />
+                </mat-form-field>
+              </section>
+            }
+          </div>
+        </form>
+      </mat-step>
+
+      <mat-step>
+        <ng-template matStepLabel>{{ 'Card, passbook and digital enrolment' | translate }}</ng-template>
+        <form [formGroup]="checklistForm" class="checklist-grid">
+          <mat-checkbox formControlName="memberCardIssued">{{ 'Member card issued' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="passbookIssued">{{
+            'Passbook issued with initial entries' | translate
+          }}</mat-checkbox>
+          <mat-checkbox formControlName="mobileBankingRegistered">{{
+            'Mobile banking registered' | translate
+          }}</mat-checkbox>
+          <mat-checkbox formControlName="smsAlertsRegistered">{{ 'SMS alerts registered' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="welcomePackPrinted">{{ 'Welcome pack printed' | translate }}</mat-checkbox>
+          <mat-checkbox formControlName="documentsFiled">{{ 'Documents filed' | translate }}</mat-checkbox>
+        </form>
+      </mat-step>
+    </mat-stepper>
+
+    <div class="button-row onboarding-actions">
+      <button mat-stroked-button type="button" [disabled]="submitting" (click)="save()">
+        {{ 'Save progress' | translate }}
+      </button>
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        [disabled]="submitting || onboarding.status === 'COMPLETED'"
+        (click)="complete()"
+      >
+        {{ 'Complete onboarding' | translate }}
+      </button>
+    </div>
+  }
+</main>

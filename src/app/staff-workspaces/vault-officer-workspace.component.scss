@@ -1,0 +1,54 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.movement-list {
+  display: grid;
+  gap: 8px;
+}
+
+.movement-list button {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.movement-list button.selected {
+  outline: 2px solid currentColor;
+}
+
+.movement-list strong,
+.movement-list small {
+  display: block;
+}
+
+.movement-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.movement-details dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.denominations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.denominations span {
+  padding: 8px;
+  border-radius: 8px;
+  background: #eef2f8;
+}

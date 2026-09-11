@@ -213,7 +213,7 @@ button {
 
 .transaction-types {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid #dbe3f0;
@@ -317,7 +317,7 @@ button {
   font-weight: 500;
   text-transform: uppercase;
 }
-.entry-card input {
+.entry-card > label input {
   width: 100%;
   padding: 11px;
   border: 1px solid #dbe3f0;
@@ -325,7 +325,7 @@ button {
   outline: 0;
   background: #fff;
 }
-.entry-card input:focus {
+.entry-card > label input:focus {
   border-color: #244d9a;
 }
 .entry-actions,
@@ -340,6 +340,102 @@ button {
   margin: -3px 0 0;
   color: #68758c;
   font-size: 12px;
+}
+.verification-card {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  background: #fff;
+}
+.verification-heading,
+.verification-options {
+  grid-column: 1 / -1;
+}
+
+.review-validation {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: #8c1d18;
+  background: #fceeee;
+  font-size: 13px;
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+  }
+}
+
+.field-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: #b3261e;
+  font-size: 12px;
+  font-weight: 500;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+.verification-error {
+  grid-column: 1 / -1;
+}
+.verification-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.verification-heading strong,
+.verification-heading small {
+  display: block;
+}
+.verification-heading small {
+  color: #68758c;
+}
+.verification-options {
+  display: grid;
+  gap: 8px;
+}
+
+.checkbox-error {
+  --mdc-checkbox-unselected-icon-color: #b3261e;
+  --mdc-checkbox-unselected-hover-icon-color: #b3261e;
+  --mdc-checkbox-unselected-focus-icon-color: #b3261e;
+
+  padding: 8px;
+  border-left: 3px solid #b3261e;
+  border-radius: 8px;
+  color: #8c1d18;
+  background: #fceeee;
+}
+.reconciliation-card {
+  margin-top: 16px;
+}
+.reconciliation-form,
+.denomination-list {
+  display: grid;
+  gap: 8px;
+}
+.denomination-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  align-items: center;
+  gap: 8px;
 }
 .primary-button,
 .secondary-button,
@@ -461,7 +557,8 @@ button {
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
-.quick-actions button {
+.quick-actions button,
+.quick-actions a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -473,12 +570,14 @@ button {
   text-align: left;
   font-size: 14px;
 }
-.quick-actions button:hover {
+.quick-actions button:hover,
+.quick-actions a:hover {
   border-color: #244d9a;
   color: #244d9a;
   background: #f6f8fd;
 }
-.quick-actions button .action-icon {
+.quick-actions button .action-icon,
+.quick-actions a .action-icon {
   display: grid;
   width: 36px;
   height: 36px;
@@ -573,6 +672,19 @@ th {
   .receipt-modal > div:last-child {
     display: none !important;
   }
+
+  .receipt-modal {
+    width: 100% !important;
+    box-shadow: none !important;
+  }
+
+  .receipt-copy {
+    display: block !important;
+    min-height: 45vh;
+    padding: 24px;
+    border-bottom: 1px dashed #555;
+    break-inside: avoid;
+  }
 }
 
 .receipt-overlay {
@@ -611,6 +723,28 @@ th {
 }
 .receipt-modal h2 {
   margin: 0;
+}
+.receipt-copy.office-copy {
+  display: none;
+}
+.signature-line {
+  margin-top: 36px;
+  padding-top: 8px;
+  border-top: 1px solid #8b95a7;
+}
+.receipt-allocation {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+.receipt-allocation div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.receipt-allocation dd {
+  margin: 0;
+  font-weight: 700;
 }
 .receipt-modal p {
   color: #68758c;
@@ -667,7 +801,9 @@ th {
   }
   .stat-grid,
   .quick-actions,
-  .entry-card {
+  .entry-card,
+  .verification-card,
+  .denomination-row {
     grid-template-columns: 1fr;
   }
   .transaction-types {

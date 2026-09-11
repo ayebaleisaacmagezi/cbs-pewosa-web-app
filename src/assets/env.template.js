@@ -48,6 +48,7 @@
 
   // Show minimal production hero on login page
   window['env']['productionMode'] = '$MIFOS_PRODUCTION_MODE';
+  window['env']['productionDiagnosticsEnabled'] = '$MIFOS_PRODUCTION_DIAGNOSTICS_ENABLED';
 
   // Display or not the Tenant Selector
   window['env']['displayTenantSelector'] = '$MIFOS_DISPLAY_TENANT_SELECTOR';

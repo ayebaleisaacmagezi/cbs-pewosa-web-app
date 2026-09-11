@@ -1,0 +1,83 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+:host {
+  display: block;
+  min-height: calc(100vh - 68px);
+  background: #f4f7fc;
+}
+
+.compliance-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(360px, 1.1fr);
+  gap: 24px;
+}
+
+.case-list,
+.case-details,
+.decision-actions {
+  display: grid;
+  gap: 16px;
+}
+
+.case-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  min-height: 64px;
+  text-align: left;
+}
+
+.case-row span strong,
+.case-row span small {
+  display: block;
+}
+
+.case-row.selected {
+  border-color: #2854a1;
+  background: #eef4ff;
+}
+
+.case-type {
+  padding: 8px;
+  border-radius: 8px;
+  color: #244d9a;
+  background: #e9f0fd;
+  font-weight: 700;
+}
+
+.case-details div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+}
+
+.case-details dt {
+  color: #66738d;
+}
+
+.case-details dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+pre {
+  overflow: auto;
+  padding: 16px;
+  border-radius: 12px;
+  background: #eef2f8;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 850px) {
+  .compliance-grid {
+    grid-template-columns: 1fr;
+  }
+}

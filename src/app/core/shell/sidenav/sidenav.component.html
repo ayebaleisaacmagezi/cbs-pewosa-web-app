@@ -12,7 +12,12 @@
     'sidebar-compact': sidenavCollapsed
   }"
 >
-  @if (workspaceRole === 'cashier' || workspaceRole === 'loan-officer' || workspaceRole === 'chief-teller') {
+  @if (
+    workspaceRole === 'cashier' ||
+    workspaceRole === 'loan-officer' ||
+    workspaceRole === 'chief-teller' ||
+    workspaceRole === 'vault-officer'
+  ) {
     <div class="cashier-side-panel">
       <div
         class="cashier-brand"
@@ -21,15 +26,17 @@
         (click)="openWorkspaceView(workspaceHomeView)"
         (keydown.enter)="openWorkspaceView(workspaceHomeView)"
       >
-        <img src="assets/images/kcps-logo.png" alt="CBS PEWOSA logo" />
+        <img src="assets/images/kcps-logo.png" alt="app-logo" />
         <div>
-          <strong>CBS PEWOSA</strong
+          <strong>{{ 'APP_NAME' | translate }}</strong
           ><small>{{
             workspaceRole === 'cashier'
               ? 'Cashier portal'
               : workspaceRole === 'chief-teller'
                 ? 'Chief Teller portal'
-                : 'Loan Officer portal'
+                : workspaceRole === 'vault-officer'
+                  ? 'Vault Officer portal'
+                  : 'Loan Officer portal'
           }}</small>
         </div>
       </div>
@@ -39,7 +46,9 @@
             ? 'Cashier operations'
             : workspaceRole === 'chief-teller'
               ? 'Cash control'
-              : 'Loan operations'
+              : workspaceRole === 'vault-officer'
+                ? 'Vault control'
+                : 'Loan operations'
         }}
       </div>
       <nav
@@ -49,7 +58,9 @@
             ? 'Cashier navigation'
             : workspaceRole === 'chief-teller'
               ? 'Chief Teller navigation'
-              : 'Loan Officer navigation'
+              : workspaceRole === 'vault-officer'
+                ? 'Vault Officer navigation'
+                : 'Loan Officer navigation'
         "
       >
         @for (link of workspaceLinks; track link.view) {
@@ -65,21 +76,31 @@
                   ? 'swap_horiz'
                   : link.view === 'drawer'
                     ? 'account_balance_wallet'
-                    : link.view === 'drawers'
-                      ? 'account_balance'
-                      : link.view === 'movement'
-                        ? 'currency_exchange'
-                        : link.view === 'records'
-                          ? 'history'
-                          : link.view === 'receipts'
-                            ? 'receipt'
-                            : link.view === 'members'
-                              ? 'group'
-                              : link.view === 'new-loan'
-                                ? 'note_add'
-                                : link.view === 'groups'
-                                  ? 'groups'
-                                  : 'description'
+                    : link.view === 'reversals'
+                      ? 'undo'
+                      : link.view === 'drawers'
+                        ? 'account_balance'
+                        : link.view === 'movement'
+                          ? 'currency_exchange'
+                          : link.view === 'approvals'
+                            ? 'approval'
+                            : link.view === 'reconciliation'
+                              ? 'fact_check'
+                              : link.view === 'requests'
+                                ? 'inventory_2'
+                                : link.view === 'cases'
+                                  ? 'policy'
+                                  : link.view === 'records'
+                                    ? 'history'
+                                    : link.view === 'receipts'
+                                      ? 'receipt'
+                                      : link.view === 'members'
+                                        ? 'group'
+                                        : link.view === 'new-loan'
+                                          ? 'note_add'
+                                          : link.view === 'groups'
+                                            ? 'groups'
+                                            : 'description'
             }}</mat-icon>
             <span>{{ link.label | translate }}</span>
           </button>
@@ -96,7 +117,11 @@
                   ? 'Cashier'
                   : workspaceRole === 'chief-teller'
                     ? 'Chief Teller'
-                    : 'Loan Officer'
+                    : workspaceRole === 'vault-officer'
+                      ? 'Vault Officer'
+                      : workspaceRole === 'compliance-officer'
+                        ? 'Compliance Officer'
+                        : 'Loan Officer'
               }}
               · {{ officeName }}</small
             ></span

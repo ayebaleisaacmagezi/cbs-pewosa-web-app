@@ -1,0 +1,234 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<main class="diagnostics-page">
+  <header class="diagnostics-header">
+    <div>
+      <span class="eyebrow">{{ 'Production support' | translate }}</span>
+      <h1>{{ 'System diagnostics' | translate }}</h1>
+      <p>{{ 'Review sanitized Angular and Fineract errors without exposing member data.' | translate }}</p>
+    </div>
+    @if (authenticated) {
+      <button mat-stroked-button type="button" (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        {{ 'End diagnostics session' | translate }}
+      </button>
+    }
+  </header>
+
+  @if (message) {
+    <div class="notice" role="alert">{{ message }}</div>
+  }
+
+  @if (!authenticated) {
+    <mat-card class="login-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'Owner access' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'Enter the dedicated diagnostics password.' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="login()">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Diagnostics password' | translate }}</mat-label>
+            <input matInput type="password" formControlName="password" autocomplete="current-password" />
+            @if (loginForm.controls.password.touched && loginForm.controls.password.invalid) {
+              <mat-error>{{ 'Password is required' | translate }}</mat-error>
+            }
+          </mat-form-field>
+          <button mat-flat-button type="submit" [disabled]="loginForm.invalid || loading">
+            {{ 'Open diagnostics' | translate }}
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="filters-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'Find diagnostic events' | translate }}</mat-card-title>
+        @if (expiresAt) {
+          <mat-card-subtitle>{{ 'Session expires' | translate }}: {{ expiresAt | date: 'medium' }}</mat-card-subtitle>
+        }
+      </mat-card-header>
+      <mat-card-content>
+        <form class="filters" [formGroup]="filtersForm" (ngSubmit)="search()">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Source' | translate }}</mat-label>
+            <mat-select formControlName="source">
+              <mat-option value="">{{ 'All sources' | translate }}</mat-option>
+              <mat-option value="ANGULAR">Angular</mat-option>
+              <mat-option value="FINERACT">Fineract</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Severity' | translate }}</mat-label>
+            <mat-select formControlName="severity">
+              <mat-option value="">{{ 'All severities' | translate }}</mat-option>
+              <mat-option value="ERROR">ERROR</mat-option>
+              <mat-option value="WARN">WARN</mat-option>
+              <mat-option value="INFO">INFO</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'HTTP status' | translate }}</mat-label>
+            <input matInput type="number" min="0" max="599" formControlName="httpStatus" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Endpoint contains' | translate }}</mat-label>
+            <input matInput formControlName="endpoint" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Correlation ID' | translate }}</mat-label>
+            <input matInput formControlName="correlationId" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Transaction reference' | translate }}</mat-label>
+            <input matInput formControlName="transactionReference" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'From' | translate }}</mat-label>
+            <input matInput type="datetime-local" formControlName="from" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'To' | translate }}</mat-label>
+            <input matInput type="datetime-local" formControlName="to" />
+          </mat-form-field>
+          <div class="filter-actions">
+            <button mat-flat-button type="submit" [disabled]="loading">{{ 'Search logs' | translate }}</button>
+            <button mat-button type="button" [disabled]="loading" (click)="clearFilters()">
+              {{ 'Clear filters' | translate }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <section class="results-layout">
+      <mat-card class="events-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'Diagnostic events' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ total }} {{ 'results' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          @if (loading) {
+            <div class="loading-state"><mat-spinner diameter="32"></mat-spinner></div>
+          }
+          <div class="table-wrap">
+            <table mat-table [dataSource]="events">
+              <ng-container matColumnDef="timestamp">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Time' | translate }}</th>
+                <td mat-cell *matCellDef="let event">{{ event.timestamp | date: 'short' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="source">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Source' | translate }}</th>
+                <td mat-cell *matCellDef="let event">{{ event.source }}</td>
+              </ng-container>
+              <ng-container matColumnDef="severity">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Severity' | translate }}</th>
+                <td mat-cell *matCellDef="let event">
+                  <span class="severity" [class.error]="event.severity === 'ERROR'">{{ event.severity }}</span>
+                </td>
+              </ng-container>
+              <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Status' | translate }}</th>
+                <td mat-cell *matCellDef="let event">{{ event.httpStatus || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="endpoint">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Endpoint' | translate }}</th>
+                <td mat-cell *matCellDef="let event">{{ event.endpoint || '—' }}</td>
+              </ng-container>
+              <ng-container matColumnDef="correlationId">
+                <th mat-header-cell *matHeaderCellDef>{{ 'Correlation ID' | translate }}</th>
+                <td mat-cell *matCellDef="let event">
+                  <code>{{ event.correlationId || '—' }}</code>
+                </td>
+              </ng-container>
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns"
+                tabindex="0"
+                [class.selected]="selectedEvent?.eventId === row.eventId"
+                (click)="selectEvent(row)"
+                (keydown.enter)="selectEvent(row)"
+              ></tr>
+            </table>
+            @if (!loading && events.length === 0) {
+              <div class="empty-state">{{ 'No diagnostic events match these filters.' | translate }}</div>
+            }
+          </div>
+          <div class="pagination">
+            <span>{{ 'Page' | translate }} {{ page + 1 }}</span>
+            <div>
+              <button mat-button type="button" [disabled]="page === 0 || loading" (click)="previousPage()">
+                {{ 'Previous' | translate }}
+              </button>
+              <button
+                mat-button
+                type="button"
+                [disabled]="(page + 1) * pageSize >= total || loading"
+                (click)="nextPage()"
+              >
+                {{ 'Next' | translate }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="detail-card">
+        <mat-card-header
+          ><mat-card-title>{{ 'Event details' | translate }}</mat-card-title></mat-card-header
+        >
+        <mat-card-content>
+          @if (selectedEvent) {
+            <dl>
+              <div>
+                <dt>{{ 'Event ID' | translate }}</dt>
+                <dd>
+                  <code>{{ selectedEvent.eventId }}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'Message' | translate }}</dt>
+                <dd>{{ selectedEvent.message }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'HTTP request' | translate }}</dt>
+                <dd>{{ selectedEvent.httpMethod || '—' }} {{ selectedEvent.endpoint || '—' }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'HTTP status' | translate }}</dt>
+                <dd>{{ selectedEvent.httpStatus ?? '—' }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'Transaction reference' | translate }}</dt>
+                <dd>{{ selectedEvent.transactionReference || '—' }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'Correlation ID' | translate }}</dt>
+                <dd>
+                  <code>{{ selectedEvent.correlationId || '—' }}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'Error code' | translate }}</dt>
+                <dd>{{ selectedEvent.details?.errorCode || '—' }}</dd>
+              </div>
+              <div>
+                <dt>{{ 'Application version' | translate }}</dt>
+                <dd>{{ selectedEvent.applicationVersion || '—' }}</dd>
+              </div>
+            </dl>
+          } @else {
+            <div class="empty-state">{{ 'Select an event to inspect its sanitized details.' | translate }}</div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </section>
+  }
+</main>

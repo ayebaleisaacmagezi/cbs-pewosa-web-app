@@ -171,7 +171,8 @@
             <div class="product-card">
               <span>Savings</span><strong>{{ accounts.savingsAccounts?.length || 0 }}</strong
               ><small
-                >UGX {{ accounts.savingsAccounts?.[0]?.accountBalance || 0 | number }} shown on first account</small
+                >{{ currencyCodeFor(accounts.savingsAccounts?.[0]) }}
+                {{ accounts.savingsAccounts?.[0]?.accountBalance || 0 | number }} shown on first account</small
               >
             </div>
             <div class="product-card">
@@ -288,7 +289,8 @@
           <div>
             <strong>{{ application.clientName || application.groupName || application.accountNo }}</strong
             ><small
-              >{{ application.loanProductName }} · {{ application.status?.value }} · UGX
+              >{{ application.loanProductName }} · {{ application.status?.value }} ·
+              {{ currencyCodeFor(application) }}
               {{ application.principal || application.approvedPrincipal | number }}</small
             >
           </div>

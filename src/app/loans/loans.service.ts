@@ -41,6 +41,17 @@ export class LoansService {
       .set('sortOrder', 'DESC');
     return this.http.get('/loans', { params: httpParams });
   }
+
+  /** Returns loans in a server-defined lifecycle status, subject to the authenticated user's office scope. */
+  getLoansByStatus(status: number, offset: number = 0, limit: number = 100): Observable<any> {
+    const httpParams = new HttpParams()
+      .set('status', status.toString())
+      .set('offset', offset.toString())
+      .set('limit', limit.toString())
+      .set('orderBy', 'submittedOnDate')
+      .set('sortOrder', 'ASC');
+    return this.http.get('/loans', { params: httpParams });
+  }
   private settingsService = inject(SettingsService);
   private dateUtils = inject(Dates);
 

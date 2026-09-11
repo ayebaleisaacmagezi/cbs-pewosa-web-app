@@ -6,7 +6,7 @@
       <p>Allocate, recover and reconcile cash without opening the technical administration screens.</p>
     </div>
     <div class="hero-stat">
-      <span>Selected cashier cash</span><strong>UGX {{ cashierSummary?.netCash || 0 | number }}</strong
+      <span>Selected cashier cash</span><strong>{{ currencyCode }} {{ cashierSummary?.netCash || 0 | number }}</strong
       ><small>{{ selectedCashier?.staffName || selectedCashier?.cashierName || 'Choose a cashier' }}</small>
     </div>
   </header>
@@ -16,6 +16,10 @@
     <button mat-button [class.active]="activeView === 'movement'" (click)="setView('movement')">
       Allocate or recover
     </button>
+    <button mat-button [class.active]="activeView === 'approvals'" (click)="setView('approvals')">Approvals</button>
+    <button mat-button [class.active]="activeView === 'reconciliation'" (click)="setView('reconciliation')">
+      Reconciliation
+    </button>
     <button mat-button [class.active]="activeView === 'records'" (click)="setView('records')">Drawer records</button>
   </nav>
 
@@ -23,6 +27,186 @@
     <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
       {{ message }}
     </div>
+  }
+
+  @if (activeView === 'approvals') {
+    <section class="section-title">
+      <h2>{{ 'Pending approvals' | translate }}</h2>
+      <p>{{ 'Requests are evaluated using the active rules for this tenant and office.' | translate }}</p>
+    </section>
+    <section class="panel records-list">
+      <mat-form-field class="full-width" appearance="outline">
+        <mat-label>{{ 'Decision note' | translate }}</mat-label>
+        <textarea matInput [formControl]="approvalNoteControl"></textarea>
+      </mat-form-field>
+      @for (approval of approvals; track approval.id) {
+        <div class="record-row">
+          <div>
+            <strong>{{
+              approval.workflowType === 'SHARE_PURCHASE'
+                ? ('Share purchase' | translate)
+                : approval.operationType || 'Teller transaction'
+            }}</strong>
+            <small>{{ approval.reference }} · {{ approval.requiredRole || 'Authorized approver' }}</small>
+            @if (approval.workflowStatus) {
+              <small>{{ 'Workflow status' | translate }}: {{ approval.workflowStatus }}</small>
+            }
+          </div>
+          <div>
+            <strong>{{ approval.currencyCode }} {{ approval.amount | number }}</strong>
+            <div class="button-row">
+              <button mat-button type="button" [disabled]="submitting" (click)="decideApproval(approval, 'REJECT')">
+                {{ 'labels.buttons.Reject' | translate }}
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="submitting"
+                (click)="decideApproval(approval, 'APPROVE')"
+              >
+                {{ 'labels.buttons.Approve' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="empty-state">{{ 'No pending approvals were returned.' | translate }}</div>
+      }
+    </section>
+    <section class="section-title">
+      <h2>{{ 'Reversal authorization' | translate }}</h2>
+      <p>
+        {{
+          'Retrieve the teller request, review its reason, and authorize the opposite product and drawer entries.'
+            | translate
+        }}
+      </p>
+    </section>
+    <section class="panel records-list">
+      <mat-form-field class="full-width" appearance="outline">
+        <mat-label>{{ 'Reversal request reference' | translate }}</mat-label>
+        <input matInput [formControl]="reversalReferenceControl" />
+      </mat-form-field>
+      <button mat-stroked-button type="button" [disabled]="submitting" (click)="findReversal()">
+        {{ 'Load reversal request' | translate }}
+      </button>
+      @if (reversal) {
+        <div class="record-row">
+          <div>
+            <strong>{{ reversal.reference }}</strong>
+            <small>{{ 'Original transaction' | translate }}: {{ reversal.originalReference }}</small>
+            <small>{{ reversal.reason }}</small>
+          </div>
+          <strong>{{ reversal.status }}</strong>
+        </div>
+        @if (reversal.status === 'PENDING_APPROVAL' || reversal.status === 'APPROVED') {
+          <mat-form-field class="full-width" appearance="outline">
+            <mat-label>{{ 'Reversal decision note' | translate }}</mat-label>
+            <textarea matInput [formControl]="reversalDecisionNoteControl"></textarea>
+          </mat-form-field>
+          <div class="button-row">
+            @if (reversal.status === 'PENDING_APPROVAL') {
+              <button mat-button type="button" [disabled]="submitting" (click)="decideReversal('REJECT')">
+                {{ 'labels.buttons.Reject' | translate }}
+              </button>
+            }
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              [disabled]="submitting"
+              (click)="decideReversal('APPROVE')"
+            >
+              {{
+                (reversal.status === 'APPROVED' ? 'Complete approved reversal' : 'Approve and complete reversal')
+                  | translate
+              }}
+            </button>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (activeView === 'reconciliation') {
+    <section class="section-title">
+      <h2>{{ 'End-of-day reconciliation' | translate }}</h2>
+      <p>{{ 'Review the submitted cash count, variance evidence, and system totals before approval.' | translate }}</p>
+    </section>
+    @if (selectedShift) {
+      <section class="panel reconciliation-panel">
+        <div class="reconciliation-head">
+          <div>
+            <span>{{ 'Shift reference' | translate }}</span>
+            <strong>{{ selectedShift.reference }}</strong>
+          </div>
+          <span class="status-badge">{{ selectedShift.status }}</span>
+        </div>
+        <div class="summary-grid reconciliation-totals">
+          <div class="summary-card">
+            <span>{{ 'System expected cash' | translate }}</span>
+            <strong>{{ selectedShift.currencyCode }} {{ selectedShift.expectedCash || 0 | number }}</strong>
+          </div>
+          <div class="summary-card">
+            <span>{{ 'Physical cash counted' | translate }}</span>
+            <strong>{{ selectedShift.currencyCode }} {{ selectedShift.physicalCash || 0 | number }}</strong>
+          </div>
+          <div class="summary-card" [class.variance-warning]="selectedShift.variance">
+            <span>{{ selectedShift.varianceType || ('Variance' | translate) }}</span>
+            <strong>{{ selectedShift.currencyCode }} {{ selectedShift.variance || 0 | number }}</strong>
+          </div>
+        </div>
+        <div class="reconciliation-grid">
+          <div>
+            <h3>{{ 'Denomination count' | translate }}</h3>
+            @for (line of selectedShift.denominations || []; track line.denomination) {
+              <div class="count-row">
+                <span>{{ selectedShift.currencyCode }} {{ line.denomination | number }} × {{ line.quantity }}</span>
+                <strong>{{ selectedShift.currencyCode }} {{ line.denomination * line.quantity | number }}</strong>
+              </div>
+            } @empty {
+              <div class="empty-state">{{ 'No denomination count was submitted.' | translate }}</div>
+            }
+          </div>
+          <div>
+            <h3>{{ 'Control evidence' | translate }}</h3>
+            <div class="notice" [class.error]="selectedShift.variance && !selectedShift.explanation">
+              <strong>{{ 'Variance explanation' | translate }}</strong>
+              <p>{{ selectedShift.explanation || ('No variance explanation was required.' | translate) }}</p>
+            </div>
+            @if (shiftReports) {
+              <div class="notice success">
+                {{
+                  'Shift transaction, cash summary, and audit reports are available for this reconciliation.'
+                    | translate
+                }}
+              </div>
+            }
+          </div>
+        </div>
+        <div class="button-row">
+          <button mat-button type="button" [disabled]="loading" (click)="loadSelectedShift()">
+            {{ 'labels.buttons.Refresh' | translate }}
+          </button>
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            [disabled]="submitting || selectedShift.status !== 'PENDING_APPROVAL'"
+            (click)="approveReconciliation()"
+          >
+            {{ 'Approve reconciliation and return cash' | translate }}
+          </button>
+        </div>
+      </section>
+    } @else {
+      <section class="panel">
+        <div class="empty-state">
+          {{ 'The selected cashier has no active or submitted shift for this currency.' | translate }}
+        </div>
+      </section>
+    }
   }
 
   @if (loading) {
@@ -76,19 +260,19 @@
     <div class="summary-grid">
       <div class="summary-card">
         <span class="summary-icon allocation"><mat-icon>south_west</mat-icon></span>
-        <span>Allocated</span><strong>UGX {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
+        <span>Allocated</span><strong>{{ currencyCode }} {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon cash-in"><mat-icon>arrow_downward</mat-icon></span>
-        <span>Cash in</span><strong>UGX {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
+        <span>Cash in</span><strong>{{ currencyCode }} {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon cash-out"><mat-icon>arrow_upward</mat-icon></span>
-        <span>Cash out</span><strong>UGX {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
+        <span>Cash out</span><strong>{{ currencyCode }} {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon settlement"><mat-icon>north_east</mat-icon></span>
-        <span>Settled</span><strong>UGX {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
+        <span>Settled</span><strong>{{ currencyCode }} {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
       </div>
     </div>
     <div class="button-row">
@@ -113,7 +297,7 @@
         </div>
         <form [formGroup]="movementForm">
           <mat-form-field class="full-width"
-            ><mat-label>Amount (UGX)</mat-label
+            ><mat-label>{{ 'labels.inputs.Amount' | translate }} ({{ currencyCode }})</mat-label
             ><input matInput type="number" formControlName="txnAmount" /></mat-form-field
           ><mat-form-field class="full-width"
             ><mat-label>Reason</mat-label><input matInput formControlName="txnNote"
@@ -125,7 +309,7 @@
         @if (pendingMovement) {
           <div class="confirmation">
             <strong>Confirm {{ pendingMovement.action }}</strong>
-            <p>{{ pendingMovement.cashier }} · UGX {{ pendingMovement.amount | number }}</p>
+            <p>{{ pendingMovement.cashier }} · {{ currencyCode }} {{ pendingMovement.amount | number }}</p>
             <p>{{ pendingMovement.note }}</p>
             <div class="button-row">
               <button mat-button (click)="cancelMovement()">Go back</button
@@ -145,7 +329,8 @@
           <p>Verify the physical cash before confirming.</p>
         </div>
         <div class="summary-card">
-          <span>Expected cashier cash</span><strong>UGX {{ cashierSummary?.netCash || 0 | number }}</strong>
+          <span>Expected cashier cash</span
+          ><strong>{{ currencyCode }} {{ cashierSummary?.netCash || 0 | number }}</strong>
         </div>
         <div class="notice">
           Allocation increases the cashier drawer. Recovery reduces it and records the settlement.
@@ -168,7 +353,7 @@
               >{{ record.txnDate || record.transactionDate }} · {{ record.txnNote || record.note || 'No note' }}</small
             >
           </div>
-          <div>UGX {{ record.amount || record.txnAmount || 0 | number }}</div>
+          <div>{{ currencyCodeFor(record) }} {{ record.amount || record.txnAmount || 0 | number }}</div>
         </div>
       } @empty {
         <div class="empty-state">No drawer records were returned.</div>

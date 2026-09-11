@@ -22,6 +22,7 @@ import { LoansService } from 'app/loans/loans.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { MemberSearchComponent } from './member-search/member-search.component';
+import { resolveTellerCurrencyCode } from './teller-api.models';
 
 @Component({
   selector: 'mifosx-loan-officer-workspace',
@@ -67,6 +68,10 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   message = '';
   messageType: 'error' | 'success' | '' = '';
   private memberRequestId = 0;
+
+  currencyCodeFor(source: unknown): string {
+    return resolveTellerCurrencyCode([source]);
+  }
 
   memberSearchControl = this.formBuilder.control('', [
     Validators.required,

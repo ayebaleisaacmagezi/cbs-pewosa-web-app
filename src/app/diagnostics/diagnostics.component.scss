@@ -1,0 +1,190 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--md-sys-color-surface-container-low, #f4f6fa);
+  color: var(--md-sys-color-on-surface, #1a1c1e);
+}
+
+.diagnostics-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.diagnostics-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 8px 0;
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  p {
+    max-width: 720px;
+    margin: 0;
+    color: var(--md-sys-color-on-surface-variant, #44474e);
+  }
+}
+
+.eyebrow {
+  color: var(--md-sys-color-primary, #1074b9);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notice {
+  margin-bottom: 24px;
+  padding: 16px;
+  border: 1px solid var(--md-sys-color-error, #ba1a1a);
+  border-radius: 8px;
+  background: var(--md-sys-color-error-container, #ffdad6);
+  color: var(--md-sys-color-on-error-container, #410002);
+}
+
+.login-card {
+  max-width: 480px;
+  margin: 64px auto;
+
+  form {
+    display: grid;
+    gap: 16px;
+    padding-top: 24px;
+  }
+}
+
+.filters-card {
+  margin-bottom: 24px;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 24px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.results-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  gap: 24px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+tr[mat-row] {
+  cursor: pointer;
+
+  &:hover,
+  &.selected {
+    background: var(--md-sys-color-secondary-container, #d7e3f8);
+  }
+}
+
+.severity {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container-high, #e8e8eb);
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  &.error {
+    background: var(--md-sys-color-error-container, #ffdad6);
+    color: var(--md-sys-color-on-error-container, #410002);
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant, #44474e);
+  text-align: center;
+}
+
+.detail-card dl {
+  display: grid;
+  gap: 16px;
+  margin: 24px 0 0;
+
+  div {
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--md-sys-color-outline-variant, #c4c7c5);
+  }
+
+  dt {
+    margin-bottom: 4px;
+    color: var(--md-sys-color-on-surface-variant, #44474e);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  dd {
+    overflow-wrap: anywhere;
+    margin: 0;
+  }
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+@media (max-width: 960px) {
+  .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .results-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .diagnostics-page {
+    padding: 16px;
+  }
+
+  .diagnostics-header {
+    flex-direction: column;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

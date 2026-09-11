@@ -1,0 +1,97 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<main class="staff-workspace">
+  <header class="workspace-hero">
+    <div>
+      <span class="eyebrow">{{ 'Vault Officer portal' | translate }}</span>
+      <h1>{{ 'Dual-control cash verification' | translate }}</h1>
+      <p>
+        {{ credentials?.officeName }} · {{ 'Every movement requires two different authorized officers.' | translate }}
+      </p>
+    </div>
+    <div class="hero-stat">
+      <span>{{ 'Pending requests' | translate }}</span
+      ><strong>{{ movements.length }}</strong>
+      <small>{{ 'Office-scoped queue' | translate }}</small>
+    </div>
+  </header>
+
+  @if (message) {
+    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
+      {{ message }}
+    </div>
+  }
+
+  <section class="workspace-grid">
+    <article class="panel">
+      <div class="section-title">
+        <h2>{{ 'Cash movement requests' | translate }}</h2>
+        <p>{{ 'Select a request and independently verify its physical cash.' | translate }}</p>
+      </div>
+      @if (loading) {
+        <div class="notice"><mat-icon>sync</mat-icon>{{ 'Loading requests' | translate }}</div>
+      }
+      <div class="movement-list">
+        @for (movement of movements; track movement.reference) {
+          <button
+            mat-stroked-button
+            type="button"
+            [class.selected]="selectedMovement?.reference === movement.reference"
+            (click)="selectMovement(movement)"
+          >
+            <span
+              ><strong>{{ movement.movementType }}</strong
+              ><small>{{ movement.reference }}</small></span
+            >
+            <span>{{ movement.currencyCode }} {{ movement.amount | number }}</span>
+          </button>
+        } @empty {
+          <div class="empty-state">{{ 'No pending cash movements were returned.' | translate }}</div>
+        }
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="section-title">
+        <h2>{{ 'Independent cash count' | translate }}</h2>
+        <p>{{ 'Count the cash yourself before recording verification.' | translate }}</p>
+      </div>
+      @if (selectedMovement) {
+        <dl class="movement-details">
+          <div>
+            <dt>{{ 'Cashier' | translate }}</dt>
+            <dd>{{ selectedMovement.cashierId }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'Direction' | translate }}</dt>
+            <dd>{{ selectedMovement.movementType }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'Expected amount' | translate }}</dt>
+            <dd>{{ selectedMovement.currencyCode }} {{ selectedMovement.amount | number }}</dd>
+          </div>
+        </dl>
+        <div class="denominations">
+          @for (line of selectedMovement.denominations; track $index) {
+            <span>{{ line.denomination | number }} × {{ line.quantity | number }}</span>
+          }
+        </div>
+        <mat-form-field class="full-width" appearance="outline">
+          <mat-label>{{ 'Verification note' | translate }}</mat-label>
+          <textarea matInput [formControl]="noteControl"></textarea>
+        </mat-form-field>
+        <button mat-raised-button color="primary" type="button" [disabled]="submitting" (click)="verifyMovement()">
+          {{ 'Record my verification' | translate }}
+        </button>
+      } @else {
+        <div class="empty-state">{{ 'Select a cash movement request.' | translate }}</div>
+      }
+    </article>
+  </section>
+</main>

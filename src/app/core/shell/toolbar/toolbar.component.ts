@@ -114,6 +114,8 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
   cashierWorkspace = false;
   loanOfficerWorkspace = false;
   chiefTellerWorkspace = false;
+  vaultOfficerWorkspace = false;
+  complianceOfficerWorkspace = false;
   cashierName = '';
   cashierOffice = '';
 
@@ -136,11 +138,23 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
       'accountant',
       'it officer'
     ];
-    this.cashierWorkspace =
-      roleNames.includes('cashier') && !roleNames.some((role: string) => elevatedRoles.includes(role));
-    this.loanOfficerWorkspace =
-      roleNames.includes('loan officer') && !roleNames.some((role: string) => elevatedRoles.includes(role));
     this.chiefTellerWorkspace = roleNames.includes('chief teller');
+    this.vaultOfficerWorkspace = !this.chiefTellerWorkspace && roleNames.includes('vault officer');
+    this.complianceOfficerWorkspace =
+      !this.chiefTellerWorkspace && !this.vaultOfficerWorkspace && roleNames.includes('compliance officer');
+    this.cashierWorkspace =
+      !this.chiefTellerWorkspace &&
+      !this.vaultOfficerWorkspace &&
+      !this.complianceOfficerWorkspace &&
+      roleNames.includes('cashier') &&
+      !roleNames.some((role: string) => elevatedRoles.includes(role));
+    this.loanOfficerWorkspace =
+      !this.chiefTellerWorkspace &&
+      !this.vaultOfficerWorkspace &&
+      !this.complianceOfficerWorkspace &&
+      !this.cashierWorkspace &&
+      roleNames.includes('loan officer') &&
+      !roleNames.some((role: string) => elevatedRoles.includes(role));
     this.cashierName = credentials?.staffDisplayName || credentials?.username || 'Cashier';
     this.cashierOffice = credentials?.officeName || '';
     this.isHandset$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((isHandset) => {
@@ -148,6 +162,40 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
         this.toggleSidenavCollapse(false);
       }
     });
+  }
+
+  get focusedWorkspace(): boolean {
+    return (
+      this.cashierWorkspace ||
+      this.loanOfficerWorkspace ||
+      this.chiefTellerWorkspace ||
+      this.vaultOfficerWorkspace ||
+      this.complianceOfficerWorkspace
+    );
+  }
+
+  get workspaceTitle(): string {
+    if (this.cashierWorkspace) return 'Cashier';
+    if (this.chiefTellerWorkspace) return 'Chief Teller';
+    if (this.vaultOfficerWorkspace) return 'Vault Officer';
+    if (this.complianceOfficerWorkspace) return 'Compliance Officer';
+    return 'Loan Officer';
+  }
+
+  get workspaceIcon(): string {
+    if (this.cashierWorkspace) return 'point_of_sale';
+    if (this.chiefTellerWorkspace) return 'account_balance';
+    if (this.vaultOfficerWorkspace) return 'inventory_2';
+    if (this.complianceOfficerWorkspace) return 'policy';
+    return 'request_quote';
+  }
+
+  get workspaceSubtitle(): string {
+    if (this.cashierWorkspace) return 'Serve members and manage your teller drawer';
+    if (this.chiefTellerWorkspace) return 'Control cashier drawers, allocations and recoveries';
+    if (this.vaultOfficerWorkspace) return 'Verify controlled vault cash movements';
+    if (this.complianceOfficerWorkspace) return 'Review CTR and suspicious transaction cases';
+    return 'Manage members, groups and loan applications';
   }
 
   ngAfterContentChecked(): void {

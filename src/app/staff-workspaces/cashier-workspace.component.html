@@ -16,15 +16,15 @@
       </div>
       <div class="stat-grid">
         <article class="stat-card">
-          <span>Available drawer cash</span><strong>UGX {{ availableCash | number }}</strong
+          <span>Available drawer cash</span><strong>{{ currencyCode }} {{ availableCash | number }}</strong
           ><small>Current system balance</small>
         </article>
         <article class="stat-card">
-          <span>Cash received</span><strong>UGX {{ drawer?.sumInwardCash || 0 | number }}</strong
+          <span>Cash received</span><strong>{{ currencyCode }} {{ drawer?.sumInwardCash || 0 | number }}</strong
           ><small>Recorded by Fineract</small>
         </article>
         <article class="stat-card">
-          <span>Cash paid out</span><strong>UGX {{ drawer?.sumOutwardCash || 0 | number }}</strong
+          <span>Cash paid out</span><strong>{{ currencyCode }} {{ drawer?.sumOutwardCash || 0 | number }}</strong
           ><small>Recorded by Fineract</small>
         </article>
         <article class="stat-card">
@@ -37,11 +37,20 @@
           <h2>Serve a member</h2>
           <p>Choose what the member needs, then find their account.</p>
           <div class="quick-actions">
+            <a mat-stroked-button routerLink="/staff-workspaces/cashier/onboarding">
+              <mat-icon class="action-icon">person_add</mat-icon><b>{{ 'Onboard member' | translate }}</b>
+            </a>
             <button type="button" (click)="startTransaction('deposit')">
               <mat-icon class="action-icon">arrow_downward</mat-icon><b>Deposit cash</b>
             </button>
             <button type="button" (click)="startTransaction('withdrawal')">
               <mat-icon class="action-icon">arrow_upward</mat-icon><b>Withdraw cash</b>
+            </button>
+            <button type="button" (click)="startTransaction('loanRepayment')">
+              <mat-icon class="action-icon">payments</mat-icon><b>{{ 'labels.buttons.Make Repayment' | translate }}</b>
+            </button>
+            <button type="button" (click)="startTransaction('loanDisbursement')">
+              <mat-icon class="action-icon">request_quote</mat-icon><b>{{ 'Disburse loan' | translate }}</b>
             </button>
             <button type="button" (click)="startTransaction('shares')">
               <mat-icon class="action-icon">pie_chart</mat-icon><b>Buy shares</b>
@@ -55,10 +64,10 @@
           <h2>Current shift</h2>
           <p>{{ credentials?.officeName }} · Cashier drawer</p>
           <div>
-            <span>Cash allocated</span><b>UGX {{ drawer?.sumCashAllocation || 0 | number }}</b>
+            <span>Cash allocated</span><b>{{ currencyCode }} {{ drawer?.sumCashAllocation || 0 | number }}</b>
           </div>
           <div>
-            <span>Cash settled</span><b>UGX {{ drawer?.sumCashSettlement || 0 | number }}</b>
+            <span>Cash settled</span><b>{{ currencyCode }} {{ drawer?.sumCashSettlement || 0 | number }}</b>
           </div>
           <div>
             <span>Transactions</span><b>{{ drawerRecords.length }}</b>
@@ -68,6 +77,28 @@
           </div>
         </section>
       </div>
+      <section class="section-card">
+        <h2>{{ 'Approved loan disbursement instructions' | translate }}</h2>
+        <p>{{ 'Only approved, not-yet-disbursed loans visible to this user are listed.' | translate }}</p>
+        <div class="records-list">
+          @for (loan of approvedLoanQueue; track loan.id) {
+            <div class="record-row">
+              <div>
+                <strong>{{ loan.clientName || loan.accountNo }}</strong>
+                <small>{{ loan.loanProductName }} · {{ loan.accountNo }}</small>
+              </div>
+              <div>
+                <strong>{{ currencyCodeFor(loan) }} {{ loan.approvedPrincipal || loan.principal | number }}</strong>
+                <button mat-button type="button" (click)="openApprovedLoanInstruction(loan)">
+                  {{ 'Open instruction' | translate }}
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div class="small-empty">{{ 'No approved loan is waiting for disbursement.' | translate }}</div>
+          }
+        </div>
+      </section>
     </section>
   }
 
@@ -77,7 +108,7 @@
         ><strong>{{ drawerReady ? 'Drawer open' : 'Drawer setup required' }}</strong> ·
         {{ credentials?.officeName }}</span
       ><span
-        >Available cash: <b>UGX {{ availableCash | number }}</b></span
+        >Available cash: <b>{{ currencyCode }} {{ availableCash | number }}</b></span
       >
     </div>
     @if (!drawerReady) {
@@ -87,11 +118,11 @@
       </div>
     }
     <nav class="flow-progress" [attr.aria-label]="'Transaction progress' | translate">
-      <span [class.current]="!selectedClient">{{ '1. Find member' | translate }}</span>
+      <span [class.current]="transactionStage === 'member'">{{ '1. Find member' | translate }}</span>
       <mat-icon aria-hidden="true">chevron_right</mat-icon>
-      <span [class.current]="selectedClient && !pendingTransaction">{{ '2. Enter transaction' | translate }}</span>
+      <span [class.current]="transactionStage === 'transaction'">{{ '2. Enter transaction' | translate }}</span>
       <mat-icon aria-hidden="true">chevron_right</mat-icon>
-      <span [class.current]="pendingTransaction">{{ '3. Review and confirm' | translate }}</span>
+      <span [class.current]="transactionStage === 'review'">{{ '3. Review and confirm' | translate }}</span>
     </nav>
     @if (selectedClient) {
       <div class="member-context">
@@ -141,7 +172,7 @@
               <span class="step">Step 2</span>
               <h2>New member transaction</h2>
             </div>
-            <span class="cash-chip">Cash</span>
+            <span class="cash-chip">{{ selectedAction === 'loanDisbursement' ? 'Controlled payout' : 'Cash' }}</span>
           </header>
           <div class="transaction-types">
             <button type="button" [class.active]="selectedAction === 'deposit'" (click)="selectAction('deposit')">
@@ -149,6 +180,20 @@
             </button>
             <button type="button" [class.active]="selectedAction === 'withdrawal'" (click)="selectAction('withdrawal')">
               <mat-icon>arrow_upward</mat-icon>Withdraw
+            </button>
+            <button
+              type="button"
+              [class.active]="selectedAction === 'loanRepayment'"
+              (click)="selectAction('loanRepayment')"
+            >
+              <mat-icon>payments</mat-icon>{{ 'labels.inputs.Repayment' | translate }}
+            </button>
+            <button
+              type="button"
+              [class.active]="selectedAction === 'loanDisbursement'"
+              (click)="selectAction('loanDisbursement')"
+            >
+              <mat-icon>request_quote</mat-icon>{{ 'Disburse' | translate }}
             </button>
             <button type="button" [class.active]="selectedAction === 'shares'" (click)="selectAction('shares')">
               <mat-icon>pie_chart</mat-icon>Shares
@@ -184,7 +229,8 @@
                           ><strong>{{ account.productName }}</strong
                           ><small>{{ account.accountNo }}</small></span
                         ><span class="account-balance"
-                          ><small>Balance</small><b>UGX {{ account.accountBalance || 0 | number }}</b></span
+                          ><small>Balance</small
+                          ><b>{{ currencyCodeFor(account) }} {{ account.accountBalance || 0 | number }}</b></span
                         >
                       </button>
                     } @empty {
@@ -197,7 +243,7 @@
                         type="button"
                         class="account-row"
                         [class.selected]="transactionForm.controls.shareAccountId.value === account.id"
-                        (click)="transactionForm.controls.shareAccountId.setValue(account.id)"
+                        (click)="selectShareAccount(account)"
                       >
                         <span class="account-icon"><mat-icon>pie_chart</mat-icon></span
                         ><span
@@ -207,6 +253,53 @@
                       </button>
                     } @empty {
                       <div class="small-empty">No eligible share account was found.</div>
+                    }
+                  }
+                  @if (selectedAction === 'loanRepayment') {
+                    @for (account of loanAccounts; track account.id) {
+                      <button
+                        type="button"
+                        class="account-row"
+                        [class.selected]="transactionForm.controls.loanAccountId.value === account.id"
+                        (click)="transactionForm.controls.loanAccountId.setValue(account.id)"
+                      >
+                        <span class="account-icon"><mat-icon>account_balance</mat-icon></span
+                        ><span
+                          ><strong>{{ account.loanProductName || account.productName }}</strong
+                          ><small>{{ account.accountNo }}</small></span
+                        ><span class="account-balance"
+                          ><small>{{ 'labels.inputs.Loan Balance' | translate }}</small
+                          ><b
+                            >{{ currencyCodeFor(account) }}
+                            {{ account.loanBalance || account.outstandingLoanBalance || 0 | number }}</b
+                          ></span
+                        >
+                      </button>
+                    } @empty {
+                      <div class="small-empty">{{ 'labels.text.No Active Loan Accounts Found' | translate }}</div>
+                    }
+                  }
+                  @if (selectedAction === 'loanDisbursement') {
+                    @for (account of approvedLoanAccounts; track account.id) {
+                      <button
+                        type="button"
+                        class="account-row"
+                        [class.selected]="transactionForm.controls.loanAccountId.value === account.id"
+                        (click)="selectLoanForDisbursement(account)"
+                      >
+                        <span class="account-icon"><mat-icon>account_balance</mat-icon></span
+                        ><span
+                          ><strong>{{ account.loanProductName || account.productName }}</strong
+                          ><small>{{ account.accountNo }}</small></span
+                        ><span class="account-balance"
+                          ><small>{{ 'Approved amount' | translate }}</small
+                          ><b
+                            >{{ currencyCodeFor(account) }} {{ account.originalLoan || account.loanAmount | number }}</b
+                          ></span
+                        >
+                      </button>
+                    } @empty {
+                      <div class="small-empty">{{ 'No approved loan is ready for disbursement' | translate }}</div>
                     }
                   }
                   @if (selectedAction === 'fee') {
@@ -222,7 +315,9 @@
                           ><strong>{{ charge.name }}</strong
                           ><small>Outstanding member fee</small></span
                         ><span class="account-balance"
-                          ><b>UGX {{ charge.amountOutstanding || charge.amount | number }}</b></span
+                          ><b
+                            >{{ currencyCodeFor(charge) }} {{ charge.amountOutstanding || charge.amount | number }}</b
+                          ></span
                         >
                       </button>
                     } @empty {
@@ -230,24 +325,232 @@
                     }
                   }
                 </div>
+                @if (
+                  reviewAttempted && selectedAction === 'deposit' && !transactionForm.controls.savingsAccountId.value
+                ) {
+                  <p class="field-error" role="alert">
+                    <mat-icon>error</mat-icon>{{ 'Select the savings account for this deposit' | translate }}
+                  </p>
+                }
                 <div class="entry-card">
                   @if (selectedAction === 'shares') {
                     <label
                       ><span>Number of shares</span
                       ><input type="number" formControlName="requestedShares" placeholder="0"
                     /></label>
-                    <p class="form-help">
-                      This creates an additional share request. Savings-funded purchases require backend support.
-                    </p>
-                  } @else {
                     <label
-                      ><span>{{ actionTitle }} amount</span
-                      ><input type="number" formControlName="amount" placeholder="UGX 0"
+                      ><span>{{ 'Cash amount for shares' | translate }}</span
+                      ><input type="number" formControlName="amount" [placeholder]="currencyCode + ' 0'"
                     /></label>
+                    <p class="form-help">
+                      {{ 'The amount is checked against the current share price before posting.' | translate }}
+                    </p>
+                    @if (sharePreview) {
+                      <div class="summary-totals">
+                        <div>
+                          <span>{{ 'Current unit price' | translate }}</span
+                          ><b>{{ currencyCodeFor(sharePreview) }} {{ sharePreview.currentMarketPrice | number }}</b>
+                        </div>
+                        <div>
+                          <span>{{ 'Approved holding' | translate }}</span
+                          ><b>{{ sharePreview.summary?.totalApprovedShares || 0 | number }}</b>
+                        </div>
+                        <div>
+                          <span>{{ 'Pending shares' | translate }}</span
+                          ><b>{{ sharePreview.summary?.totalPendingForApprovalShares || 0 | number }}</b>
+                        </div>
+                      </div>
+                    }
+                  } @else {
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ actionTitle | translate }} {{ 'labels.inputs.Amount' | translate }}</mat-label>
+                      <input matInput type="number" formControlName="amount" />
+                      @if (reviewAttempted && selectedAction === 'deposit' && !transactionForm.controls.amount.value) {
+                        <mat-error>{{ 'Enter an amount greater than zero' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
                   }
                   <label
                     ><span>Reference or note</span><input formControlName="note" placeholder="Optional note"
                   /></label>
+                  @if (selectedAction === 'loanDisbursement') {
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'Disbursement method' | translate }}</mat-label>
+                      <mat-select formControlName="disbursementMode">
+                        <mat-option value="CASH">{{ 'Cash' | translate }}</mat-option>
+                        <mat-option value="CHEQUE">{{ 'Cheque' | translate }}</mat-option>
+                        <mat-option value="DIRECT_TO_SAVINGS">{{ 'Direct to member savings' | translate }}</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                    @if (transactionForm.controls.disbursementMode.value === 'CHEQUE') {
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'Cheque number' | translate }}</mat-label>
+                        <input matInput formControlName="chequeNumber" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'Issuing bank' | translate }}</mat-label>
+                        <input matInput formControlName="bankName" />
+                      </mat-form-field>
+                    }
+                    @if (transactionForm.controls.loanAccountId.value) {
+                      @if (loanDisbursementPreview?.netDisbursalAmount !== undefined) {
+                        <div class="summary-totals">
+                          <div>
+                            <span>{{ 'Approved principal' | translate }}</span>
+                            <b
+                              >{{ currencyCodeFor(loanDisbursementPreview) }}
+                              {{ loanDisbursementPreview.approvedPrincipal | number }}</b
+                            >
+                          </div>
+                          <div>
+                            <span>{{ 'Configured deductions' | translate }}</span>
+                            <b
+                              >{{ currencyCodeFor(loanDisbursementPreview) }}
+                              {{ loanDisbursementDeductions | number }}</b
+                            >
+                          </div>
+                          <div>
+                            <span>{{ 'Net disbursement' | translate }}</span>
+                            <b
+                              >{{ currencyCodeFor(loanDisbursementPreview) }}
+                              {{ loanDisbursementPreview.netDisbursalAmount | number }}</b
+                            >
+                          </div>
+                        </div>
+                      }
+                      <a
+                        mat-stroked-button
+                        target="_blank"
+                        [routerLink]="[
+                          '/clients',
+                          selectedClient.id,
+                          'loans-accounts',
+                          transactionForm.controls.loanAccountId.value,
+                          'repayment-schedule'
+                        ]"
+                      >
+                        <mat-icon>event_note</mat-icon>{{ 'Review repayment schedule' | translate }}
+                      </a>
+                    }
+                  }
+                  <section class="verification-card">
+                    <div class="verification-heading">
+                      <mat-icon>verified_user</mat-icon>
+                      <div>
+                        <strong>{{ 'Required counter checks' | translate }}</strong>
+                        <small>{{ 'Record the evidence checked before posting' | translate }}</small>
+                      </div>
+                    </div>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'Identity evidence' | translate }}</mat-label>
+                      <mat-select formControlName="identityMethod">
+                        <mat-option value="NATIONAL_ID">{{ 'National ID' | translate }}</mat-option>
+                        <mat-option value="MEMBER_CARD">{{ 'Member card' | translate }}</mat-option>
+                        <mat-option value="BIOMETRIC">{{ 'Biometric' | translate }}</mat-option>
+                      </mat-select>
+                      @if (reviewAttempted && !transactionForm.controls.identityMethod.value) {
+                        <mat-error>{{ 'Select the identity evidence checked' | translate }}</mat-error>
+                      }
+                    </mat-form-field>
+                    @if (selectedAction === 'deposit' || selectedAction === 'withdrawal') {
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'Slip or voucher reference' | translate }}</mat-label>
+                        <input matInput formControlName="slipReference" />
+                        @if (reviewAttempted && !transactionForm.controls.slipReference.value?.trim()) {
+                          <mat-error>{{ 'Enter the slip or voucher reference' | translate }}</mat-error>
+                        }
+                      </mat-form-field>
+                    }
+                    @if (
+                      !(
+                        selectedAction === 'loanDisbursement' &&
+                        transactionForm.controls.disbursementMode.value !== 'CASH'
+                      )
+                    ) {
+                      <mat-form-field appearance="outline">
+                        <mat-label>{{ 'Physical cash counted' | translate }} ({{ currencyCode }})</mat-label>
+                        <input matInput type="number" formControlName="countedAmount" />
+                        @if (
+                          reviewAttempted &&
+                          (!transactionForm.controls.countedAmount.value ||
+                            transactionForm.controls.countedAmount.value !== transactionForm.controls.amount.value)
+                        ) {
+                          <mat-error>{{ 'Cash count must equal the transaction amount' | translate }}</mat-error>
+                        }
+                      </mat-form-field>
+                    }
+                    <div class="verification-options">
+                      @if (selectedAction === 'deposit') {
+                        <mat-checkbox
+                          formControlName="slipVerified"
+                          [class.checkbox-error]="reviewAttempted && !transactionForm.controls.slipVerified.value"
+                          [attr.aria-invalid]="reviewAttempted && !transactionForm.controls.slipVerified.value"
+                        >
+                          {{ 'Deposit slip is complete and correct' | translate }}
+                        </mat-checkbox>
+                        <mat-checkbox
+                          formControlName="amountVerified"
+                          [class.checkbox-error]="reviewAttempted && !transactionForm.controls.amountVerified.value"
+                          [attr.aria-invalid]="reviewAttempted && !transactionForm.controls.amountVerified.value"
+                        >
+                          {{ 'Amount in words matches amount in figures' | translate }}
+                        </mat-checkbox>
+                        <mat-checkbox
+                          formControlName="cashAuthenticityVerified"
+                          [class.checkbox-error]="
+                            reviewAttempted && !transactionForm.controls.cashAuthenticityVerified.value
+                          "
+                          [attr.aria-invalid]="
+                            reviewAttempted && !transactionForm.controls.cashAuthenticityVerified.value
+                          "
+                        >
+                          {{ 'Cash was counted with the member and checked for authenticity' | translate }}
+                        </mat-checkbox>
+                        @if (
+                          reviewAttempted &&
+                          (!transactionForm.controls.slipVerified.value ||
+                            !transactionForm.controls.amountVerified.value ||
+                            !transactionForm.controls.cashAuthenticityVerified.value)
+                        ) {
+                          <p class="field-error verification-error" role="alert">
+                            <mat-icon>error</mat-icon>{{ 'Complete all deposit verification checks' | translate }}
+                          </p>
+                        }
+                      }
+                      @if (selectedAction === 'withdrawal') {
+                        <mat-checkbox formControlName="signatureVerified">
+                          {{ 'Member signature matches the specimen' | translate }}
+                        </mat-checkbox>
+                      }
+                      @if (
+                        selectedAction === 'shares' || selectedAction === 'loanRepayment' || selectedAction === 'fee'
+                      ) {
+                        <mat-checkbox formControlName="cashAuthenticityVerified">
+                          {{ 'Cash was counted with the member and checked for authenticity' | translate }}
+                        </mat-checkbox>
+                      }
+                      @if (selectedAction === 'loanDisbursement') {
+                        <mat-checkbox formControlName="loanApprovalVerified">
+                          {{ 'Approval instruction and approved amount were verified' | translate }}
+                        </mat-checkbox>
+                        <mat-checkbox formControlName="collateralSecured">
+                          {{ 'Required collateral and security conditions are complete' | translate }}
+                        </mat-checkbox>
+                        <mat-checkbox formControlName="loanDocumentsVerified">
+                          {{ 'Loan agreement and required documents are signed' | translate }}
+                        </mat-checkbox>
+                      }
+                    </div>
+                  </section>
+                  @if (incompleteDepositCount) {
+                    <div class="review-validation" role="alert" aria-live="polite">
+                      <mat-icon>info</mat-icon>
+                      <span>
+                        <strong>{{ incompleteDepositCount }}</strong>
+                        {{ 'required items need attention' | translate }}
+                      </span>
+                    </div>
+                  }
                   <div class="entry-actions">
                     <button type="button" class="secondary-button" (click)="selectAction(selectedAction)">Clear</button
                     ><button type="button" class="primary-button" (click)="prepareTransaction()">
@@ -285,7 +588,7 @@
                 <b>{{
                   pendingTransaction.action === 'shares'
                     ? pendingTransaction.requestedShares + ' shares'
-                    : 'UGX ' + (pendingTransaction.amount | number)
+                    : pendingTransaction.currencyCode + ' ' + (pendingTransaction.amount | number)
                 }}</b>
               </article>
             } @else {
@@ -298,9 +601,10 @@
               <div>
                 <span>Cash received</span
                 ><b
-                  >UGX
+                  >{{ pendingTransaction?.currencyCode || currencyCode }}
                   {{
-                    pendingTransaction && selectedAction !== 'withdrawal' && selectedAction !== 'shares'
+                    pendingTransaction &&
+                    (selectedAction === 'deposit' || selectedAction === 'loanRepayment' || selectedAction === 'fee')
                       ? pendingTransaction.amount
                       : (0 | number)
                   }}</b
@@ -309,21 +613,38 @@
               <div>
                 <span>Cash paid out</span
                 ><b
-                  >UGX
+                  >{{ pendingTransaction?.currencyCode || currencyCode }}
                   {{
-                    pendingTransaction && selectedAction === 'withdrawal' ? pendingTransaction.amount : (0 | number)
+                    pendingTransaction &&
+                    (selectedAction === 'withdrawal' ||
+                      (selectedAction === 'loanDisbursement' && pendingTransaction.disbursementMode === 'CASH'))
+                      ? pendingTransaction.netDisbursementAmount || pendingTransaction.amount
+                      : (0 | number)
                   }}</b
                 >
               </div>
               <div class="total">
-                <span>Current drawer</span><b>UGX {{ availableCash | number }}</b>
+                <span>Current drawer</span><b>{{ currencyCode }} {{ availableCash | number }}</b>
               </div>
             </div>
             @if (pendingTransaction) {
+              @if (transactionNeedsRecovery) {
+                <div class="cashier-alert error">
+                  {{ 'Transaction status must be verified before retrying' | translate }}
+                  <button mat-stroked-button type="button" [disabled]="submitting" (click)="verifyPendingTransaction()">
+                    {{ 'Verify transaction' | translate }}
+                  </button>
+                </div>
+              }
               <div class="review-actions">
                 <button type="button" class="secondary-button" [disabled]="submitting" (click)="cancelPending()">
                   {{ 'Back to edit' | translate }}</button
-                ><button type="button" class="primary-button" (click)="confirmTransaction()" [disabled]="submitting">
+                ><button
+                  type="button"
+                  class="primary-button"
+                  (click)="confirmTransaction()"
+                  [disabled]="submitting || transactionNeedsRecovery"
+                >
                   {{ submitting ? 'Recording…' : 'Confirm and post' }}
                 </button>
               </div>
@@ -335,6 +656,16 @@
               </p>
               @if (pendingTransaction.note) {
                 <p>{{ 'Note' | translate }}: {{ pendingTransaction.note }}</p>
+              }
+              <p>{{ 'Identity evidence' | translate }}: {{ pendingTransaction.identityMethod }}</p>
+              @if (pendingTransaction.slipReference) {
+                <p>{{ 'Slip or voucher reference' | translate }}: {{ pendingTransaction.slipReference }}</p>
+              }
+              @if (pendingTransaction.action !== 'shares') {
+                <p>
+                  {{ 'Verified cash count' | translate }}: {{ pendingTransaction.currencyCode }}
+                  {{ pendingTransaction.countedAmount | number }}
+                </p>
               }
             </div>
           </div>
@@ -353,25 +684,26 @@
       </div>
       <div class="stat-grid">
         <article class="stat-card">
-          <span>Opening allocation</span><strong>UGX {{ drawer?.sumCashAllocation || 0 | number }}</strong
+          <span>Opening allocation</span
+          ><strong>{{ currencyCode }} {{ drawer?.sumCashAllocation || 0 | number }}</strong
           ><small>Chief Teller allocation</small>
         </article>
         <article class="stat-card">
-          <span>Cash received</span><strong>UGX {{ drawer?.sumInwardCash || 0 | number }}</strong
+          <span>Cash received</span><strong>{{ currencyCode }} {{ drawer?.sumInwardCash || 0 | number }}</strong
           ><small>Drawer movements</small>
         </article>
         <article class="stat-card">
-          <span>Cash paid out</span><strong>UGX {{ drawer?.sumOutwardCash || 0 | number }}</strong
+          <span>Cash paid out</span><strong>{{ currencyCode }} {{ drawer?.sumOutwardCash || 0 | number }}</strong
           ><small>Member withdrawals</small>
         </article>
         <article class="stat-card">
-          <span>Expected balance</span><strong>UGX {{ availableCash | number }}</strong
+          <span>Expected balance</span><strong>{{ currencyCode }} {{ availableCash | number }}</strong
           ><small>System-calculated position</small>
         </article>
       </div>
       <div class="drawer-grid">
         <article class="drawer-hero">
-          <span>Expected physical cash</span><strong>UGX {{ availableCash | number }}</strong>
+          <span>Expected physical cash</span><strong>{{ currencyCode }} {{ availableCash | number }}</strong>
           <div>
             <span>Cashier drawer</span><span>{{ drawerRecords.length }} records</span
             ><span>{{ credentials?.officeName }}</span>
@@ -382,14 +714,307 @@
           <p>Cash allocations and recoveries are performed by the Chief Teller.</p>
           <div class="shift-card">
             <div>
-              <span>Allocated</span><b>UGX {{ drawer?.sumCashAllocation || 0 | number }}</b>
+              <span>Allocated</span><b>{{ currencyCode }} {{ drawer?.sumCashAllocation || 0 | number }}</b>
             </div>
             <div>
-              <span>Settled</span><b>UGX {{ drawer?.sumCashSettlement || 0 | number }}</b>
+              <span>Settled</span><b>{{ currencyCode }} {{ drawer?.sumCashSettlement || 0 | number }}</b>
             </div>
           </div>
         </article>
       </div>
+      @if (awaitingCashReceipt) {
+        <article class="section-card">
+          <h2>{{ 'Confirm cash received from vault' | translate }}</h2>
+          <p>
+            {{ awaitingCashReceipt.reference }} · {{ awaitingCashReceipt.currencyCode }}
+            {{ awaitingCashReceipt.amount | number }}
+          </p>
+          <div class="denominations">
+            @for (line of awaitingCashReceipt.denominations; track $index) {
+              <span>{{ line.denomination | number }} × {{ line.quantity | number }}</span>
+            }
+          </div>
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            [disabled]="submitting"
+            (click)="acknowledgeCashReceipt()"
+          >
+            {{ 'I counted and received this cash' | translate }}
+          </button>
+        </article>
+      }
+      <article class="section-card reconciliation-card">
+        <h2>{{ 'Request cash from vault' | translate }}</h2>
+        <p>{{ 'The request requires independent verification by two different vault officers.' | translate }}</p>
+        <form [formGroup]="cashRequestForm" class="reconciliation-form">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Requested amount' | translate }} ({{ currencyCode }})</mat-label>
+            <input matInput type="number" formControlName="amount" />
+          </mat-form-field>
+          <div formArrayName="denominations" class="denomination-list">
+            @for (line of cashRequestDenominationLines.controls; track $index) {
+              <div [formGroupName]="$index" class="denomination-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Denomination' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="denomination" />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Quantity' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="quantity" />
+                </mat-form-field>
+                <button
+                  mat-icon-button
+                  type="button"
+                  [disabled]="cashRequestDenominationLines.length === 1"
+                  (click)="removeCashRequestDenominationLine($index)"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+          <button mat-button type="button" (click)="addCashRequestDenominationLine()">
+            <mat-icon>add</mat-icon>{{ 'Add denomination' | translate }}
+          </button>
+          <p>
+            <strong>{{ 'Denomination total' | translate }}:</strong> {{ currencyCode }}
+            {{ requestedCashTotal | number }}
+          </p>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Request reason' | translate }}</mat-label>
+            <textarea matInput formControlName="note"></textarea>
+          </mat-form-field>
+          <div class="entry-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              [disabled]="submitting"
+              (click)="requestVaultCash()"
+            >
+              {{ 'Submit cash request' | translate }}
+            </button>
+          </div>
+        </form>
+      </article>
+      <article class="section-card reconciliation-card">
+        <div class="account-heading">
+          <div>
+            <h2>{{ 'End-of-day reconciliation' | translate }}</h2>
+            <span>{{ shift?.reference || ('No active shift' | translate) }}</span>
+          </div>
+          <span class="posted-pill">{{ shift?.status || 'NOT OPEN' }}</span>
+        </div>
+        @if (!shift) {
+          <p>{{ 'Open a server-controlled shift before recording its final physical cash count.' | translate }}</p>
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            [disabled]="submitting || !drawerReady"
+            (click)="openShift()"
+          >
+            {{ 'Open shift' | translate }}
+          </button>
+        } @else {
+          <div class="summary-totals">
+            <div>
+              <span>{{ 'Expected cash' | translate }}</span
+              ><b>{{ shift.currencyCode }} {{ shift.expectedCash || availableCash | number }}</b>
+            </div>
+            <div>
+              <span>{{ 'Physical cash' | translate }}</span
+              ><b>{{ shift.currencyCode }} {{ shift.physicalCash || physicalCashTotal | number }}</b>
+            </div>
+            <div class="total">
+              <span>{{ 'Variance' | translate }}</span
+              ><b>{{ shift.currencyCode }} {{ shift.variance || 0 | number }}</b>
+            </div>
+          </div>
+          @if (shift.status === 'OPEN') {
+            <button mat-raised-button color="warn" type="button" [disabled]="submitting" (click)="stopShift()">
+              {{ 'Stop accepting transactions' | translate }}
+            </button>
+          }
+          @if (shift.status === 'STOPPED' || shift.status === 'COUNTING') {
+            <form [formGroup]="reconciliationForm" class="reconciliation-form">
+              <div formArrayName="denominations" class="denomination-list">
+                @for (line of denominationLines.controls; track $index) {
+                  <div [formGroupName]="$index" class="denomination-row">
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'Denomination' | translate }}</mat-label>
+                      <input matInput type="number" formControlName="denomination" />
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                      <mat-label>{{ 'Quantity' | translate }}</mat-label>
+                      <input matInput type="number" formControlName="quantity" />
+                    </mat-form-field>
+                    <button
+                      mat-icon-button
+                      type="button"
+                      [disabled]="denominationLines.length === 1"
+                      (click)="removeDenominationLine($index)"
+                    >
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+              <button mat-button type="button" (click)="addDenominationLine()">
+                <mat-icon>add</mat-icon>{{ 'Add denomination' | translate }}
+              </button>
+              <p>
+                <strong>{{ 'Calculated physical cash' | translate }}:</strong> {{ shift.currencyCode }}
+                {{ physicalCashTotal | number }}
+              </p>
+              <mat-form-field class="full-width" appearance="outline">
+                <mat-label>{{ 'Variance explanation' | translate }}</mat-label>
+                <textarea matInput formControlName="explanation"></textarea>
+              </mat-form-field>
+              <div class="verification-options">
+                <mat-checkbox formControlName="depositSlipsSubmitted">{{
+                  'Deposit slips submitted' | translate
+                }}</mat-checkbox>
+                <mat-checkbox formControlName="withdrawalSlipsSubmitted">{{
+                  'Withdrawal slips submitted' | translate
+                }}</mat-checkbox>
+                <mat-checkbox formControlName="loanDocumentsSubmitted">{{
+                  'Loan documents submitted' | translate
+                }}</mat-checkbox>
+                <mat-checkbox formControlName="expenseVouchersSubmitted">{{
+                  'Expense vouchers submitted' | translate
+                }}</mat-checkbox>
+              </div>
+              <div class="entry-actions">
+                <button mat-stroked-button type="button" [disabled]="submitting" (click)="countShift()">
+                  {{ 'Calculate variance' | translate }}
+                </button>
+                @if (shift.status === 'COUNTING') {
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="button"
+                    [disabled]="submitting"
+                    (click)="submitShift()"
+                  >
+                    {{ 'Submit for supervisor review' | translate }}
+                  </button>
+                }
+              </div>
+            </form>
+          }
+          @if (shift.status === 'PENDING_APPROVAL') {
+            <div class="cashier-alert">
+              {{ 'Reconciliation submitted and awaiting supervisor approval.' | translate }}
+            </div>
+          }
+          @if (shift.status === 'RECONCILED' || shift.status === 'CLOSED') {
+            <div class="cashier-alert success">{{ 'The teller shift has been reconciled.' | translate }}</div>
+            @if (shift.status === 'RECONCILED') {
+              <button mat-raised-button color="primary" type="button" [disabled]="submitting" (click)="closeShift()">
+                {{ 'Confirm handover and close shift' | translate }}
+              </button>
+            }
+          }
+        }
+      </article>
+    </section>
+  }
+
+  @if (activeView === 'reversals') {
+    <section class="workstation">
+      <article class="work-panel">
+        <header class="panel-head">
+          <div>
+            <span class="step">{{ 'Controlled correction' | translate }}</span>
+            <h2>{{ 'Request transaction reversal' | translate }}</h2>
+          </div>
+          <mat-icon>undo</mat-icon>
+        </header>
+        <div class="panel-body">
+          <p>
+            {{
+              'The server verifies that the original transaction is posted, reversible, within the allowed period, and permitted for your role.'
+                | translate
+            }}
+          </p>
+          <form [formGroup]="reversalForm" class="reconciliation-form">
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'Original transaction reference' | translate }}</mat-label>
+              <input matInput formControlName="originalReference" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'Reversal reason' | translate }}</mat-label>
+              <textarea matInput formControlName="reason"></textarea>
+            </mat-form-field>
+            <div class="entry-actions">
+              <button mat-stroked-button type="button" [disabled]="submitting" (click)="findReversal()">
+                {{ 'Check request status' | translate }}
+              </button>
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="submitting"
+                (click)="requestReversal()"
+              >
+                {{ 'Submit reversal request' | translate }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </article>
+      <aside class="work-panel">
+        <header class="panel-head">
+          <h2>{{ 'Reversal status' | translate }}</h2>
+        </header>
+        <div class="panel-body">
+          @if (reversal) {
+            <div class="summary-totals">
+              <div>
+                <span>{{ 'Reference' | translate }}</span
+                ><b>{{ reversal.reference }}</b>
+              </div>
+              <div>
+                <span>{{ 'Original transaction' | translate }}</span
+                ><b>{{ reversal.originalReference }}</b>
+              </div>
+              <div class="total">
+                <span>{{ 'Status' | translate }}</span
+                ><b>{{ reversal.status }}</b>
+              </div>
+            </div>
+            <p>{{ reversal.reason }}</p>
+            @if (reversalOriginalTransaction) {
+              <div class="summary-totals">
+                <div>
+                  <span>{{ 'Original posting status' | translate }}</span>
+                  <b>{{ reversalOriginalTransaction.status }}</b>
+                </div>
+                <div>
+                  <span>{{ 'Product transaction ID' | translate }}</span>
+                  <b>{{
+                    reversalOriginalTransaction.productTransaction?.transactionId || ('Not available' | translate)
+                  }}</b>
+                </div>
+                <div>
+                  <span>{{ 'Drawer movement ID' | translate }}</span>
+                  <b>{{
+                    reversalOriginalTransaction.drawerMovement?.drawerMovementId || ('Not available' | translate)
+                  }}</b>
+                </div>
+              </div>
+            }
+            <button type="button" class="secondary-button" (click)="printReversal()">
+              {{ 'Print reversal record' | translate }}
+            </button>
+          } @else {
+            <div class="summary-empty">{{ 'No reversal request selected.' | translate }}</div>
+          }
+        </div>
+      </aside>
     </section>
   }
 
@@ -421,7 +1046,7 @@
                 <td>{{ record.id || record.transactionId || '—' }}</td>
                 <td>{{ record.entityType || record.transactionType || 'Drawer transaction' }}</td>
                 <td>
-                  <b>UGX {{ record.amount || record.txnAmount || 0 | number }}</b>
+                  <b>{{ currencyCodeFor(record) }} {{ record.amount || record.txnAmount || 0 | number }}</b>
                 </td>
                 <td><span class="posted-pill">Posted</span></td>
                 <td>
@@ -444,16 +1069,86 @@
   @if (receipt) {
     <div class="receipt-overlay">
       <section class="receipt-modal">
-        <div class="receipt-mark"><mat-icon>check</mat-icon></div>
-        <h2>Transaction posted</h2>
-        <p>{{ receipt.member }} · {{ receipt.action }} · {{ receipt.amount }}</p>
-        <strong class="receipt-code">{{ receipt.reference }}</strong>
-        <p>{{ receipt.date }}</p>
+        @for (copyLabel of ['Member copy', 'Office copy']; track copyLabel) {
+          <article class="receipt-copy" [class.office-copy]="copyLabel === 'Office copy'">
+            <small>{{ copyLabel | translate }}</small>
+            <div class="receipt-mark"><mat-icon>check</mat-icon></div>
+            <h2>
+              {{
+                (receipt.status === 'PENDING_APPROVAL'
+                  ? 'Request awaiting approval'
+                  : receipt.action === 'shares'
+                    ? 'Share certificate / receipt'
+                    : 'Transaction posted'
+                ) | translate
+              }}
+            </h2>
+            <p>
+              {{ receipt.member }} · {{ receipt.action }} ·
+              {{ receipt.action === 'shares' ? receipt.amount : receipt.currencyCode + ' ' + receipt.amount }}
+            </p>
+            <strong class="receipt-code">{{ receipt.reference }}</strong>
+            <p>{{ receipt.date }}</p>
+            @if (receipt.action === 'loanDisbursement' && receipt.grossAmount !== undefined) {
+              <p>
+                {{ 'Approved principal' | translate }}: {{ receipt.currencyCode }} {{ receipt.grossAmount | number }} ·
+                {{ 'Net disbursement' | translate }}: {{ receipt.currencyCode }} {{ receipt.amount | number }}
+              </p>
+            }
+            <p class="notification-state">
+              {{ 'Member notification' | translate }}:
+              <strong>{{ receipt.notificationStatus || ('Not queued' | translate) }}</strong>
+            </p>
+            @if (receipt.loanAllocation) {
+              <dl class="receipt-allocation">
+                <div>
+                  <dt>{{ 'Principal' | translate }}</dt>
+                  <dd>{{ receipt.currencyCode }} {{ receipt.loanAllocation.principal | number }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'Interest' | translate }}</dt>
+                  <dd>{{ receipt.currencyCode }} {{ receipt.loanAllocation.interest | number }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'Fees' | translate }}</dt>
+                  <dd>{{ receipt.currencyCode }} {{ receipt.loanAllocation.fees | number }}</dd>
+                </div>
+                <div>
+                  <dt>{{ 'Penalties' | translate }}</dt>
+                  <dd>{{ receipt.currencyCode }} {{ receipt.loanAllocation.penalties | number }}</dd>
+                </div>
+                @if (receipt.loanAllocation.remainingBalance !== undefined) {
+                  <div>
+                    <dt>{{ 'Remaining balance' | translate }}</dt>
+                    <dd>{{ receipt.currencyCode }} {{ receipt.loanAllocation.remainingBalance | number }}</dd>
+                  </div>
+                }
+              </dl>
+            }
+            <p class="signature-line">{{ 'Member signature' | translate }}</p>
+          </article>
+        }
         <div>
-          <button type="button" class="secondary-button" (click)="printReceipt()">Print receipt</button
+          <button type="button" class="secondary-button" (click)="printReceipt()">
+            {{ (receipt.action === 'shares' ? 'Print certificate / receipt' : 'Print receipt') | translate }}</button
           ><button type="button" class="secondary-button" (click)="receipt = null">
             {{ 'Another transaction' | translate }}
           </button>
+          @if (receipt.action === 'loanDisbursement' && receipt.clientId && receipt.loanAccountId) {
+            <a
+              mat-stroked-button
+              target="_blank"
+              [routerLink]="[
+                '/clients',
+                receipt.clientId,
+                'loans-accounts',
+                receipt.loanAccountId,
+                'repayment-schedule'
+              ]"
+            >
+              <mat-icon>print</mat-icon>{{ 'Print loan schedule' | translate }}
+            </a>
+          }
           <button type="button" class="primary-button" (click)="resetMemberSelection()">
             {{ 'Next member' | translate }}
           </button>
