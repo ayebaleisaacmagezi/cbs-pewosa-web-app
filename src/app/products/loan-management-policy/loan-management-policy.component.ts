@@ -141,7 +141,7 @@ export class LoanManagementPolicyComponent implements OnInit {
         nonNullable: true,
         validators: Validators.required
       }),
-      mobileMoneyEnabled: this.formBuilder.control<false>(false, { nonNullable: true })
+      mobileMoneyEnabled: this.formBuilder.control<boolean>(false, { nonNullable: true })
     }),
     feeSettlementMode: this.formBuilder.control<'DEDUCT_FROM_DISBURSEMENT' | 'PAY_SEPARATELY'>(
       'DEDUCT_FROM_DISBURSEMENT',
@@ -283,6 +283,9 @@ export class LoanManagementPolicyComponent implements OnInit {
     const methods = disbursement.controls.allowedMethods.value.filter((entry) => entry !== method);
     if (enabled) methods.push(method);
     disbursement.controls.allowedMethods.setValue(methods);
+    if (method === 'MOBILE_MONEY') {
+      disbursement.controls.mobileMoneyEnabled.setValue(enabled);
+    }
     if (!methods.includes(disbursement.controls.defaultMethod.value) && methods.length) {
       disbursement.controls.defaultMethod.setValue(methods[0]);
     }

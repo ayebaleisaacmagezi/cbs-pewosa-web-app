@@ -19,7 +19,8 @@ import { Dates } from 'app/core/utils/dates';
 import {
   LoanRecoveryResponse,
   LoanServicingSummary,
-  LoanWriteOffResponse
+  LoanWriteOffResponse,
+  LoanWriteOffWorkflow
 } from 'app/loans/pewosa-loan-servicing.models';
 import { PewosaLoanServicingService } from 'app/loans/pewosa-loan-servicing.service';
 import { IconsModule } from 'app/shared/icons.module';
@@ -95,6 +96,21 @@ describe('LoanWriteOffComponent', () => {
     writtenOffOn: '2026-09-12'
   };
 
+  const mockWorkflow: LoanWriteOffWorkflow = {
+    id: 12,
+    loanId: 105,
+    status: 'SUBMITTED',
+    reason: 'EXHAUSTED_RECOVERY',
+    recoveryEfforts: 'Demand letters and guarantor follow-up completed.',
+    outstandingSnapshot: 3250000,
+    provisionSnapshot: 3250000,
+    expectedLoanVersion: 3,
+    requestedByName: 'loanofficer',
+    version: 1,
+    evidence: [{ documentId: 512, evidenceType: 'RECOVERY_EVIDENCE' }],
+    decisions: []
+  };
+
   const mockRecoveryResponse: LoanRecoveryResponse = {
     loanId: 105,
     recoveryTransactionId: 605,
@@ -107,6 +123,8 @@ describe('LoanWriteOffComponent', () => {
   beforeEach(async () => {
     mockServicingService = {
       getLoanServicingSummary: jest.fn().mockReturnValue(of(mockSummary)),
+      getCurrentWriteOffRequest: jest.fn().mockReturnValue(of({ exists: false })),
+      submitWriteOffRequest: jest.fn().mockReturnValue(of(mockWorkflow)),
       executeWriteOff: jest.fn().mockReturnValue(of(mockWriteOffResponse)),
       recordRecovery: jest.fn().mockReturnValue(of(mockRecoveryResponse))
     };
@@ -161,60 +179,47 @@ describe('LoanWriteOffComponent', () => {
     );
 
     fixture.detectChanges();
-    component.writeOffForm.patchValue({
-      transactionDate: new Date('2026-09-12'),
-      reason: 'EXHAUSTED_RECOVERY',
-      governanceReference: 'BR-2026-Q3-014',
-      explanation: 'All avenues exhausted'
-    });
+    component.writeOffForm.patchValue({ reason: 'EXHAUSTED_RECOVERY', recoveryEfforts: 'All avenues exhausted', evidenceDocumentIds: '512' });
 
     component.submitWriteOff();
 
     expect(component.errorMessage).toContain('positive outstanding balance');
-    expect(mockServicingService.executeWriteOff).not.toHaveBeenCalled();
+    expect(mockServicingService.submitWriteOffRequest).not.toHaveBeenCalled();
   });
 
-  it('should submit write-off with expected version and idempotency key', () => {
+  it('should submit evidence-backed write-off request with expected version', () => {
     fixture.detectChanges();
 
     component.writeOffForm.patchValue({
-      transactionDate: new Date('2026-09-12'),
       reason: 'EXHAUSTED_RECOVERY',
-      governanceReference: 'BR-2026-Q3-014',
-      explanation: 'All avenues exhausted',
-      evidenceDocumentIds: 'DOC-512, DOC-513',
-      idempotencyKey: 'TEST-WO-KEY'
+      recoveryEfforts: 'All avenues exhausted',
+      evidenceDocumentIds: '512, 513'
     });
 
     component.submitWriteOff();
 
-    expect(mockServicingService.executeWriteOff).toHaveBeenCalledWith(
+    expect(mockServicingService.submitWriteOffRequest).toHaveBeenCalledWith(
       105,
       expect.objectContaining({
         expectedLoanVersion: 3,
-        idempotencyKey: 'TEST-WO-KEY',
-        transactionDate: '2026-09-12',
         reason: 'EXHAUSTED_RECOVERY',
-        governanceReference: 'BR-2026-Q3-014',
-        explanation: 'All avenues exhausted',
-        evidenceDocumentIds: ['DOC-512', 'DOC-513']
+        recoveryEfforts: 'All avenues exhausted',
+        evidenceDocumentIds: [512, 513]
       })
     );
-    expect(component.writeOffResult).toEqual(mockWriteOffResponse);
-    expect(component.summary?.loanStatus).toBe('WRITTEN_OFF');
+    expect(component.writeOffWorkflow).toEqual(mockWorkflow);
   });
 
   it('should handle 409 concurrency conflict on write-off', () => {
-    mockServicingService.executeWriteOff.mockReturnValue(
+    mockServicingService.submitWriteOffRequest.mockReturnValue(
       throwError(() => ({ status: 409 }))
     );
 
     fixture.detectChanges();
     component.writeOffForm.patchValue({
-      transactionDate: new Date('2026-09-12'),
       reason: 'EXHAUSTED_RECOVERY',
-      governanceReference: 'BR-2026-Q3-014',
-      explanation: 'All avenues exhausted'
+      recoveryEfforts: 'All avenues exhausted',
+      evidenceDocumentIds: '512'
     });
 
     component.submitWriteOff();
@@ -245,7 +250,7 @@ describe('LoanWriteOffComponent', () => {
       expect.objectContaining({
         expectedLoanVersion: 3,
         idempotencyKey: 'REC-TEST-KEY',
-        amount: 500000,
+        transactionAmount: 500000,
         paymentTypeId: 1,
         receiptNumber: 'REC-REC-0012'
       })

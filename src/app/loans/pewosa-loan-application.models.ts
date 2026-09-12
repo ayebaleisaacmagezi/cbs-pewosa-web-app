@@ -138,7 +138,7 @@ export interface LoanCreditScore {
   factors: LoanCreditScoreFactor[];
 }
 
-export type LoanDisbursementRail = 'ACCOUNT_CREDIT' | 'CASH' | 'CHEQUE';
+export type LoanDisbursementRail = 'ACCOUNT_CREDIT' | 'CASH' | 'CHEQUE' | 'MOBILE_MONEY';
 
 export interface LoanDisbursementInstructionRequest {
   idempotencyKey: string;

@@ -79,7 +79,7 @@ export interface LoanManagementPolicyDefinition {
   disbursement: {
     allowedMethods: LoanPolicyDisbursementMethod[];
     defaultMethod: LoanPolicyDisbursementMethod;
-    mobileMoneyEnabled: false;
+    mobileMoneyEnabled: boolean;
   };
   feeSettlementMode: LoanPolicyFeeSettlementMode;
   groupLending?: LoanPolicyGroupLending;

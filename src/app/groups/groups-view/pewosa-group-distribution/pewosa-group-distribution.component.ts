@@ -25,7 +25,8 @@ import { PewosaGroupLendingService } from 'app/groups/pewosa-group-lending.servi
 import {
   PewosaGroupLoanApplicationResponse,
   PewosaGroupLoanDistributionResponse,
-  PewosaGroupLoanDistributionRequest
+  PewosaGroupLoanDistributionRequest,
+  PewosaCollectiveRepaymentResponse
 } from 'app/groups/pewosa-group-lending.models';
 
 @Component({
@@ -62,6 +63,9 @@ export class PewosaGroupDistributionComponent implements OnInit {
   selectedApplication: PewosaGroupLoanApplicationResponse | null = null;
   groupMembers: any[] = [];
   distributionForm!: FormGroup;
+  collectiveRepaymentForm!: FormGroup;
+  lastCollectiveRepayment: PewosaCollectiveRepaymentResponse | null = null;
+  materialized = false;
 
   loading = false;
   saving = false;
@@ -88,6 +92,11 @@ export class PewosaGroupDistributionComponent implements OnInit {
   private initForm(): void {
     this.distributionForm = this.fb.group({
       distributions: this.fb.array([])
+    });
+    this.collectiveRepaymentForm = this.fb.group({
+      amount: [null, [Validators.required, Validators.min(0.01)]],
+      paymentTypeId: [null, [Validators.required, Validators.min(1)]],
+      transactionDate: [new Date().toISOString().substring(0, 10), Validators.required]
     });
 
     this.distributionsArray.valueChanges.subscribe(() => {
@@ -165,6 +174,7 @@ export class PewosaGroupDistributionComponent implements OnInit {
       this.initializeDefaultRows();
     }
     this.calculateReconciliation();
+    this.materialized = res.distributions.length > 0 && res.distributions.every((item) => !!item.nativeLoanId);
   }
 
   private initializeDefaultRows(): void {
@@ -230,6 +240,7 @@ export class PewosaGroupDistributionComponent implements OnInit {
     this.saving = true;
     this.cdr.markForCheck();
     const payload: PewosaGroupLoanDistributionRequest = {
+      allocationMethod: 'CUSTOM',
       distributions: this.distributionsArray.value
     };
 
@@ -243,6 +254,51 @@ export class PewosaGroupDistributionComponent implements OnInit {
       error: (err) => {
         this.alertService.alert({ type: 'DANGER', message: err.error?.defaultUserMessage || 'Reconciliation failed on server.' });
         this.saving = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  applyAutomaticDistribution(method: 'EQUAL' | 'PROPORTIONAL_TO_SAVINGS'): void {
+    if (!this.selectedApplicationId) return;
+    this.saving = true;
+    this.lendingService.saveLoanDistribution(this.groupId, this.selectedApplicationId, {
+      allocationMethod: method,
+      purpose: 'Group loan allocation'
+    }).subscribe({
+      next: (response) => {
+        this.populateDistributions(response);
+        this.saving = false;
+        this.alertService.alert({ type: 'SUCCESS', message: `${method} distribution calculated and reconciled by the server.` });
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.alertService.alert({ type: 'DANGER', message: error.error?.defaultUserMessage || 'Automatic distribution failed.' });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  executeCollectiveRepayment(): void {
+    if (!this.selectedApplicationId || this.collectiveRepaymentForm.invalid) {
+      this.collectiveRepaymentForm.markAllAsTouched();
+      return;
+    }
+    this.saving = true;
+    this.lendingService.executeCollectiveRepayment(this.groupId, this.selectedApplicationId, {
+      ...this.collectiveRepaymentForm.value,
+      idempotencyKey: `GROUP-PAY-${this.selectedApplicationId}-${Date.now()}`
+    }).subscribe({
+      next: (response) => {
+        this.lastCollectiveRepayment = response;
+        this.saving = false;
+        this.alertService.alert({ type: 'SUCCESS', message: 'Collective payment posted across native member loans.' });
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.alertService.alert({ type: 'DANGER', message: error.error?.defaultUserMessage || 'Collective repayment failed.' });
         this.cdr.markForCheck();
       }
     });

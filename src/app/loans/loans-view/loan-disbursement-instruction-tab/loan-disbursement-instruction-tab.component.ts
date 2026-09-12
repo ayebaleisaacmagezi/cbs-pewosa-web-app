@@ -47,6 +47,8 @@ export class LoanDisbursementInstructionTabComponent implements OnInit {
   readonly instructionForm = this.formBuilder.group({
     rail: this.formBuilder.control<LoanDisbursementRail>('ACCOUNT_CREDIT', { nonNullable: true }),
     destinationSavingsAccountId: this.formBuilder.control<number | null>(null),
+    destinationPhone: ['', Validators.pattern(/^\+?[0-9]{9,15}$/)],
+    paymentTypeId: this.formBuilder.control<number | null>(null),
     chequeNumber: [
       '',
       Validators.maxLength(100)
@@ -150,6 +152,19 @@ export class LoanDisbursementInstructionTabComponent implements OnInit {
         return null;
       }
       railDetails = { chequeNumber };
+    }
+    if (values.rail === 'MOBILE_MONEY') {
+      const destinationPhone = values.destinationPhone?.trim();
+      if (
+        !destinationPhone ||
+        this.instructionForm.controls.destinationPhone.invalid ||
+        !values.paymentTypeId
+      ) {
+        if (!destinationPhone) this.instructionForm.controls.destinationPhone.setErrors({ required: true });
+        if (!values.paymentTypeId) this.instructionForm.controls.paymentTypeId.setErrors({ required: true });
+        return null;
+      }
+      railDetails = { destinationPhone, paymentTypeId: values.paymentTypeId };
     }
     return { idempotencyKey: crypto.randomUUID(), rail: values.rail, railDetails };
   }

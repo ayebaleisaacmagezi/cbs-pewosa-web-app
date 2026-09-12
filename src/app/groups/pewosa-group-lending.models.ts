@@ -159,6 +159,12 @@ export interface PewosaGroupLoanApplicationRequest {
   jointLiabilityAgreed: boolean;
 }
 
+export interface PewosaGroupLoanDecisionRequest {
+  decision: 'APPROVE' | 'REJECT';
+  approvedAmount?: number;
+  notes?: string;
+}
+
 export interface PewosaGroupLoanAppraisal {
   totalMemberDebtCapacity?: number;
   groupRiskBand?: string;
@@ -204,6 +210,8 @@ export interface PewosaMemberDistributionItem {
   clientName?: string;
   requestedAmount: number;
   approvedAmount: number;
+  allocationWeight?: number;
+  allocationMethod?: 'EQUAL' | 'PROPORTIONAL_TO_SAVINGS' | 'CUSTOM';
   purpose?: string;
   nativeLoanId?: number;
 }
@@ -212,12 +220,18 @@ export interface PewosaMemberDistributionItem {
  * Member loan distribution save request payload.
  */
 export interface PewosaGroupLoanDistributionRequest {
-  distributions: {
+  allocationMethod?: 'EQUAL' | 'PROPORTIONAL_TO_SAVINGS' | 'CUSTOM';
+  purpose?: string;
+  distributions?: {
     clientId: number;
     requestedAmount: number;
     approvedAmount: number;
     purpose?: string;
   }[];
+}
+
+export interface PewosaGroupLoanMaterializationRequest {
+  loanTerms: Record<string, unknown>;
 }
 
 /**
@@ -229,7 +243,54 @@ export interface PewosaGroupLoanDistributionResponse {
   totalDistributedAmount: number;
   reconciled: boolean;
   memberCount: number;
+  allocationMethod?: 'EQUAL' | 'PROPORTIONAL_TO_SAVINGS' | 'CUSTOM';
   distributions: PewosaMemberDistributionItem[];
+}
+
+export interface PewosaCollectiveRepaymentRequest {
+  amount: number;
+  paymentTypeId: number;
+  transactionDate?: string;
+  idempotencyKey: string;
+}
+
+export interface PewosaCollectiveRepaymentResponse {
+  groupId: number;
+  applicationId: number;
+  idempotencyKey: string;
+  status: 'COMPLETED';
+  allocations: {
+    client_id: number;
+    loan_id: number;
+    allocated_amount: number;
+    native_loan_transaction_id: number;
+  }[];
+}
+
+export interface PewosaGroupDefaultCase {
+  id: number;
+  applicationId: number;
+  distributionId: number;
+  defaultingClientId: number;
+  defaultingClientName: string;
+  defaultingLoanId: number;
+  overdueSince: string;
+  resolutionDueDate: string;
+  daysInArrears: number;
+  outstandingAmount: number;
+  overdueAmount: number;
+  escalationStage: 'NOTICE' | 'ESCALATED' | 'LOSS_RECOVERY';
+  status: 'OPEN' | 'RESOLVED';
+  firstDetectedOn: string;
+  lastEvaluatedOn: string;
+  resolvedOn?: string;
+}
+
+export interface PewosaGroupDefaultCasesResponse {
+  groupId: number;
+  lendingStatus: 'ACTIVE' | 'SUSPENDED_DEFAULT';
+  count: number;
+  cases: PewosaGroupDefaultCase[];
 }
 
 /**

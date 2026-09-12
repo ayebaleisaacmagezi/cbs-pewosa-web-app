@@ -21,6 +21,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { AlertService } from 'app/core/alert/alert.service';
 import { PewosaGroupLendingService } from 'app/groups/pewosa-group-lending.service';
@@ -53,6 +54,7 @@ import { DateFormatPipe } from 'app/pipes/date-format.pipe';
     MatTableModule,
     MatChipsModule,
     MatTabsModule,
+    MatTooltipModule,
     TranslateModule,
     DateFormatPipe
   ]
@@ -203,6 +205,30 @@ export class PewosaGroupApplicationComponent implements OnInit {
         this.alertService.alert({ type: 'DANGER', message: err.error?.defaultUserMessage || 'Maker-checker rule violation.' });
       }
     });
+  }
+
+  decideApplication(application: PewosaGroupLoanApplicationResponse, decision: 'APPROVE' | 'REJECT'): void {
+    this.lendingService
+      .decideLoanApplication(this.groupId, application.id, {
+        decision,
+        approvedAmount: decision === 'APPROVE' ? application.requestedAmount : undefined
+      })
+      .subscribe({
+        next: (updated) => {
+          this.applications = this.applications.map((item) => (item.id === updated.id ? updated : item));
+          this.alertService.alert({
+            type: 'SUCCESS',
+            message: `Group loan application ${decision.toLowerCase()}d successfully.`
+          });
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.alertService.alert({
+            type: 'DANGER',
+            message: err.error?.defaultUserMessage || 'Failed to decide group loan application.'
+          });
+        }
+      });
   }
 
   goToDistribution(applicationId: number): void {

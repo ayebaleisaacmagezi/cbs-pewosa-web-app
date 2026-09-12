@@ -55,10 +55,11 @@
     <mat-card class="distribution-table-card">
       <mat-card-header class="make-flex space-between align-center">
         <mat-card-title>{{ 'labels.heading.Member Loan Allocations' | translate }}</mat-card-title>
-        <button mat-stroked-button color="primary" (click)="addMemberRow()">
-          <mat-icon>person_add</mat-icon>
-          {{ 'labels.buttons.Add Member' | translate }}
-        </button>
+        <div class="layout-row gap-8">
+          <button mat-stroked-button type="button" [disabled]="saving" (click)="applyAutomaticDistribution('EQUAL')">{{ 'labels.buttons.Equal Distribution' | translate }}</button>
+          <button mat-stroked-button type="button" [disabled]="saving" (click)="applyAutomaticDistribution('PROPORTIONAL_TO_SAVINGS')">{{ 'labels.buttons.Savings-Proportional' | translate }}</button>
+          <button mat-stroked-button color="primary" type="button" (click)="addMemberRow()"><mat-icon>person_add</mat-icon>{{ 'labels.buttons.Custom Member' | translate }}</button>
+        </div>
       </mat-card-header>
 
       <mat-card-content>
@@ -122,5 +123,25 @@
         </form>
       </mat-card-content>
     </mat-card>
+
+    @if (materialized) {
+      <mat-card class="distribution-table-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Collective Group Repayment' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.The server allocates this payment pro-rata and posts each native member-loan transaction atomically.' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="collectiveRepaymentForm" (ngSubmit)="executeCollectiveRepayment()" class="layout-row gap-16 align-center">
+            <mat-form-field appearance="outline"><mat-label>{{ 'labels.inputs.Amount' | translate }}</mat-label><input matInput type="number" formControlName="amount" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'labels.inputs.Payment Type ID' | translate }}</mat-label><input matInput type="number" formControlName="paymentTypeId" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'labels.inputs.Transaction Date' | translate }}</mat-label><input matInput type="date" formControlName="transactionDate" /></mat-form-field>
+            <button mat-raised-button color="primary" type="submit" [disabled]="saving || collectiveRepaymentForm.invalid">{{ 'labels.buttons.Post Collective Repayment' | translate }}</button>
+          </form>
+          @if (lastCollectiveRepayment) {
+            <p>{{ 'labels.text.Posted member transactions' | translate }}: {{ lastCollectiveRepayment.allocations.length }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
   }
 </div>

@@ -353,13 +353,9 @@
             @for (method of disbursementMethods; track method.code) {
               <mat-checkbox
                 [checked]="methodEnabled(method.code)"
-                [disabled]="method.code === 'MOBILE_MONEY'"
                 (change)="toggleMethod(method.code, $event.checked)"
               >
                 {{ method.label | translate }}
-                @if (method.code === 'MOBILE_MONEY') {
-                  — {{ 'labels.text.Deferred for the first release' | translate }}
-                }
               </mat-checkbox>
             }
           </div>

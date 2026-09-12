@@ -135,10 +135,24 @@
                 <ng-container matColumnDef="actions">
                   <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Actions' | translate }}</th>
                   <td mat-cell *matCellDef="let app">
-                    <button mat-stroked-button color="primary" (click)="goToDistribution(app.id)">
-                      <mat-icon>group_work</mat-icon>
-                      {{ 'labels.buttons.Distribute' | translate }}
-                    </button>
+                    <div class="button-group">
+                      @if (app.status === 'SUBMITTED') {
+                        <button mat-stroked-button color="primary" (click)="decideApplication(app, 'APPROVE')">
+                          <mat-icon>check_circle</mat-icon>
+                          {{ 'labels.buttons.Approve' | translate }}
+                        </button>
+                        <button mat-stroked-button color="warn" (click)="decideApplication(app, 'REJECT')">
+                          <mat-icon>cancel</mat-icon>
+                          {{ 'labels.buttons.Reject' | translate }}
+                        </button>
+                      }
+                      @if (app.status === 'APPROVED' || app.status === 'MATERIALIZED') {
+                        <button mat-stroked-button color="primary" (click)="goToDistribution(app.id)">
+                          <mat-icon>group_work</mat-icon>
+                          {{ 'labels.buttons.Distribute' | translate }}
+                        </button>
+                      }
+                    </div>
                   </td>
                 </ng-container>
 

@@ -18,14 +18,17 @@ import {
   PewosaGroupEvidenceVerificationRequest,
   PewosaGroupEvidenceResponse,
   PewosaGroupLoanApplicationRequest,
+  PewosaGroupLoanDecisionRequest,
   PewosaGroupLoanApplicationResponse,
   PewosaGroupLoanDistributionRequest,
+  PewosaGroupLoanMaterializationRequest,
   PewosaGroupLoanDistributionResponse,
   PewosaGroupMeetingRequest,
   PewosaGroupMeetingResponse,
   PewosaGroupMeetingTransactionRequest,
   PewosaGroupMeetingTransactionResponse,
   PewosaGroupExposureResponse,
+  PewosaGroupDefaultCasesResponse,
   PewosaGroupRecoveryRequest,
   PewosaGroupRecoveryResponse
 } from './pewosa-group-lending.models';
@@ -150,6 +153,17 @@ export class PewosaGroupLendingService {
     );
   }
 
+  decideLoanApplication(
+    groupId: number | string,
+    applicationId: number | string,
+    request: PewosaGroupLoanDecisionRequest
+  ): Observable<PewosaGroupLoanApplicationResponse> {
+    return this.http.post<PewosaGroupLoanApplicationResponse>(
+      `${this.basePath(groupId)}/loan-applications/${applicationId}/decisions`,
+      request
+    );
+  }
+
   // ==========================================
   // D2: Member Loan Distribution & Exact Reconciliation
   // ==========================================
@@ -171,6 +185,28 @@ export class PewosaGroupLendingService {
   ): Observable<PewosaGroupLoanDistributionResponse> {
     return this.http.get<PewosaGroupLoanDistributionResponse>(
       `${this.basePath(groupId)}/loan-applications/${applicationId}/distribution`
+    );
+  }
+
+  materializeLoanDistribution(
+    groupId: number | string,
+    applicationId: number | string,
+    request: PewosaGroupLoanMaterializationRequest
+  ): Observable<PewosaGroupLoanDistributionResponse> {
+    return this.http.post<PewosaGroupLoanDistributionResponse>(
+      `${this.basePath(groupId)}/loan-applications/${applicationId}/distribution/materialize`,
+      request
+    );
+  }
+
+  executeCollectiveRepayment(
+    groupId: number | string,
+    applicationId: number | string,
+    request: import('./pewosa-group-lending.models').PewosaCollectiveRepaymentRequest
+  ): Observable<import('./pewosa-group-lending.models').PewosaCollectiveRepaymentResponse> {
+    return this.http.post<import('./pewosa-group-lending.models').PewosaCollectiveRepaymentResponse>(
+      `${this.basePath(groupId)}/loan-applications/${applicationId}/collective-repayments`,
+      request
     );
   }
 
@@ -218,6 +254,14 @@ export class PewosaGroupLendingService {
 
   getGroupExposure(groupId: number | string): Observable<PewosaGroupExposureResponse> {
     return this.http.get<PewosaGroupExposureResponse>(`${this.basePath(groupId)}/exposure`);
+  }
+
+  getDefaultCases(groupId: number | string): Observable<PewosaGroupDefaultCasesResponse> {
+    return this.http.get<PewosaGroupDefaultCasesResponse>(`${this.basePath(groupId)}/default-cases`);
+  }
+
+  refreshDefaultCases(groupId: number | string): Observable<PewosaGroupDefaultCasesResponse> {
+    return this.http.post<PewosaGroupDefaultCasesResponse>(`${this.basePath(groupId)}/default-cases/refresh`, {});
   }
 
   // ==========================================

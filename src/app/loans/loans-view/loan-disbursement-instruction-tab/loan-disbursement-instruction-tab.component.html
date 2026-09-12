@@ -64,7 +64,7 @@
         </section>
       }
 
-      @if (instruction.status === 'READY') {
+      @if (instruction.status === 'READY' && instruction.rail !== 'MOBILE_MONEY') {
         <div *mifosxHasPermission="'EXECUTE_PEWOSALOANDISBURSEMENT'" class="execute-container">
           @if (!showConfirmation) {
             <button
@@ -127,6 +127,9 @@
           }
         </div>
       }
+      @if (instruction.status === 'READY' && instruction.rail === 'MOBILE_MONEY') {
+        <p>{{ 'Awaiting guarded server payout and Collecto confirmation' | translate }}.</p>
+      }
     } @else {
       <form [formGroup]="instructionForm" (ngSubmit)="create()">
         <mat-form-field appearance="outline">
@@ -135,6 +138,7 @@
             <mat-option value="ACCOUNT_CREDIT">{{ 'Account credit' | translate }}</mat-option>
             <mat-option value="CASH">{{ 'Cash' | translate }}</mat-option>
             <mat-option value="CHEQUE">{{ 'Cheque' | translate }}</mat-option>
+            <mat-option value="MOBILE_MONEY">{{ 'Mobile money' | translate }}</mat-option>
           </mat-select>
         </mat-form-field>
         @if (instructionForm.controls.rail.value === 'ACCOUNT_CREDIT') {
@@ -149,7 +153,16 @@
             <input matInput formControlName="chequeNumber" />
           </mat-form-field>
         }
-        <p>{{ 'Mobile-money disbursement is unavailable in this release' | translate }}.</p>
+        @if (instructionForm.controls.rail.value === 'MOBILE_MONEY') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Destination mobile number' | translate }}</mat-label>
+            <input matInput formControlName="destinationPhone" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Payment type ID' | translate }}</mat-label>
+            <input matInput type="number" min="1" formControlName="paymentTypeId" />
+          </mat-form-field>
+        }
         <button
           mat-raised-button
           color="primary"

@@ -227,16 +227,97 @@ export interface RestructuringExecutionResponse {
 }
 
 export interface LoanWriteOffRequest {
-  expectedLoanVersion: number;
   idempotencyKey: string;
-  transactionDate: string;
+  writeOffRequestId: number;
+  expectedRequestVersion: number;
   reason: string;
-  governanceReference: string;
-  explanation: string;
-  evidenceDocumentIds?: (number | string)[];
+}
+
+export interface LoanWriteOffSubmissionRequest {
+  expectedLoanVersion: number;
+  reason: string;
+  recoveryEfforts: string;
+  legalAction?: string;
+  guarantorClaims?: string;
+  collateralLiquidation?: string;
+  evidenceDocumentIds: number[];
+}
+
+export interface LoanWriteOffDecisionRequest {
+  expectedVersion: number;
+  decision: 'APPROVED' | 'REJECTED';
+  comments?: string;
+}
+
+export interface LoanWriteOffDecision {
+  decisionLevel: 'COMMITTEE' | 'BOARD';
+  decision: 'APPROVED' | 'REJECTED';
+  comments?: string;
+  decidedByName?: string;
+  decidedOn?: string;
+}
+
+export interface LoanWriteOffWorkflow {
+  exists?: boolean;
+  id: number;
+  loanId: number;
+  status: 'SUBMITTED' | 'COMMITTEE_RECOMMENDED' | 'BOARD_APPROVED' | 'REJECTED' | 'EXECUTED';
+  reason: string;
+  recoveryEfforts: string;
+  legalAction?: string;
+  guarantorClaims?: string;
+  collateralLiquidation?: string;
+  outstandingSnapshot: number;
+  provisionSnapshot?: number;
+  expectedLoanVersion: number;
+  requestedByName?: string;
+  requestedOn?: string;
+  executedOn?: string;
+  version: number;
+  evidence: { documentId: number; evidenceType: string }[];
+  decisions: LoanWriteOffDecision[];
+}
+
+export interface LoanWriteOffQueueItem {
+  requestId: number;
+  loanId: number;
+  accountNo: string;
+  clientName: string;
+  officeName: string;
+  currencyCode: string;
+  outstandingAmount: number;
+  provisionAmount?: number;
+  reason: string;
+  status: string;
+  requestedOn: string;
+  version: number;
+}
+
+export interface LoanWriteOffQueueResponse {
+  status: string;
+  page: number;
+  size: number;
+  totalElements: number;
+  content: LoanWriteOffQueueItem[];
+}
+
+export interface LoanWriteOffReport {
+  fromDate: string;
+  toDate: string;
+  recordCount: number;
+  writeOffs: Record<string, unknown>[];
+}
+
+export interface LoanDocumentSnapshot {
+  documentType: string;
+  documentNumber: string;
+  generatedOn: string;
+  issuedBy: string;
+  [key: string]: unknown;
 }
 
 export interface LoanWriteOffResponse {
+  resourceId?: number;
   loanId: number;
   nativeTransactionId?: number;
   writtenOffPrincipal?: number;
@@ -252,13 +333,14 @@ export interface LoanRecoveryRequest {
   expectedLoanVersion: number;
   idempotencyKey: string;
   transactionDate: string;
-  amount: number;
+  transactionAmount: number;
   paymentTypeId?: number;
   receiptNumber?: string;
   notes?: string;
 }
 
 export interface LoanRecoveryResponse {
+  resourceId?: number;
   loanId: number;
   recoveryTransactionId?: number;
   amount: number;

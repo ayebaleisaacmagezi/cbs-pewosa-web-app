@@ -87,57 +87,46 @@
       </mat-card-content>
     </mat-card>
 
-    <!-- Section 1: Write-Off Form (When Loan is NOT Written Off) -->
-    @if (summary.loanStatus !== 'WRITTEN_OFF' && canWriteOff && !writeOffResult) {
+    <!-- Stage 1: Loan officer request -->
+    @if (summary.loanStatus !== 'WRITTEN_OFF' && canRequestWriteOff && !writeOffWorkflow) {
       <mat-card class="form-card">
         <mat-card-header>
-          <mat-card-title>{{ 'labels.heading.Execute Loan Write-Off' | translate }}</mat-card-title>
-          <mat-card-subtitle>{{ 'labels.text.Requires governance resolution reference and positive balance.' | translate }}</mat-card-subtitle>
+          <mat-card-title>{{ 'labels.heading.Submit Write-Off Request' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.This request must be reviewed independently by the Credit Committee and Board.' | translate }}</mat-card-subtitle>
         </mat-card-header>
 
         <mat-card-content>
           <form [formGroup]="writeOffForm" (ngSubmit)="submitWriteOff()" class="action-form">
             <div class="form-row">
               <mat-form-field appearance="outline" class="flex-50">
-                <mat-label>{{ 'labels.inputs.Write-Off Date' | translate }}</mat-label>
-                <input matInput [matDatepicker]="woDatePicker" formControlName="transactionDate" required />
-                <mat-datepicker-toggle matIconSuffix [for]="woDatePicker"></mat-datepicker-toggle>
-                <mat-datepicker #woDatePicker></mat-datepicker>
-                @if (writeOffForm.get('transactionDate')?.hasError('required')) {
-                  <mat-error>{{ 'labels.error.Date is required' | translate }}</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="flex-50">
                 <mat-label>{{ 'labels.inputs.Write-Off Reason' | translate }}</mat-label>
-                <input matInput formControlName="reason" required placeholder="e.g. EXHAUSTED_RECOVERY" />
-                @if (writeOffForm.get('reason')?.hasError('required')) {
-                  <mat-error>{{ 'labels.error.Reason is required' | translate }}</mat-error>
-                }
+                <input matInput formControlName="reason" required [placeholder]="'labels.placeholder.Write-off reason code' | translate" />
               </mat-form-field>
-            </div>
-
-            <div class="form-row">
-              <mat-form-field appearance="outline" class="flex-50">
-                <mat-label>{{ 'labels.inputs.Governance Resolution Reference' | translate }}</mat-label>
-                <input matInput formControlName="governanceReference" required placeholder="e.g. BR-2026-Q3-014" />
-                @if (writeOffForm.get('governanceReference')?.hasError('required')) {
-                  <mat-error>{{ 'labels.error.Governance reference is required' | translate }}</mat-error>
-                }
-              </mat-form-field>
-
               <mat-form-field appearance="outline" class="flex-50">
                 <mat-label>{{ 'labels.inputs.Evidence Document IDs' | translate }}</mat-label>
-                <input matInput formControlName="evidenceDocumentIds" placeholder="e.g. DOC-512, DOC-513" />
+                <input matInput formControlName="evidenceDocumentIds" required [placeholder]="'labels.placeholder.Comma-separated document IDs' | translate" />
               </mat-form-field>
             </div>
 
             <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'labels.inputs.Explanation' | translate }}</mat-label>
-              <textarea matInput formControlName="explanation" required rows="2" placeholder="{{ 'labels.placeholder.Detailed justification for write-off' | translate }}"></textarea>
-              @if (writeOffForm.get('explanation')?.hasError('required')) {
-                <mat-error>{{ 'labels.error.Explanation is required' | translate }}</mat-error>
-              }
+              <mat-label>{{ 'labels.inputs.Recovery Efforts Made' | translate }}</mat-label>
+              <textarea matInput formControlName="recoveryEfforts" required rows="3"></textarea>
+            </mat-form-field>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Legal Action Taken' | translate }}</mat-label>
+                <textarea matInput formControlName="legalAction" rows="2"></textarea>
+              </mat-form-field>
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Guarantor Claims' | translate }}</mat-label>
+                <textarea matInput formControlName="guarantorClaims" rows="2"></textarea>
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'labels.inputs.Collateral Liquidation' | translate }}</mat-label>
+              <textarea matInput formControlName="collateralLiquidation" rows="2"></textarea>
             </mat-form-field>
 
             <div class="form-actions">
@@ -145,10 +134,63 @@
                 @if (submitting) {
                   <mat-spinner diameter="20"></mat-spinner>
                 }
-                {{ 'labels.buttons.Execute Write-Off' | translate }}
+                {{ 'labels.buttons.Submit for Committee Review' | translate }}
               </button>
             </div>
           </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Stages 2-4: independent decisions and final execution -->
+    @if (writeOffWorkflow && writeOffWorkflow.status !== 'EXECUTED') {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Write-Off Governance' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Status' | translate }}: {{ writeOffWorkflow.status }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metrics-grid">
+            <div class="metric-item"><span class="label">{{ 'labels.inputs.Reason' | translate }}:</span><span class="value">{{ writeOffWorkflow.reason }}</span></div>
+            <div class="metric-item"><span class="label">{{ 'labels.inputs.Requested By' | translate }}:</span><span class="value">{{ writeOffWorkflow.requestedByName }}</span></div>
+            <div class="metric-item"><span class="label">{{ 'labels.inputs.Outstanding Snapshot' | translate }}:</span><span class="value">{{ writeOffWorkflow.outstandingSnapshot | currency:summary.currencyCode:'symbol-narrow' }}</span></div>
+            <div class="metric-item"><span class="label">{{ 'labels.inputs.Provision Snapshot' | translate }}:</span><span class="value">{{ writeOffWorkflow.provisionSnapshot | currency:summary.currencyCode:'symbol-narrow' }}</span></div>
+          </div>
+          <p><strong>{{ 'labels.inputs.Recovery Efforts Made' | translate }}:</strong> {{ writeOffWorkflow.recoveryEfforts }}</p>
+
+          @if (writeOffWorkflow.decisions.length) {
+            <h3>{{ 'labels.heading.Decision History' | translate }}</h3>
+            @for (decision of writeOffWorkflow.decisions; track decision.decisionLevel) {
+              <p>{{ decision.decisionLevel }} &mdash; {{ decision.decision }} &mdash; {{ decision.decidedByName }}: {{ decision.comments }}</p>
+            }
+          }
+
+          @if ((writeOffWorkflow.status === 'SUBMITTED' && canCommitteeReview) || (writeOffWorkflow.status === 'COMMITTEE_RECOMMENDED' && canBoardReview)) {
+            <form [formGroup]="decisionForm" class="action-form">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'labels.inputs.Review Comments' | translate }}</mat-label>
+                <textarea matInput formControlName="comments" required rows="3"></textarea>
+              </mat-form-field>
+              <div class="form-actions">
+                <button mat-raised-button color="primary" type="button" [disabled]="submitting || decisionForm.invalid"
+                  (click)="recordDecision(writeOffWorkflow.status === 'SUBMITTED' ? 'COMMITTEE' : 'BOARD', 'APPROVED')">
+                  {{ (writeOffWorkflow.status === 'SUBMITTED' ? 'labels.buttons.Recommend Write-Off' : 'labels.buttons.Approve Write-Off') | translate }}
+                </button>
+                <button mat-stroked-button color="warn" type="button" [disabled]="submitting || decisionForm.invalid"
+                  (click)="recordDecision(writeOffWorkflow.status === 'SUBMITTED' ? 'COMMITTEE' : 'BOARD', 'REJECTED')">
+                  {{ 'labels.buttons.Reject' | translate }}
+                </button>
+              </div>
+            </form>
+          }
+
+          @if (writeOffWorkflow.status === 'BOARD_APPROVED' && canExecuteWriteOff) {
+            <div class="form-actions">
+              <button mat-raised-button color="warn" type="button" [disabled]="submitting" (click)="executeApprovedWriteOff()">
+                {{ 'labels.buttons.Post Approved Write-Off' | translate }}
+              </button>
+            </div>
+          }
         </mat-card-content>
       </mat-card>
     }
@@ -213,12 +255,12 @@
             <div class="form-row">
               <mat-form-field appearance="outline" class="flex-50">
                 <mat-label>{{ 'labels.inputs.Receipt Number' | translate }}</mat-label>
-                <input matInput formControlName="receiptNumber" placeholder="e.g. REC-REC-0012" />
+                <input matInput formControlName="receiptNumber" [placeholder]="'labels.placeholder.Recovery receipt number' | translate" />
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="flex-50">
                 <mat-label>{{ 'labels.inputs.Payment Type ID' | translate }}</mat-label>
-                <input matInput type="number" formControlName="paymentTypeId" placeholder="e.g. 1 (Cash)" />
+                <input matInput type="number" formControlName="paymentTypeId" [placeholder]="'labels.placeholder.Payment type ID' | translate" />
               </mat-form-field>
             </div>
 
@@ -258,6 +300,30 @@
               <span class="value">{{ recoveryResult.totalRecoveredToDate | currency:'UGX':'symbol-narrow' }}</span>
             </div>
           </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (canIssueDocuments) {
+      <mat-card class="form-card">
+        <mat-card-header><mat-card-title>{{ 'labels.heading.Loan Documents' | translate }}</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <div class="form-actions">
+            <button mat-stroked-button type="button" (click)="issueDocument('DISBURSEMENT_VOUCHER')">{{ 'labels.buttons.Disbursement Voucher' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="issueDocument('REPAYMENT_SCHEDULE')">{{ 'labels.buttons.Repayment Schedule' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="issueDocument('DEMAND_LETTER')">{{ 'labels.buttons.Demand Letter' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="issueDocument('CLEARANCE_CERTIFICATE')">{{ 'labels.buttons.Clearance Certificate' | translate }}</button>
+            <button mat-stroked-button type="button" (click)="issueDocument('FINAL_STATEMENT')">{{ 'labels.buttons.Final Statement' | translate }}</button>
+          </div>
+          @if (issuedDocument) {
+            <section class="issued-document">
+              <p>{{ issuedDocument.documentType }} &mdash; {{ issuedDocument.documentNumber }} &mdash; {{ issuedDocument.generatedOn }}</p>
+              <pre>{{ issuedDocumentJson }}</pre>
+              <button mat-raised-button color="primary" type="button" (click)="printIssuedDocument()">
+                {{ 'labels.buttons.Print Document' | translate }}
+              </button>
+            </section>
+          }
         </mat-card-content>
       </mat-card>
     }

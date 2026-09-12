@@ -98,6 +98,7 @@ import { LoanWriteOffComponent } from './loans-view/loan-write-off/loan-write-of
 import { LoanSecurityReleaseComponent } from './loans-view/loan-security-release/loan-security-release.component';
 import { LoanClosureComponent } from './loans-view/loan-closure/loan-closure.component';
 import { staffWorkspaceGuard } from '../staff-workspaces/staff-workspace.guard';
+import { WriteOffQueueComponent } from './write-off-queue/write-off-queue.component';
 
 /** Loans Route. */
 const routes: Routes = [
@@ -113,6 +114,12 @@ const routes: Routes = [
           loansAccountTemplate: LoansAccountTemplateResolver,
           loanProductsBasicDetails: LoanProductsResolver
         }
+      },
+      {
+        path: 'write-off-queue',
+        component: WriteOffQueueComponent,
+        canActivate: [staffWorkspaceGuard],
+        data: { title: 'Write-Off Review Queue', breadcrumb: 'Write-Off Queue', permission: 'READ_PEWOSALOANSERVICING' }
       },
       {
         path: ':loanId',
@@ -408,7 +415,7 @@ const routes: Routes = [
               title: 'Loan Write-Off',
               breadcrumb: 'Write-Off',
               routeParamBreadcrumb: false,
-              permission: 'CREATE_PEWOSAWRITEOFF'
+              permission: 'READ_PEWOSALOANSERVICING'
             }
           },
           {

@@ -22,6 +22,12 @@ import {
   LoanWorkQueueResponse,
   LoanWriteOffRequest,
   LoanWriteOffResponse,
+  LoanWriteOffSubmissionRequest,
+  LoanWriteOffDecisionRequest,
+  LoanWriteOffWorkflow,
+  LoanDocumentSnapshot,
+  LoanWriteOffQueueResponse,
+  LoanWriteOffReport,
   RestructuringDecisionRequest,
   RestructuringDecisionResponse,
   RestructuringExecutionRequest,
@@ -118,6 +124,40 @@ export class PewosaLoanServicingService {
 
   executeWriteOff(loanId: number, payload: LoanWriteOffRequest): Observable<LoanWriteOffResponse> {
     return this.http.post<LoanWriteOffResponse>(`${this.basePath}/loans/${loanId}/write-offs`, payload);
+  }
+
+  submitWriteOffRequest(loanId: number, payload: LoanWriteOffSubmissionRequest): Observable<LoanWriteOffWorkflow> {
+    return this.http.post<LoanWriteOffWorkflow>(`${this.basePath}/loans/${loanId}/write-off-requests`, payload);
+  }
+
+  getCurrentWriteOffRequest(loanId: number): Observable<LoanWriteOffWorkflow> {
+    return this.http.get<LoanWriteOffWorkflow>(`${this.basePath}/loans/${loanId}/write-off-requests/current`);
+  }
+
+  recordWriteOffDecision(
+    loanId: number,
+    requestId: number,
+    level: 'COMMITTEE' | 'BOARD',
+    payload: LoanWriteOffDecisionRequest
+  ): Observable<LoanWriteOffWorkflow> {
+    return this.http.post<LoanWriteOffWorkflow>(
+      `${this.basePath}/loans/${loanId}/write-off-requests/${requestId}/decisions/${level}`,
+      payload
+    );
+  }
+
+  issueLoanDocument(loanId: number, documentType: string): Observable<LoanDocumentSnapshot> {
+    return this.http.post<LoanDocumentSnapshot>(`${this.basePath}/loans/${loanId}/documents/${documentType}`, {});
+  }
+
+  getWriteOffQueue(status: string, page = 0, size = 20): Observable<LoanWriteOffQueueResponse> {
+    const params = new HttpParams().set('status', status).set('page', page).set('size', size);
+    return this.http.get<LoanWriteOffQueueResponse>(`${this.basePath}/write-off-requests`, { params });
+  }
+
+  getWriteOffReport(fromDate: string, toDate: string): Observable<LoanWriteOffReport> {
+    const params = new HttpParams().set('fromDate', fromDate).set('toDate', toDate);
+    return this.http.get<LoanWriteOffReport>(`${this.basePath}/write-off-report`, { params });
   }
 
   recordRecovery(loanId: number, payload: LoanRecoveryRequest): Observable<LoanRecoveryResponse> {
