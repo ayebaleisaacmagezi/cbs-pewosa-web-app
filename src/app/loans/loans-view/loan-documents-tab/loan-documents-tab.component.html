@@ -6,6 +6,73 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
+@if (documentChecklist?.requirements?.length) {
+  <mat-card class="workflow-checklist">
+    <mat-card-header>
+      <mat-card-title>{{ 'Required loan documents' | translate }}</mat-card-title>
+      <mat-card-subtitle
+        >{{ 'Upload files below then link each file to its policy requirement' | translate }}.</mat-card-subtitle
+      >
+    </mat-card-header>
+    <mat-card-content>
+      @if (workflowMessage) {
+        <div class="workflow-message">{{ workflowMessage }}</div>
+      }
+      <div class="requirement-list">
+        @for (requirement of documentChecklist.requirements; track requirement.requirementCode) {
+          <div class="requirement-row">
+            <div class="requirement-copy">
+              <strong>{{ requirement.requirementCode }}</strong>
+              <span>{{ 'Required before' | translate }}: {{ requirement.requiredBefore }}</span>
+            </div>
+            <span class="requirement-status" [class.verified]="requirement.status === 'VERIFIED'">{{
+              requirement.status
+            }}</span>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'Attached loan document' | translate }}</mat-label>
+              <mat-select [(value)]="selectedDocumentByRequirement[requirement.requirementCode]">
+                @for (document of entityDocuments || []; track document.id) {
+                  <mat-option [value]="document.id">{{ document.fileName || document.name }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <button
+              mat-stroked-button
+              color="primary"
+              (click)="linkRequirement(requirement.requirementCode)"
+              *mifosxHasPermission="'UPDATE_PEWOSALOANDOCUMENT'"
+            >
+              {{ 'Link' | translate }}
+            </button>
+            @if (requirement.status === 'UPLOADED') {
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="verifyRequirement(requirement.requirementCode, 'VERIFIED')"
+                *mifosxHasPermission="'APPROVE_PEWOSALOANDOCUMENT'"
+              >
+                {{ 'Verify' | translate }}
+              </button>
+              <mat-form-field appearance="outline" *mifosxHasPermission="'APPROVE_PEWOSALOANDOCUMENT'">
+                <mat-label>{{ 'Rejection reason' | translate }}</mat-label>
+                <input matInput [formControl]="rejectionReasonControl(requirement.requirementCode)" />
+              </mat-form-field>
+              <button
+                mat-button
+                color="warn"
+                (click)="verifyRequirement(requirement.requirementCode, 'REJECTED')"
+                *mifosxHasPermission="'APPROVE_PEWOSALOANDOCUMENT'"
+              >
+                {{ 'Reject' | translate }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
 <mifosx-entity-documents-tab
   [entityType]="entityType"
   [entityId]="entityId"

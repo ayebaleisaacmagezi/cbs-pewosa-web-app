@@ -1,0 +1,89 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.pewosa-distribution-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  .gap-16 {
+    gap: 16px;
+  }
+
+  .gap-12 {
+    gap: 12px;
+  }
+
+  .summary-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .label {
+      font-size: 12px;
+      color: #6c757d;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .value {
+      font-size: 16px;
+      font-weight: 700;
+
+      &.mismatch {
+        color: #d9534f;
+      }
+    }
+  }
+
+  .chip-reconciled {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+    font-weight: 600;
+  }
+
+  .chip-mismatch {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+    font-weight: 600;
+  }
+
+  .member-row {
+    background-color: #fcfcfc;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+
+  .actions-bar {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e9ecef;
+
+    .reconciliation-badge {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+
+      .text-success {
+        color: #28a745;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .text-warn {
+        color: #dc3545;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+  }
+}

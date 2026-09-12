@@ -26,26 +26,7 @@
     </div>
   }
 
-  @if (!onboarding) {
-    <mat-card>
-      <mat-card-content>
-        <h2>{{ 'Start or validate a new member' | translate }}</h2>
-        <form [formGroup]="startForm" class="form-grid">
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'National ID' | translate }}</mat-label>
-            <input matInput formControlName="nationalId" />
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>{{ 'labels.inputs.Mobile No' | translate }}</mat-label>
-            <input matInput formControlName="mobileNo" />
-          </mat-form-field>
-          <button mat-raised-button color="primary" type="button" [disabled]="submitting" (click)="startOnboarding()">
-            {{ 'Check duplicates and start' | translate }}
-          </button>
-        </form>
-      </mat-card-content>
-    </mat-card>
-  } @else {
+  @if (onboarding) {
     <mat-stepper orientation="vertical">
       <mat-step [completed]="!!onboarding.clientId">
         <ng-template matStepLabel>{{ 'Member record' | translate }}</ng-template>

@@ -44,6 +44,28 @@ export const STAFF_WORKSPACE_ROUTES: Routes = [
       data: { title: 'Loan Officer workspace', workspaceRole: 'loan officer' }
     },
     {
+      path: 'loan-servicing',
+      loadComponent: () =>
+        import('./loan-servicing-queue/loan-servicing-queue.component').then((m) => m.LoanServicingQueueComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: {
+        title: 'Loan Servicing Queue',
+        permission: 'READ_PEWOSALOANSERVICING'
+      }
+    },
+    {
+      path: 'loan-approval-queue',
+      loadComponent: () =>
+        import('../loans/loans-view/loan-approval-queue/loan-approval-queue.component').then(
+          (m) => m.LoanApprovalQueueComponent
+        ),
+      canActivate: [staffWorkspaceGuard],
+      data: {
+        title: 'Loan Approval Queue',
+        permission: 'READ_PEWOSALOANAPPROVAL'
+      }
+    },
+    {
       path: 'vault-officer',
       loadComponent: () => import('./vault-officer-workspace.component').then((m) => m.VaultOfficerWorkspaceComponent),
       canActivate: [staffWorkspaceGuard],

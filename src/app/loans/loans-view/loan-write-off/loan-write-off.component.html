@@ -1,0 +1,265 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="write-off-container">
+  <!-- Back Link -->
+  <div class="header-nav">
+    <a mat-button [routerLink]="['../servicing']">
+      <fa-icon icon="arrow-left"></fa-icon>
+      {{ 'labels.buttons.Back to Loan Servicing' | translate }}
+    </a>
+    <h2>{{ 'labels.heading.Loan Write-Off & Recovery' | translate }}</h2>
+  </div>
+
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>{{ 'labels.text.Loading loan servicing status...' | translate }}</span>
+    </div>
+  }
+
+  @if (denied) {
+    <div class="access-denied-container">
+      <mat-icon color="warn">lock</mat-icon>
+      <h3>{{ 'labels.heading.Access Denied' | translate }}</h3>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (conflictError) {
+    <div class="conflict-container">
+      <mat-icon color="warn">warning</mat-icon>
+      <div class="conflict-text">
+        <strong>{{ 'labels.heading.Concurrency Conflict' | translate }}</strong>
+        <p>{{ conflictError }}</p>
+        <button mat-flat-button color="warn" (click)="loadSummary()">
+          {{ 'labels.buttons.Refresh Latest State' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (errorMessage && !denied && !conflictError) {
+    <div class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="success-container">
+      <mat-icon color="primary">check_circle</mat-icon>
+      <p>{{ successMessage }}</p>
+    </div>
+  }
+
+  @if (summary && !loading && !denied) {
+    <!-- Financial Context Card -->
+    <mat-card class="status-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'labels.heading.Authoritative Loan State' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'labels.text.Account No' | translate }}: {{ summary.accountNo }} | {{ 'labels.text.Status' | translate }}: {{ summary.loanStatus }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Total Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.totalOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Principal Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.principalOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Interest Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.interestOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Delinquency Classification' | translate }}:</span>
+            <span class="value">{{ summary.classification }} ({{ summary.daysInArrears }} {{ 'labels.text.days' | translate }})</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Section 1: Write-Off Form (When Loan is NOT Written Off) -->
+    @if (summary.loanStatus !== 'WRITTEN_OFF' && canWriteOff && !writeOffResult) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Execute Loan Write-Off' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Requires governance resolution reference and positive balance.' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <form [formGroup]="writeOffForm" (ngSubmit)="submitWriteOff()" class="action-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Write-Off Date' | translate }}</mat-label>
+                <input matInput [matDatepicker]="woDatePicker" formControlName="transactionDate" required />
+                <mat-datepicker-toggle matIconSuffix [for]="woDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #woDatePicker></mat-datepicker>
+                @if (writeOffForm.get('transactionDate')?.hasError('required')) {
+                  <mat-error>{{ 'labels.error.Date is required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Write-Off Reason' | translate }}</mat-label>
+                <input matInput formControlName="reason" required placeholder="e.g. EXHAUSTED_RECOVERY" />
+                @if (writeOffForm.get('reason')?.hasError('required')) {
+                  <mat-error>{{ 'labels.error.Reason is required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Governance Resolution Reference' | translate }}</mat-label>
+                <input matInput formControlName="governanceReference" required placeholder="e.g. BR-2026-Q3-014" />
+                @if (writeOffForm.get('governanceReference')?.hasError('required')) {
+                  <mat-error>{{ 'labels.error.Governance reference is required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Evidence Document IDs' | translate }}</mat-label>
+                <input matInput formControlName="evidenceDocumentIds" placeholder="e.g. DOC-512, DOC-513" />
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'labels.inputs.Explanation' | translate }}</mat-label>
+              <textarea matInput formControlName="explanation" required rows="2" placeholder="{{ 'labels.placeholder.Detailed justification for write-off' | translate }}"></textarea>
+              @if (writeOffForm.get('explanation')?.hasError('required')) {
+                <mat-error>{{ 'labels.error.Explanation is required' | translate }}</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button color="warn" type="submit" [disabled]="submitting || writeOffForm.invalid">
+                @if (submitting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                }
+                {{ 'labels.buttons.Execute Write-Off' | translate }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Write-Off Result Confirmation -->
+    @if (writeOffResult) {
+      <mat-card class="result-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Write-Off Completed' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Native Transaction ID' | translate }}: {{ writeOffResult.nativeTransactionId }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Total Written Off' | translate }}:</span>
+              <span class="value warn-text">{{ writeOffResult.totalWrittenOff | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Principal Written Off' | translate }}:</span>
+              <span class="value">{{ writeOffResult.writtenOffPrincipal | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Interest Written Off' | translate }}:</span>
+              <span class="value">{{ writeOffResult.writtenOffInterest | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Fee/Penalty Written Off' | translate }}:</span>
+              <span class="value">{{ ((writeOffResult.writtenOffFee || 0) + (writeOffResult.writtenOffPenalty || 0)) | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Section 2: Recovery Payment Form (Only When Status is WRITTEN_OFF) -->
+    @if ((summary.loanStatus === 'WRITTEN_OFF' || writeOffResult) && canRecover) {
+      <mat-card class="form-card recovery-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Record Post-Write-Off Recovery Payment' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Posts off-balance sheet GL recovery entry natively in Fineract.' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <form [formGroup]="recoveryForm" (ngSubmit)="submitRecovery()" class="action-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Transaction Date' | translate }}</mat-label>
+                <input matInput [matDatepicker]="recDatePicker" formControlName="transactionDate" required />
+                <mat-datepicker-toggle matIconSuffix [for]="recDatePicker"></mat-datepicker-toggle>
+                <mat-datepicker #recDatePicker></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Recovery Amount' | translate }}</mat-label>
+                <input matInput type="number" formControlName="amount" required min="0.01" />
+                @if (recoveryForm.get('amount')?.hasError('required')) {
+                  <mat-error>{{ 'labels.error.Amount is required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Receipt Number' | translate }}</mat-label>
+                <input matInput formControlName="receiptNumber" placeholder="e.g. REC-REC-0012" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Payment Type ID' | translate }}</mat-label>
+                <input matInput type="number" formControlName="paymentTypeId" placeholder="e.g. 1 (Cash)" />
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'labels.inputs.Recovery Notes' | translate }}</mat-label>
+              <textarea matInput formControlName="notes" rows="2" placeholder="{{ 'labels.placeholder.Settlement details' | translate }}"></textarea>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="submitting || recoveryForm.invalid">
+                @if (submitting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                }
+                {{ 'labels.buttons.Record Recovery Payment' | translate }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Recovery Result Confirmation -->
+    @if (recoveryResult) {
+      <mat-card class="result-card success-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Recovery Payment Recorded' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Transaction ID' | translate }}: {{ recoveryResult.recoveryTransactionId }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Recovered Amount' | translate }}:</span>
+              <span class="value">{{ recoveryResult.amount | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Total Recovered to Date' | translate }}:</span>
+              <span class="value">{{ recoveryResult.totalRecoveredToDate | currency:'UGX':'symbol-narrow' }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

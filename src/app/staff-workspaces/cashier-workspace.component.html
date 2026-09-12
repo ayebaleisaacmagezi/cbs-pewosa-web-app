@@ -37,7 +37,7 @@
           <h2>Serve a member</h2>
           <p>Choose what the member needs, then find their account.</p>
           <div class="quick-actions">
-            <a mat-stroked-button routerLink="/staff-workspaces/cashier/onboarding">
+            <a mat-stroked-button routerLink="/clients/create" [queryParams]="{ workspace: 'cashier' }">
               <mat-icon class="action-icon">person_add</mat-icon><b>{{ 'Onboard member' | translate }}</b>
             </a>
             <button type="button" (click)="startTransaction('deposit')">

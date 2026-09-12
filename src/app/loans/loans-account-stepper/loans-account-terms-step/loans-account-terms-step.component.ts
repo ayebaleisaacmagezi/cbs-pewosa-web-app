@@ -252,6 +252,11 @@ export class LoansAccountTermsStepComponent extends LoanProductBaseComponent imp
             this.loansAccountTermsData.interestRecognitionOnDisbursementDate || false
         });
 
+        const requestedAmount = Number(this.route.snapshot.queryParamMap.get('requestedAmount'));
+        if (this.loanId == null && Number.isFinite(requestedAmount) && requestedAmount > 0) {
+          this.loansAccountTermsForm.patchValue({ principalAmount: requestedAmount });
+        }
+
         this.setAdvancedPaymentStrategyControls();
 
         if (this.loansAccountTermsData.loanScheduleType.code == LoanProducts.LOAN_SCHEDULE_TYPE_CUMULATIVE) {

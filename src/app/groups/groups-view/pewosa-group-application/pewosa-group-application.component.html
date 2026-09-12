@@ -1,0 +1,273 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="pewosa-group-application-container">
+  @if (loading) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <mat-tab-group animationDuration="0ms">
+    <!-- Tab 1: Applications List & Creation -->
+    <mat-tab [label]="'labels.heading.Group Applications' | translate">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Create Group Loan Application' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'labels.subheading.Bound to verified eligibility snapshot' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <form [formGroup]="appForm" (ngSubmit)="submitApplication()" class="layout-column">
+              <div class="layout-row gap-16">
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Eligibility Reference' | translate }}</mat-label>
+                  <mat-select formControlName="eligibilityReference">
+                    @for (elig of eligibilityHistory; track elig.reference) {
+                      <mat-option [value]="elig.reference">
+                        {{ elig.reference }} ({{ elig.loanProductName }} - {{ elig.requestedTotalAmount | currency:'UGX':'symbol':'1.0-0' }})
+                      </mat-option>
+                    }
+                  </mat-select>
+                  @if (appForm.get('eligibilityReference')?.hasError('required')) {
+                    <mat-error>{{ 'labels.errors.Eligibility reference is required' | translate }}</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Requested Amount' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="requestedAmount" />
+                  @if (appForm.get('requestedAmount')?.hasError('required')) {
+                    <mat-error>{{ 'labels.errors.Requested amount is required' | translate }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="layout-row gap-16">
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Term (Months)' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="requestedTerm" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Repayment Frequency' | translate }}</mat-label>
+                  <mat-select formControlName="repaymentFrequency">
+                    <mat-option value="WEEKLY">Weekly</mat-option>
+                    <mat-option value="BI_WEEKLY">Bi-Weekly</mat-option>
+                    <mat-option value="MONTHLY">Monthly</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'labels.inputs.Loan Purpose' | translate }}</mat-label>
+                <textarea matInput formControlName="purpose" rows="2"></textarea>
+              </mat-form-field>
+
+              <div class="joint-liability-toggle">
+                <mat-checkbox formControlName="jointLiabilityAgreed" color="primary">
+                  {{ 'labels.inputs.Acknowledge Joint & Several Liability Agreement' | translate }}
+                </mat-checkbox>
+                @if (appForm.get('jointLiabilityAgreed')?.hasError('required')) {
+                  <mat-error class="checkbox-error">{{ 'labels.errors.Joint liability affirmation is required' | translate }}</mat-error>
+                }
+              </div>
+
+              <div class="form-actions align-end">
+                <button mat-raised-button color="primary" type="submit" [disabled]="submitting || appForm.invalid">
+                  <mat-icon>send</mat-icon>
+                  {{ 'labels.buttons.Submit Application' | translate }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="list-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Submitted Applications' | translate }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (applications.length > 0) {
+              <table mat-table [dataSource]="applications" class="full-width">
+                <ng-container matColumnDef="reference">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Reference' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">{{ app.applicationReference }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="product">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Product' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">{{ app.productName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="requestedAmount">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Requested' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">{{ app.requestedAmount | currency:'UGX':'symbol':'1.0-0' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="approvedAmount">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Approved' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">
+                    {{ app.approvedAmount ? (app.approvedAmount | currency:'UGX':'symbol':'1.0-0') : '—' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Status' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">
+                    <mat-chip [ngClass]="app.status.toLowerCase()">{{ app.status }}</mat-chip>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="jointLiability">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Joint Liability' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">
+                    <mat-icon [color]="app.jointLiabilityAgreed ? 'primary' : 'warn'">
+                      {{ app.jointLiabilityAgreed ? 'check_circle' : 'cancel' }}
+                    </mat-icon>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Actions' | translate }}</th>
+                  <td mat-cell *matCellDef="let app">
+                    <button mat-stroked-button color="primary" (click)="goToDistribution(app.id)">
+                      <mat-icon>group_work</mat-icon>
+                      {{ 'labels.buttons.Distribute' | translate }}
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="appColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: appColumns"></tr>
+              </table>
+            } @else {
+              <div class="empty-state">
+                <mat-icon>folder_open</mat-icon>
+                <p>{{ 'labels.msg.No group applications found' | translate }}</p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Evidence Checklist & Verification -->
+    <mat-tab [label]="'labels.heading.Evidence & Resolutions' | translate">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Submit Evidence Checklist Item' | translate }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="evidenceForm" (ngSubmit)="submitEvidence()" class="layout-row gap-16 align-center">
+              <mat-form-field appearance="outline" class="flex-30">
+                <mat-label>{{ 'labels.inputs.Evidence Type' | translate }}</mat-label>
+                <mat-select formControlName="evidenceType">
+                  @for (t of evidenceTypes; track t) {
+                    <mat-option [value]="t">{{ t }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-20">
+                <mat-label>{{ 'labels.inputs.Stage' | translate }}</mat-label>
+                <mat-select formControlName="stage">
+                  <mat-option value="SUBMISSION">SUBMISSION</mat-option>
+                  <mat-option value="APPROVAL">APPROVAL</mat-option>
+                  <mat-option value="DISBURSEMENT">DISBURSEMENT</mat-option>
+                </mat-select>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="flex-35">
+                <mat-label>{{ 'labels.inputs.Notes' | translate }}</mat-label>
+                <input matInput formControlName="notes" />
+              </mat-form-field>
+
+              <div class="flex-15">
+                <button mat-raised-button color="primary" type="submit" [disabled]="evidenceForm.invalid">
+                  <mat-icon>upload_file</mat-icon>
+                  {{ 'labels.buttons.Upload' | translate }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="list-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Evidence Verification Checklist' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'labels.subheading.Maker-checker separated approvals' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            @if (evidenceList.length > 0) {
+              <table mat-table [dataSource]="evidenceList" class="full-width">
+                <ng-container matColumnDef="type">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Type' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">{{ ev.evidenceType }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="fileName">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.File' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">{{ ev.fileName }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="stage">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Stage' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">{{ ev.stage }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Status' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">
+                    <mat-chip [ngClass]="ev.status.toLowerCase()">{{ ev.status }}</mat-chip>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="submittedBy">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Submitted By' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">{{ ev.submittedBy }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="verifiedBy">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Verified By' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">{{ ev.verifiedBy || '—' }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Verification Actions' | translate }}</th>
+                  <td mat-cell *matCellDef="let ev">
+                    @if (ev.status === 'PENDING') {
+                      <div class="button-group">
+                        <button mat-icon-button color="primary" matTooltip="Verify" (click)="verifyEvidence(ev, 'VERIFIED')">
+                          <mat-icon>check_circle</mat-icon>
+                        </button>
+                        <button mat-icon-button color="warn" matTooltip="Reject" (click)="verifyEvidence(ev, 'REJECTED')">
+                          <mat-icon>cancel</mat-icon>
+                        </button>
+                      </div>
+                    } @else {
+                      <span>{{ ev.status }}</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="evidenceColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: evidenceColumns"></tr>
+              </table>
+            } @else {
+              <div class="empty-state">
+                <mat-icon>assignment</mat-icon>
+                <p>{{ 'labels.msg.No evidence recorded' | translate }}</p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

@@ -566,6 +566,58 @@
         </a>
         <a
           mat-tab-link
+          *mifosxHasPermission="'READ_PEWOSALOANAPPRAISAL'"
+          [routerLink]="['./appraisal']"
+          [queryParams]="{
+            productType: loanProductService.productType.value
+          }"
+          routerLinkActive
+          #appraisal="routerLinkActive"
+          [active]="appraisal.isActive"
+        >
+          {{ 'Loan Appraisal' | translate }}
+        </a>
+        <a
+          mat-tab-link
+          *mifosxHasPermission="'READ_PEWOSALOANAPPROVAL'"
+          [routerLink]="['./approval']"
+          [queryParams]="{
+            productType: loanProductService.productType.value
+          }"
+          routerLinkActive
+          #approval="routerLinkActive"
+          [active]="approval.isActive"
+        >
+          {{ 'Loan Approval' | translate }}
+        </a>
+        <a
+          mat-tab-link
+          *mifosxHasPermission="'READ_PEWOSALOANSCORE'"
+          [routerLink]="['./credit-score']"
+          [queryParams]="{
+            productType: loanProductService.productType.value
+          }"
+          routerLinkActive
+          #creditScore="routerLinkActive"
+          [active]="creditScore.isActive"
+        >
+          {{ 'Credit Score' | translate }}
+        </a>
+        <a
+          mat-tab-link
+          *mifosxHasPermission="'READ_PEWOSALOANDISBURSEMENT'"
+          [routerLink]="['./disbursement-instruction']"
+          [queryParams]="{
+            productType: loanProductService.productType.value
+          }"
+          routerLinkActive
+          #disbursementInstruction="routerLinkActive"
+          [active]="disbursementInstruction.isActive"
+        >
+          {{ 'Disbursement Instruction' | translate }}
+        </a>
+        <a
+          mat-tab-link
           *mifosxHasPermission="'READ_LOANNOTE'"
           [routerLink]="['./notes']"
           [queryParams]="{
@@ -603,6 +655,18 @@
             [active]="externalAssetOwner.isActive"
           >
             {{ 'labels.inputs.External Asset Owner' | translate }}
+          </a>
+        }
+        @if (loanDetailsData) {
+          <a
+            mat-tab-link
+            *mifosxHasPermission="'READ_PEWOSALOANSERVICING'"
+            [routerLink]="['./servicing']"
+            routerLinkActive
+            #servicing="routerLinkActive"
+            [active]="servicing.isActive"
+          >
+            {{ 'labels.inputs.Loan Servicing' | translate }}
           </a>
         }
         @if (loanProductService.isLoanProduct && datatablesReady) {

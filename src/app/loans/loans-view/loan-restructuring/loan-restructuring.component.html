@@ -1,0 +1,334 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="restructuring-container">
+  <!-- Back Link -->
+  <div class="header-nav">
+    <a mat-button [routerLink]="['../servicing']">
+      <fa-icon icon="arrow-left"></fa-icon>
+      {{ 'labels.buttons.Back to Loan Servicing' | translate }}
+    </a>
+    <h2>{{ 'labels.heading.Loan Restructuring' | translate }}</h2>
+  </div>
+
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>{{ 'labels.text.Loading restructuring details...' | translate }}</span>
+    </div>
+  }
+
+  @if (denied) {
+    <div class="access-denied-container">
+      <mat-icon color="warn">lock</mat-icon>
+      <h3>{{ 'labels.heading.Access Denied' | translate }}</h3>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (conflictError) {
+    <div class="conflict-container">
+      <mat-icon color="warn">warning</mat-icon>
+      <div class="conflict-text">
+        <strong>{{ 'labels.heading.Concurrency Conflict' | translate }}</strong>
+        <p>{{ conflictError }}</p>
+        <button mat-flat-button color="warn" (click)="loadSummary()">
+          {{ 'labels.buttons.Refresh Latest State' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (errorMessage && !denied && !conflictError) {
+    <div class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="success-container">
+      <mat-icon color="primary">check_circle</mat-icon>
+      <p>{{ successMessage }}</p>
+    </div>
+  }
+
+  <!-- Section 1: Submit Proposal Form -->
+  @if (canCreate && !activeProposal && !denied && summary) {
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'labels.heading.Submit Restructuring Proposal' | translate }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ 'labels.text.Loan Account' | translate }}: {{ summary.accountNo }} |
+          {{ 'labels.text.Version' | translate }}: {{ summary.loanVersion }}
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="proposalForm" (ngSubmit)="submitProposal()" class="proposal-form">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-50">
+              <mat-label>{{ 'labels.inputs.Reason for Restructuring' | translate }}</mat-label>
+              <input matInput formControlName="reason" required placeholder="e.g. BUSINESS_DOWNTURN" />
+              @if (proposalForm.get('reason')?.hasError('required')) {
+                <mat-error>{{ 'labels.error.Reason is required' | translate }}</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-50">
+              <mat-label>{{ 'labels.inputs.Reschedule From Date' | translate }}</mat-label>
+              <input matInput [matDatepicker]="reschedulePicker" formControlName="rescheduleFromDate" required />
+              <mat-datepicker-toggle matIconSuffix [for]="reschedulePicker"></mat-datepicker-toggle>
+              <mat-datepicker #reschedulePicker></mat-datepicker>
+              @if (proposalForm.get('rescheduleFromDate')?.hasError('required')) {
+                <mat-error>{{ 'labels.error.Date is required' | translate }}</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-25">
+              <mat-label>{{ 'labels.inputs.Grace on Principal (Months)' | translate }}</mat-label>
+              <input matInput type="number" formControlName="graceOnPrincipal" min="0" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-25">
+              <mat-label>{{ 'labels.inputs.Grace on Interest (Months)' | translate }}</mat-label>
+              <input matInput type="number" formControlName="graceOnInterest" min="0" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-25">
+              <mat-label>{{ 'labels.inputs.Extra Terms (Installments)' | translate }}</mat-label>
+              <input matInput type="number" formControlName="extraTerms" min="0" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-25">
+              <mat-label>{{ 'labels.inputs.New Interest Rate (%)' | translate }}</mat-label>
+              <input matInput type="number" formControlName="newInterestRate" min="0" step="0.01" />
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-50">
+              <mat-label>{{ 'labels.inputs.Evidence Document IDs' | translate }}</mat-label>
+              <input matInput formControlName="evidenceDocumentIds" placeholder="e.g. DOC-101, DOC-102" />
+              <mat-hint>{{ 'labels.hint.Comma-separated document IDs' | translate }}</mat-hint>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-50">
+              <mat-label>{{ 'labels.inputs.Explanation' | translate }}</mat-label>
+              <textarea
+                matInput
+                formControlName="explanation"
+                rows="2"
+                placeholder="{{ 'labels.placeholder.Field assessment and cashflow notes' | translate }}"
+              ></textarea>
+            </mat-form-field>
+          </div>
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit" [disabled]="submitting || proposalForm.invalid">
+              @if (submitting) {
+                <mat-spinner diameter="20"></mat-spinner>
+              }
+              {{ 'labels.buttons.Submit Proposal' | translate }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Section 2: Active Proposal Overview -->
+  @if (activeProposal) {
+    <mat-card class="proposal-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'labels.heading.Proposal #' | translate }}{{ activeProposal.proposalId }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ 'labels.text.Status' | translate }}:
+          <span class="status-badge {{ activeProposal.status.toLowerCase() }}">{{ activeProposal.status }}</span> |
+          {{ 'labels.text.Version' | translate }}: {{ activeProposal.version }} |
+          {{ 'labels.text.Submitted by' | translate }}:
+          {{ activeProposal.submittedByName || activeProposal.submittedBy || 'Unknown' }}
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="terms-grid">
+          @if (activeProposal.originalTermsSnapshot) {
+            <div class="terms-box">
+              <h4>{{ 'labels.heading.Original Terms Snapshot' | translate }}</h4>
+              <p>
+                <strong>{{ 'labels.inputs.Principal' | translate }}:</strong>
+                {{ activeProposal.originalTermsSnapshot.principalOutstanding | currency: 'UGX' : 'symbol-narrow' }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Interest' | translate }}:</strong>
+                {{ activeProposal.originalTermsSnapshot.interestOutstanding | currency: 'UGX' : 'symbol-narrow' }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Rate' | translate }}:</strong>
+                {{ activeProposal.originalTermsSnapshot.nominalInterestRate }}%
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Term Remaining' | translate }}:</strong>
+                {{ activeProposal.originalTermsSnapshot.termRemainingMonths }} {{ 'labels.text.months' | translate }}
+              </p>
+            </div>
+          }
+
+          @if (activeProposal.proposedTerms) {
+            <div class="terms-box highlight-box">
+              <h4>{{ 'labels.heading.Proposed Restructuring Terms' | translate }}</h4>
+              <p>
+                <strong>{{ 'labels.inputs.Effective Date' | translate }}:</strong>
+                {{ activeProposal.proposedTerms.rescheduleFromDate }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Grace on Principal' | translate }}:</strong>
+                {{ activeProposal.proposedTerms.graceOnPrincipal || 0 }} {{ 'labels.text.months' | translate }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Grace on Interest' | translate }}:</strong>
+                {{ activeProposal.proposedTerms.graceOnInterest || 0 }} {{ 'labels.text.months' | translate }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.Extra Terms' | translate }}:</strong>
+                {{ activeProposal.proposedTerms.extraTerms || 0 }} {{ 'labels.text.installments' | translate }}
+              </p>
+              <p>
+                <strong>{{ 'labels.inputs.New Rate' | translate }}:</strong>
+                {{
+                  activeProposal.proposedTerms.newInterestRate != null
+                    ? activeProposal.proposedTerms.newInterestRate + '%'
+                    : ('labels.text.Unchanged' | translate)
+                }}
+              </p>
+            </div>
+          }
+        </div>
+
+        <!-- Section 3: Maker-Checker Proposal Decision Form -->
+        @if (canApprove && activeProposal.status === 'SUBMITTED') {
+          <div class="decision-section">
+            <h3>{{ 'labels.heading.Record Proposal Decision' | translate }}</h3>
+
+            @if (isAuthorDeciding()) {
+              <div class="maker-checker-notice">
+                <mat-icon color="accent">security</mat-icon>
+                <span>{{
+                  'labels.text.Maker-checker constraint: As the author of this proposal, you cannot decide it.'
+                    | translate
+                }}</span>
+              </div>
+            } @else {
+              <form [formGroup]="decisionForm" (ngSubmit)="submitDecision()" class="decision-form">
+                <mat-radio-group formControlName="decision" aria-label="Proposal Decision">
+                  <mat-radio-button value="APPROVED" color="primary">{{
+                    'labels.buttons.Approve' | translate
+                  }}</mat-radio-button>
+                  <mat-radio-button value="REJECTED" color="warn">{{
+                    'labels.buttons.Reject' | translate
+                  }}</mat-radio-button>
+                </mat-radio-group>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>{{ 'labels.inputs.Decision Comments' | translate }}</mat-label>
+                  <textarea
+                    matInput
+                    formControlName="comments"
+                    required
+                    rows="2"
+                    placeholder="{{ 'labels.placeholder.Assessment and justification' | translate }}"
+                  ></textarea>
+                  @if (decisionForm.get('comments')?.hasError('required')) {
+                    <mat-error>{{ 'labels.error.Comments are required' | translate }}</mat-error>
+                  }
+                </mat-form-field>
+
+                <div class="form-actions">
+                  <button
+                    mat-raised-button
+                    color="primary"
+                    type="submit"
+                    [disabled]="submitting || decisionForm.invalid"
+                  >
+                    {{ 'labels.buttons.Record Decision' | translate }}
+                  </button>
+                </div>
+              </form>
+            }
+          </div>
+        }
+
+        <!-- Section 4: Execution Form -->
+        @if (canExecute && activeProposal.status === 'APPROVED' && !executionResult) {
+          <div class="execution-section">
+            <h3>{{ 'labels.heading.Execute Restructuring' | translate }}</h3>
+            <p>
+              {{
+                'labels.text.Executing will atomically recalculate repayment schedules natively in Fineract.'
+                  | translate
+              }}
+            </p>
+
+            <form [formGroup]="executionForm" (ngSubmit)="executeProposal()" class="execution-form">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Execution Date' | translate }}</mat-label>
+                  <input matInput [matDatepicker]="execPicker" formControlName="executionDate" required />
+                  <mat-datepicker-toggle matIconSuffix [for]="execPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #execPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Reschedule Reason ID' | translate }}</mat-label>
+                  <input matInput type="number" min="1" formControlName="rescheduleReasonId" required />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Idempotency Key' | translate }}</mat-label>
+                  <input matInput formControlName="idempotencyKey" required readonly />
+                </mat-form-field>
+              </div>
+
+              <div class="form-actions">
+                <button mat-raised-button color="accent" type="submit" [disabled]="submitting || executionForm.invalid">
+                  {{ 'labels.buttons.Execute Restructuring Now' | translate }}
+                </button>
+              </div>
+            </form>
+          </div>
+        }
+
+        <!-- Section 5: Native Post-Operation State -->
+        @if (executionResult) {
+          <div class="execution-result-card">
+            <h4>{{ 'labels.heading.Native Execution Results' | translate }}</h4>
+            <div class="metric-row">
+              <span class="label">{{ 'labels.inputs.Post-Op Loan Status' | translate }}:</span>
+              <span class="value">{{ executionResult.postOperationLoanStatus }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="label">{{ 'labels.inputs.Days in Arrears' | translate }}:</span>
+              <span class="value">{{ executionResult.postOperationDaysInArrears }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="label">{{ 'labels.inputs.Delinquency Classification' | translate }}:</span>
+              <span class="value">{{ executionResult.postOperationDelinquencyClassification }}</span>
+            </div>
+            <div class="metric-row">
+              <span class="label">{{ 'labels.inputs.New Outstanding Balance' | translate }}:</span>
+              <span class="value">{{ executionResult.newOutstandingBalance | currency: 'UGX' : 'symbol-narrow' }}</span>
+            </div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

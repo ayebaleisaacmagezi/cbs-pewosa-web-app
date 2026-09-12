@@ -1,0 +1,78 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<mat-card class="score-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'Credit score' | translate }}</mat-card-title>
+    <mat-card-subtitle>{{
+      'Calculated and frozen by Fineract under the application policy version' | translate
+    }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (error) {
+      <div class="error-message">{{ error | translate }}</div>
+    }
+    @if (loading) {
+      <div class="loading-state">{{ 'Loading credit score' | translate }}...</div>
+    } @else if (!creditScore) {
+      <div class="empty-state">
+        <p>{{ 'No credit score has been calculated for this application' | translate }}.</p>
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="calculating"
+          (click)="calculate()"
+          *mifosxHasPermission="'CREATE_PEWOSALOANSCORE'"
+        >
+          {{ (calculating ? 'Calculating credit score' : 'Calculate credit score') | translate }}
+        </button>
+      </div>
+    } @else {
+      <section class="score-summary">
+        <div class="total">
+          <span>{{ 'Total score' | translate }}</span
+          ><strong>{{ creditScore.totalScore | number: '1.0-2' }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Risk band' | translate }}</span
+          ><strong>{{ creditScore.riskBand | translate }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Recommended action' | translate }}</span
+          ><strong>{{ creditScore.outcome | translate }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Policy version' | translate }}</span
+          ><strong>{{ creditScore.policyVersion }}</strong>
+        </div>
+      </section>
+
+      <section>
+        <h3>{{ 'Score explanation' | translate }}</h3>
+        <div class="factor-list">
+          @for (factor of creditScore.factors; track factor.code) {
+            <mat-card appearance="outlined">
+              <mat-card-content>
+                <div class="factor-heading">
+                  <strong>{{ factor.code | translate }}</strong
+                  ><span>{{ factor.weight | number }}%</span>
+                </div>
+                <p>{{ factor.explanation }}</p>
+                <div class="factor-values">
+                  <span>{{ 'Observed value' | translate }}: {{ factor.rawValue }}</span>
+                  <span>{{ 'Normalized score' | translate }}: {{ factor.normalizedScore | number: '1.0-2' }}</span>
+                  <strong>{{ 'Weighted score' | translate }}: {{ factor.weightedScore | number: '1.0-2' }}</strong>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      </section>
+    }
+  </mat-card-content>
+</mat-card>

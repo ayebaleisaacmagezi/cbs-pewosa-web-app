@@ -1,0 +1,211 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="closure-container">
+  <!-- Back Link -->
+  <div class="header-nav">
+    <a mat-button [routerLink]="['../servicing']">
+      <fa-icon icon="arrow-left"></fa-icon>
+      {{ 'labels.buttons.Back to Loan Servicing' | translate }}
+    </a>
+    <h2>{{ 'labels.heading.Loan Account Closure' | translate }}</h2>
+  </div>
+
+  @if (loading && !readiness) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>{{ 'labels.text.Evaluating closure readiness...' | translate }}</span>
+    </div>
+  }
+
+  @if (denied) {
+    <div class="access-denied-container">
+      <mat-icon color="warn">lock</mat-icon>
+      <h3>{{ 'labels.heading.Access Denied' | translate }}</h3>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (conflictError) {
+    <div class="conflict-container">
+      <mat-icon color="warn">warning</mat-icon>
+      <div class="conflict-text">
+        <strong>{{ 'labels.heading.Concurrency Conflict' | translate }}</strong>
+        <p>{{ conflictError }}</p>
+        <button mat-flat-button color="warn" (click)="loadReadiness()">
+          {{ 'labels.buttons.Refresh Latest State' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (errorMessage && !denied && !conflictError) {
+    <div class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (successMessage) {
+    <div class="success-container">
+      <mat-icon color="primary">check_circle</mat-icon>
+      <p>{{ successMessage }}</p>
+    </div>
+  }
+
+  @if (readiness && !denied) {
+    <!-- Readiness Assessment Card -->
+    <mat-card class="readiness-card">
+      <mat-card-header>
+        <mat-card-title>{{ 'labels.heading.Authoritative Closure Readiness' | translate }}</mat-card-title>
+        <mat-card-subtitle
+          >{{ 'labels.text.Account No' | translate }}: {{ readiness.accountNo }} |
+          {{ 'labels.text.Current Status' | translate }}: {{ readiness.loanStatus }}</mat-card-subtitle
+        >
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Total Outstanding' | translate }}:</span>
+            <span class="value" [class.warn-text]="readiness.totalOutstanding > 0">
+              {{ readiness.totalOutstanding | currency: readiness.currencyCode : 'symbol-narrow' }}
+            </span>
+          </div>
+
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Fully Paid' | translate }}:</span>
+            <span class="value">{{
+              readiness.isFullyPaid ? ('labels.text.Yes' | translate) : ('labels.text.No' | translate)
+            }}</span>
+          </div>
+
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Unreleased Securities' | translate }}:</span>
+            <span class="value" [class.warn-text]="readiness.unreleasedSecuritiesCount > 0">
+              {{ readiness.unreleasedSecuritiesCount }}
+            </span>
+          </div>
+
+          <div class="metric-item">
+            <span class="label">{{ 'labels.inputs.Ready for Closure' | translate }}:</span>
+            <span
+              class="value"
+              [class.success-text]="readiness.readyForClosure"
+              [class.warn-text]="!readiness.readyForClosure"
+            >
+              {{ readiness.readyForClosure ? ('labels.text.READY' | translate) : ('labels.text.BLOCKED' | translate) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Blocking Reasons List -->
+        @if (!readiness.readyForClosure && readiness.blockingReasons?.length > 0) {
+          <div class="blocking-reasons-box">
+            <h4>
+              <mat-icon color="warn">block</mat-icon>
+              {{ 'labels.heading.Closure Blockers' | translate }}
+            </h4>
+            <ul>
+              @for (reason of readiness.blockingReasons; track reason) {
+                <li>
+                  {{ reason }}
+                  @if (reason.includes('UNRELEASED_SECURITIES')) {
+                    <a [routerLink]="['../security-release']" class="release-link">
+                      {{ 'labels.buttons.Go to Security Release' | translate }}
+                    </a>
+                  }
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Closure Execution Form -->
+    @if (hasClosePermission && readiness.loanStatus !== 'CLOSED_OBLIGATIONS_MET' && !closureResult) {
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Execute Loan Closure' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{
+            'labels.text.Transitions loan status to CLOSED_OBLIGATIONS_MET natively in Fineract.' | translate
+          }}</mat-card-subtitle>
+        </mat-card-header>
+
+        <mat-card-content>
+          <form [formGroup]="closureForm" (ngSubmit)="submitClosure()" class="action-form">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="flex-50">
+                <mat-label>{{ 'labels.inputs.Closure Date' | translate }}</mat-label>
+                <input matInput [matDatepicker]="closePicker" formControlName="closureDate" required />
+                <mat-datepicker-toggle matIconSuffix [for]="closePicker"></mat-datepicker-toggle>
+                <mat-datepicker #closePicker></mat-datepicker>
+                @if (closureForm.get('closureDate')?.hasError('required')) {
+                  <mat-error>{{ 'labels.error.Date is required' | translate }}</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'labels.inputs.Closure Notes' | translate }}</mat-label>
+              <textarea
+                matInput
+                formControlName="closureNotes"
+                required
+                rows="2"
+                placeholder="{{
+                  'labels.placeholder.Full repayment completed and securities verified released' | translate
+                }}"
+              ></textarea>
+              @if (closureForm.get('closureNotes')?.hasError('required')) {
+                <mat-error>{{ 'labels.error.Closure notes are required' | translate }}</mat-error>
+              }
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button
+                mat-raised-button
+                color="primary"
+                type="submit"
+                [disabled]="submitting || closureForm.invalid || !readiness.readyForClosure"
+              >
+                @if (submitting) {
+                  <mat-spinner diameter="20"></mat-spinner>
+                }
+                {{ 'labels.buttons.Confirm and Close Loan' | translate }}
+              </button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <!-- Closure Result Confirmation Card -->
+    @if (closureResult) {
+      <mat-card class="result-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Loan Account Closed Successfully' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Status' | translate }}: {{ closureResult.loanStatus }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metrics-grid">
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Closed On Date' | translate }}:</span>
+              <span class="value">{{ closureResult.closedOnDate }}</span>
+            </div>
+            <div class="metric-item">
+              <span class="label">{{ 'labels.inputs.Closed By' | translate }}:</span>
+              <span class="value">{{ closureResult.closedByName || 'User' }}</span>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+</div>

@@ -27,6 +27,10 @@ import { LoanTrancheDetailsComponent } from './loans-view/loan-tranche-details/l
 import { LoanCollateralTabComponent } from './loans-view/loan-collateral-tab/loan-collateral-tab.component';
 import { CreateLoansAccountComponent } from './create-loans-account/create-loans-account.component';
 import { LoanDocumentsTabComponent } from './loans-view/loan-documents-tab/loan-documents-tab.component';
+import { LoanAppraisalTabComponent } from './loans-view/loan-appraisal-tab/loan-appraisal-tab.component';
+import { LoanApprovalTabComponent } from './loans-view/loan-approval-tab/loan-approval-tab.component';
+import { LoanCreditScoreTabComponent } from './loans-view/loan-credit-score-tab/loan-credit-score-tab.component';
+import { LoanDisbursementInstructionTabComponent } from './loans-view/loan-disbursement-instruction-tab/loan-disbursement-instruction-tab.component';
 import { StandingInstructionsTabComponent } from 'app/loans/loans-view/standing-instructions-tab/standing-instructions-tab.component';
 import { EditLoansAccountComponent } from './edit-loans-account/edit-loans-account.component';
 import { ViewChargeComponent } from './loans-view/view-charge/view-charge.component';
@@ -88,6 +92,12 @@ import { LoanTransactionsResolver } from './common-resolvers/loan-transactions.r
 import { LoanChargesResolver } from './common-resolvers/loan-charges.resolver';
 import { LoanBreachScheduleResolver } from './common-resolvers/working-capital/loan-breach-schedule.resolver';
 import { LoanBreachScheduleTabComponent } from './loans-view/working-capital/loan-breach-schedule-tab/loan-breach-schedule-tab.component';
+import { LoanServicingTabComponent } from './loans-view/loan-servicing-tab/loan-servicing-tab.component';
+import { LoanRestructuringComponent } from './loans-view/loan-restructuring/loan-restructuring.component';
+import { LoanWriteOffComponent } from './loans-view/loan-write-off/loan-write-off.component';
+import { LoanSecurityReleaseComponent } from './loans-view/loan-security-release/loan-security-release.component';
+import { LoanClosureComponent } from './loans-view/loan-closure/loan-closure.component';
+import { staffWorkspaceGuard } from '../staff-workspaces/staff-workspace.guard';
 
 /** Loans Route. */
 const routes: Routes = [
@@ -289,6 +299,30 @@ const routes: Routes = [
             }
           },
           {
+            path: 'appraisal',
+            component: LoanAppraisalTabComponent,
+            data: { title: 'Loan Appraisal', breadcrumb: 'Loan Appraisal', routeParamBreadcrumb: false }
+          },
+          {
+            path: 'approval',
+            component: LoanApprovalTabComponent,
+            data: { title: 'Loan Approval', breadcrumb: 'Loan Approval', routeParamBreadcrumb: false }
+          },
+          {
+            path: 'credit-score',
+            component: LoanCreditScoreTabComponent,
+            data: { title: 'Credit Score', breadcrumb: 'Credit Score', routeParamBreadcrumb: false }
+          },
+          {
+            path: 'disbursement-instruction',
+            component: LoanDisbursementInstructionTabComponent,
+            data: {
+              title: 'Disbursement Instruction',
+              breadcrumb: 'Disbursement Instruction',
+              routeParamBreadcrumb: false
+            }
+          },
+          {
             path: 'notes',
             component: NotesTabComponent,
             data: { title: 'Notes', breadcrumb: 'Notes', routeParamBreadcrumb: false },
@@ -342,6 +376,61 @@ const routes: Routes = [
             data: { title: 'Buy Down Fees', breadcrumb: 'Buy Down Fees', routeParamBreadcrumb: false },
             resolve: {
               loanBuyDownFeesData: LoanBuyDownFeesDataResolver
+            }
+          },
+          {
+            path: 'servicing',
+            component: LoanServicingTabComponent,
+            canActivate: [staffWorkspaceGuard],
+            data: {
+              title: 'Loan Servicing',
+              breadcrumb: 'Servicing',
+              routeParamBreadcrumb: false,
+              permission: 'READ_PEWOSALOANSERVICING'
+            }
+          },
+          {
+            path: 'restructure',
+            component: LoanRestructuringComponent,
+            canActivate: [staffWorkspaceGuard],
+            data: {
+              title: 'Loan Restructuring',
+              breadcrumb: 'Restructure',
+              routeParamBreadcrumb: false,
+              permission: 'CREATE_PEWOSARESTRUCTURING'
+            }
+          },
+          {
+            path: 'write-off',
+            component: LoanWriteOffComponent,
+            canActivate: [staffWorkspaceGuard],
+            data: {
+              title: 'Loan Write-Off',
+              breadcrumb: 'Write-Off',
+              routeParamBreadcrumb: false,
+              permission: 'CREATE_PEWOSAWRITEOFF'
+            }
+          },
+          {
+            path: 'security-release',
+            component: LoanSecurityReleaseComponent,
+            canActivate: [staffWorkspaceGuard],
+            data: {
+              title: 'Security Release',
+              breadcrumb: 'Security Release',
+              routeParamBreadcrumb: false,
+              permission: 'RELEASE_PEWOSASECURITY'
+            }
+          },
+          {
+            path: 'closure',
+            component: LoanClosureComponent,
+            canActivate: [staffWorkspaceGuard],
+            data: {
+              title: 'Loan Closure',
+              breadcrumb: 'Closure',
+              routeParamBreadcrumb: false,
+              permission: 'CLOSE_PEWOSALOAN'
             }
           }
         ]

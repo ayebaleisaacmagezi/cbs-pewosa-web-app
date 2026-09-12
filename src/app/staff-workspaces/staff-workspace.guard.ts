@@ -24,9 +24,25 @@ export const staffWorkspaceGuard: CanActivateFn = (route: ActivatedRouteSnapshot
   const authenticationService = inject(AuthenticationService);
   const router = inject(Router);
   const credentials = authenticationService.getCredentials();
-  const expectedRole = String(route.data['workspaceRole'] || '').toLowerCase();
 
-  if (credentials && normalizedWorkspaceRoles(credentials.roles).includes(expectedRole)) {
+  if (!credentials) {
+    return router.createUrlTree(['/home']);
+  }
+
+  const requiredPermission = route.data['permission'] ? String(route.data['permission']) : null;
+  if (requiredPermission) {
+    const userPermissions = credentials.permissions || [];
+    const isReadPermission = requiredPermission.startsWith('READ_');
+    const hasPerm =
+      userPermissions.includes('ALL_FUNCTIONS') ||
+      (isReadPermission && userPermissions.includes('ALL_FUNCTIONS_READ')) ||
+      userPermissions.includes(requiredPermission);
+
+    return hasPerm ? true : router.createUrlTree(['/home']);
+  }
+
+  const expectedRole = String(route.data['workspaceRole'] || '').toLowerCase();
+  if (normalizedWorkspaceRoles(credentials.roles).includes(expectedRole)) {
     return true;
   }
 

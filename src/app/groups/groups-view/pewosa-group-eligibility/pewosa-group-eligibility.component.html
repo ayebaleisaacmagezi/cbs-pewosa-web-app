@@ -1,0 +1,193 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="pewosa-group-eligibility-container">
+  <div class="header-section">
+    <div>
+      <h2 class="mat-headline-6 title">PEWOSA Group Lending Eligibility</h2>
+      <p class="subtitle text-muted">
+        Evaluate solidarity group lending eligibility against active product policies using authoritative group and member facts.
+      </p>
+    </div>
+  </div>
+
+  <!-- Evaluation Form Card -->
+  <mat-card class="eval-form-card">
+    <mat-card-header>
+      <mat-card-title>Run Eligibility Evaluation</mat-card-title>
+      <mat-card-subtitle>Select loan product and enter total requested loan amount</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <form [formGroup]="evalForm" (ngSubmit)="evaluate()" class="eval-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Loan Product</mat-label>
+          <mat-select formControlName="loanProductId">
+            <mat-option *ngFor="let p of loanProducts" [value]="p.id">
+              {{ p.name }} (ID: {{ p.id }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Requested Total Amount</mat-label>
+          <input matInput type="number" formControlName="requestedTotalAmount" placeholder="e.g. 20000000" min="1" />
+        </mat-form-field>
+
+        <div class="action-btn">
+          <button mat-raised-button color="primary" type="submit" [disabled]="evaluating || evalForm.invalid">
+            <mat-icon *ngIf="!evaluating">analytics</mat-icon>
+            <span *ngIf="!evaluating">Evaluate Eligibility</span>
+            <span *ngIf="evaluating">Evaluating...</span>
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Evaluation Result View -->
+  <div *ngIf="latestEvaluation" class="evaluation-result">
+    <!-- Outcome Banner -->
+    <div class="outcome-banner" [class.banner-eligible]="latestEvaluation.eligible" [class.banner-ineligible]="!latestEvaluation.eligible">
+      <div class="banner-status">
+        <mat-icon>{{ latestEvaluation.eligible ? 'check_circle' : 'cancel' }}</mat-icon>
+        <div>
+          <h3 class="outcome-title">{{ latestEvaluation.overallOutcome }}</h3>
+          <p class="outcome-ref">Reference: {{ latestEvaluation.reference }} &bull; Policy Version: v{{ latestEvaluation.policyVersion }}</p>
+        </div>
+      </div>
+      <div class="banner-meta">
+        <div><strong>Product:</strong> {{ latestEvaluation.loanProductName }}</div>
+        <div><strong>Requested:</strong> {{ latestEvaluation.requestedTotalAmount | number }}</div>
+        <div><strong>Evaluated:</strong> {{ latestEvaluation.evaluatedOn | dateFormat }} by {{ latestEvaluation.evaluatedBy }}</div>
+      </div>
+    </div>
+
+    <!-- Facts Snapshot Card -->
+    <mat-card class="facts-card" *ngIf="latestEvaluation.factsSnapshot">
+      <mat-card-header>
+        <mat-card-title>Authoritative Facts Snapshot</mat-card-title>
+        <mat-card-subtitle>Snapshot of verified group and member metrics used during evaluation</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="facts-grid">
+        <div class="fact-item">
+          <span class="fact-label">Group Age</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.groupAgeMonths }} Months</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Active Members</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.activeMemberCount }}</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Total Group Savings</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.totalGroupSavings | number }}</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Constitution Adopted</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.hasConstitution ? 'Yes' : 'No' }}</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Training Completed</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.hasCompletedTraining ? 'Yes' : 'No' }}</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Delinquent Members</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.activeDelinquentMemberCount }}</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Meeting Attendance</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.meetingAttendanceRate }}%</span>
+        </div>
+        <div class="fact-item">
+          <span class="fact-label">Appointed Roles</span>
+          <span class="fact-value">{{ latestEvaluation.factsSnapshot.appointedRoles?.join(', ') || 'None' }}</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Policy Rules Details -->
+    <mat-card class="rules-card" *ngIf="latestEvaluation.rules?.length">
+      <mat-card-header>
+        <mat-card-title>Policy Rules Evaluation</mat-card-title>
+        <mat-card-subtitle>Evaluation against product policy thresholds</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <table mat-table [dataSource]="latestEvaluation.rules" class="rules-table mat-elevation-z1">
+          <ng-container matColumnDef="code">
+            <th mat-header-cell *matHeaderCellDef>Rule Code</th>
+            <td mat-cell *matCellDef="let r"><code>{{ r.code }}</code></td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let r">{{ r.description }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="policyThreshold">
+            <th mat-header-cell *matHeaderCellDef>Policy Threshold</th>
+            <td mat-cell *matCellDef="let r">{{ r.policyThreshold }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actualValue">
+            <th mat-header-cell *matHeaderCellDef>Actual Fact</th>
+            <td mat-cell *matCellDef="let r">{{ r.actualValue }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Status</th>
+            <td mat-cell *matCellDef="let r">
+              <span class="rule-badge" [class.badge-pass]="r.passed" [class.badge-fail]="!r.passed">
+                {{ r.passed ? 'PASSED' : 'FAILED' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="message">
+            <th mat-header-cell *matHeaderCellDef>Evaluation Detail</th>
+            <td mat-cell *matCellDef="let r">{{ r.message }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="ruleColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: ruleColumns;"></tr>
+        </table>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Historical Evaluations List -->
+  <mat-card class="history-card" *ngIf="history.length > 0">
+    <mat-card-header>
+      <mat-card-title>Evaluation History</mat-card-title>
+      <mat-card-subtitle>Past eligibility checks run for this group</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="history-list">
+        <div
+          *ngFor="let item of history"
+          class="history-item"
+          [class.selected]="item.reference === latestEvaluation?.reference"
+          (click)="selectEvaluation(item)"
+        >
+          <div class="hist-left">
+            <mat-icon [class.text-success]="item.eligible" [class.text-warn]="!item.eligible">
+              {{ item.eligible ? 'check_circle' : 'cancel' }}
+            </mat-icon>
+            <div>
+              <strong>{{ item.loanProductName }}</strong>
+              <div class="text-muted">{{ item.reference }} &bull; {{ item.evaluatedOn | dateFormat }}</div>
+            </div>
+          </div>
+          <div class="hist-right">
+            <span class="rule-badge" [class.badge-pass]="item.eligible" [class.badge-fail]="!item.eligible">
+              {{ item.overallOutcome }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

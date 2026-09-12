@@ -1,0 +1,279 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="loan-servicing-container">
+  @if (loading) {
+    <div class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+      <span>{{ 'labels.text.Loading loan servicing data...' | translate }}</span>
+    </div>
+  }
+
+  @if (denied) {
+    <div class="access-denied-container">
+      <mat-icon color="warn">lock</mat-icon>
+      <h3>{{ 'labels.heading.Access Denied' | translate }}</h3>
+      <p>{{ errorMessage }}</p>
+    </div>
+  }
+
+  @if (errorMessage && !denied && !loading) {
+    <div class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <div class="error-text">
+        <p>{{ errorMessage }}</p>
+        <button mat-flat-button color="primary" (click)="loadServicingData()">
+          {{ 'labels.buttons.Retry' | translate }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (summary && !loading && !denied) {
+    <!-- Quick Action Bar -->
+    <div class="action-bar">
+      <div class="action-bar-title">
+        <h3>{{ 'labels.heading.Controlled Servicing Actions' | translate }}</h3>
+      </div>
+      <div class="action-buttons">
+        @if (canRestructure && summary.eligibleActions?.canRestructure) {
+          <a mat-raised-button color="primary" [routerLink]="['../restructure']">
+            <fa-icon icon="wrench"></fa-icon>
+            {{ 'labels.buttons.Propose Restructuring' | translate }}
+          </a>
+        }
+
+        @if (canWriteOff && summary.eligibleActions?.canWriteOff) {
+          <a mat-raised-button color="warn" [routerLink]="['../write-off']">
+            <fa-icon icon="file-invoice-dollar"></fa-icon>
+            {{ 'labels.buttons.Write-Off Loan' | translate }}
+          </a>
+        }
+
+        @if (canReleaseSecurity && summary.eligibleActions?.canReleaseSecurity) {
+          <a mat-raised-button [routerLink]="['../security-release']">
+            <fa-icon icon="key"></fa-icon>
+            {{ 'labels.buttons.Release Securities' | translate }}
+          </a>
+        }
+
+        @if (canClose && summary.eligibleActions?.canClose) {
+          <a mat-raised-button color="accent" [routerLink]="['../closure']">
+            <fa-icon icon="check-circle"></fa-icon>
+            {{ 'labels.buttons.Close Loan' | translate }}
+          </a>
+        }
+      </div>
+    </div>
+
+    <!-- Authoritative Financial Summary Cards -->
+    <div class="summary-grid">
+      <mat-card class="summary-card balance-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Authoritative Balances' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Account' | translate }}: {{ summary.accountNo }} ({{ 'labels.text.v' | translate }}{{ summary.loanVersion }})</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-row highlight">
+            <span class="label">{{ 'labels.inputs.Total Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.totalOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Principal Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.principalOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Interest Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.interestOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Fee Charges Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.feeChargesOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Penalty Charges Outstanding' | translate }}:</span>
+            <span class="value">{{ summary.penaltyChargesOutstanding | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card arrears-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Delinquency & Arrears' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Status' | translate }}: {{ summary.loanStatus }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-row highlight">
+            <span class="label">{{ 'labels.inputs.Total Overdue' | translate }}:</span>
+            <span class="value warn-text">{{ summary.totalOverdue | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Days In Arrears' | translate }}:</span>
+            <span class="value">{{ summary.daysInArrears }} {{ 'labels.text.days' | translate }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Classification' | translate }}:</span>
+            <span class="value">
+              <span class="badge classification-badge">{{ summary.classification }}</span>
+            </span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Provision Amount' | translate }}:</span>
+            <span class="value">{{ summary.provisionAmount | currency:summary.currencyCode:'symbol-narrow' }} ({{ summary.provisionPercentage }}%)</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Allocation Strategy' | translate }}:</span>
+            <span class="value">{{ summary.repaymentAllocationPolicy || ('labels.text.Standard' | translate) }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="summary-card payment-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'labels.heading.Repayment Schedule Status' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'labels.text.Officer' | translate }}: {{ summary.loanOfficerName || ('labels.text.Unassigned' | translate) }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="metric-row highlight">
+            <span class="label">{{ 'labels.inputs.Next Payment Due' | translate }}:</span>
+            <span class="value">{{ summary.nextPaymentDueDate || ('labels.text.None' | translate) }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Next Payment Amount' | translate }}:</span>
+            <span class="value">{{ (summary.nextPaymentAmount || 0) | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Principal Disbursed' | translate }}:</span>
+            <span class="value">{{ summary.principalDisbursed | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Total Repaid' | translate }}:</span>
+            <span class="value">{{ summary.totalRepayment | currency:summary.currencyCode:'symbol-narrow' }}</span>
+          </div>
+          <div class="metric-row">
+            <span class="label">{{ 'labels.inputs.Last Payment Date' | translate }}:</span>
+            <span class="value">{{ summary.lastPaymentDate || ('labels.text.None' | translate) }}</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Timeline History Section -->
+    <div class="timeline-section">
+      <div class="timeline-header">
+        <h3>{{ 'labels.heading.Chronological Servicing Timeline' | translate }}</h3>
+      </div>
+
+      <div class="table-container mat-elevation-z1">
+        <table mat-table [dataSource]="timelineEvents" class="timeline-table">
+          <!-- Event Date Column -->
+          <ng-container matColumnDef="eventDate">
+            <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Date' | translate }}</th>
+            <td mat-cell *matCellDef="let element">
+              {{ element.eventDate }}
+              @if (element.isReversed) {
+                <span class="badge reversed-badge">{{ 'labels.text.REVERSED' | translate }}</span>
+              }
+            </td>
+          </ng-container>
+
+          <!-- Event Type Column -->
+          <ng-container matColumnDef="eventType">
+            <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Event Type' | translate }}</th>
+            <td mat-cell *matCellDef="let element">
+              <span class="badge event-type-badge">{{ element.eventType }}</span>
+            </td>
+          </ng-container>
+
+          <!-- Amount Column -->
+          <ng-container matColumnDef="amount">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Amount' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.amount || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Principal Portion Column -->
+          <ng-container matColumnDef="principalPortion">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Principal' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.principalPortion || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Interest Portion Column -->
+          <ng-container matColumnDef="interestPortion">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Interest' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.interestPortion || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Fee Portion Column -->
+          <ng-container matColumnDef="feePortion">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Fee' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.feePortion || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Penalty Portion Column -->
+          <ng-container matColumnDef="penaltyPortion">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Penalty' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.penaltyPortion || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Outstanding Balance After Column -->
+          <ng-container matColumnDef="outstandingBalanceAfter">
+            <th mat-header-cell *matHeaderCellDef class="number-col">{{ 'labels.inputs.Balance After' | translate }}</th>
+            <td mat-cell *matCellDef="let element" class="number-col">
+              {{ (element.outstandingBalanceAfter || 0) | currency:summary.currencyCode:'symbol-narrow' }}
+            </td>
+          </ng-container>
+
+          <!-- Reference Number Column -->
+          <ng-container matColumnDef="referenceNumber">
+            <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Reference' | translate }}</th>
+            <td mat-cell *matCellDef="let element">{{ element.referenceNumber || '—' }}</td>
+          </ng-container>
+
+          <!-- Description Column -->
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Description' | translate }}</th>
+            <td mat-cell *matCellDef="let element">{{ element.description }}</td>
+          </ng-container>
+
+          <!-- Created By Column -->
+          <ng-container matColumnDef="createdByName">
+            <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Recorded By' | translate }}</th>
+            <td mat-cell *matCellDef="let element">{{ element.createdByName || ('labels.text.System' | translate) }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+
+          <tr class="mat-row" *matNoDataRow>
+            <td class="mat-cell no-data-cell" [attr.colspan]="displayedColumns.length">
+              {{ 'labels.text.No servicing timeline events recorded for this loan.' | translate }}
+            </td>
+          </tr>
+        </table>
+
+        <mat-paginator
+          [length]="totalTimelineElements"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="[20, 50, 100]"
+          (page)="onPageChange($event)"
+          [attr.aria-label]="'labels.text.Select page of servicing timeline' | translate"
+        ></mat-paginator>
+      </div>
+    </div>
+  }
+</div>

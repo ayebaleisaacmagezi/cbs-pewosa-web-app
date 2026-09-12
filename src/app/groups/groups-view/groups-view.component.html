@@ -247,6 +247,60 @@
       >
         {{ 'labels.inputs.Committee' | translate }}
       </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-profile']"
+        routerLinkActive
+        #pewosaProfile="routerLinkActive"
+        [active]="pewosaProfile.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Profile' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-eligibility']"
+        routerLinkActive
+        #pewosaEligibility="routerLinkActive"
+        [active]="pewosaEligibility.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Eligibility' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-application']"
+        routerLinkActive
+        #pewosaApplication="routerLinkActive"
+        [active]="pewosaApplication.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Application' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-distribution']"
+        routerLinkActive
+        #pewosaDistribution="routerLinkActive"
+        [active]="pewosaDistribution.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Distribution' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-meeting']"
+        routerLinkActive
+        #pewosaMeeting="routerLinkActive"
+        [active]="pewosaMeeting.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Meetings' | translate }}
+      </a>
+      <a
+        mat-tab-link
+        [routerLink]="['./pewosa-recovery']"
+        routerLinkActive
+        #pewosaRecovery="routerLinkActive"
+        [active]="pewosaRecovery.isActive"
+      >
+        {{ 'labels.inputs.PEWOSA Recovery' | translate }}
+      </a>
       @for (groupDatatable of groupDatatables; track groupDatatable) {
         <span>
           <a

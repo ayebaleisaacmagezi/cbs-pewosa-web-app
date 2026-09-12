@@ -193,6 +193,10 @@ export class CreateClientComponent {
         );
         return;
       }
+      if (this.route.snapshot.queryParamMap.get('workspace') === 'cashier') {
+        this.router.navigate(['/staff-workspaces/cashier'], { queryParams: { view: 'home' } });
+        return;
+      }
       this.router.navigate(
         [
           '../',

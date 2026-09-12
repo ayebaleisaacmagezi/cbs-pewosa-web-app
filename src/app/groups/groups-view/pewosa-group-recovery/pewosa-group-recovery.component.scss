@@ -1,0 +1,107 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.pewosa-recovery-container {
+  padding: 16px;
+
+  .exposure-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+
+    .metric-card {
+      border-radius: 8px;
+      padding: 16px;
+
+      &.overdue-card {
+        border-left: 4px solid #dc3545;
+      }
+
+      .metric-content {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .label {
+          font-size: 12px;
+          color: #6c757d;
+          text-transform: uppercase;
+          font-weight: 600;
+        }
+
+        .value {
+          font-size: 20px;
+          font-weight: 700;
+        }
+
+        .subtext {
+          font-size: 11px;
+          color: #888;
+        }
+      }
+    }
+  }
+
+  .tab-content {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-card,
+  .list-card {
+    border-radius: 8px;
+  }
+
+  .gap-16 {
+    gap: 16px;
+  }
+
+  .mt-16 {
+    margin-top: 16px;
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .align-end {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .text-warn {
+    color: #dc3545 !important;
+    font-weight: 600;
+  }
+
+  .chip-success {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+  }
+
+  .chip-danger {
+    background-color: #f8d7da !important;
+    color: #721c24 !important;
+  }
+
+  .empty-state {
+    padding: 32px;
+    text-align: center;
+    color: #6c757d;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+  }
+}

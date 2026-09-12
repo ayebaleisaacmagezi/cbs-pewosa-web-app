@@ -1,0 +1,112 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<mat-card class="approval-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'Independent loan approval' | translate }}</mat-card-title>
+    <mat-card-subtitle>{{
+      'The server selects and enforces the required approval authority' | translate
+    }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (message) {
+      <div class="approval-message" [class.error]="messageType === 'error'">{{ message | translate }}</div>
+    }
+    @if (loading) {
+      <div class="loading-state">{{ 'Loading approval case' | translate }}...</div>
+    } @else if (!approvalCase) {
+      <div class="empty-state">
+        <p>{{ 'No approval route has been created for this application' | translate }}.</p>
+        <button
+          mat-raised-button
+          color="primary"
+          [disabled]="saving"
+          (click)="createRoute()"
+          *mifosxHasPermission="'CREATE_PEWOSALOANAPPROVAL'"
+        >
+          {{ (saving ? 'Creating approval route' : 'Create approval route') | translate }}
+        </button>
+      </div>
+    } @else {
+      <section class="case-summary">
+        <div>
+          <span>{{ 'Required authority' | translate }}</span
+          ><strong>{{ approvalCase.requiredAuthority | translate }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Routed amount' | translate }}</span
+          ><strong>{{ approvalCase.routedAmount | number }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Policy version' | translate }}</span
+          ><strong>{{ approvalCase.policyVersion }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Case status' | translate }}</span
+          ><strong>{{ approvalCase.status | translate }}</strong>
+        </div>
+      </section>
+
+      @if (approvalCase.status === 'PENDING' || approvalCase.status === 'CONDITIONAL') {
+        <form [formGroup]="decisionForm" (ngSubmit)="decide()">
+          <h3>{{ 'Record independent decision' | translate }}</h3>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Decision' | translate }}</mat-label>
+            <mat-select formControlName="decision">
+              <mat-option value="APPROVED">{{ 'Approve' | translate }}</mat-option>
+              @if (approvalCase.status === 'PENDING') {
+                <mat-option value="CONDITIONAL">{{ 'Approve with conditions' | translate }}</mat-option>
+              }
+              <mat-option value="REJECTED">{{ 'Reject' | translate }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>{{ 'Decision comments' | translate }}</mat-label>
+            <textarea matInput rows="4" formControlName="comments"></textarea>
+          </mat-form-field>
+          @if (decisionForm.controls.decision.value === 'CONDITIONAL') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'Conditions one per line' | translate }}</mat-label>
+              <textarea matInput rows="4" formControlName="conditions"></textarea>
+            </mat-form-field>
+          }
+          @if (approvalCase.status === 'CONDITIONAL') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ 'Condition evidence one item per line' | translate }}</mat-label>
+              <textarea matInput rows="4" formControlName="conditionEvidence"></textarea>
+            </mat-form-field>
+          }
+          <button
+            mat-raised-button
+            color="primary"
+            type="submit"
+            [disabled]="saving"
+            *mifosxHasPermission="'APPROVE_PEWOSALOANAPPROVAL'"
+          >
+            {{ (saving ? 'Recording decision' : 'Record decision') | translate }}
+          </button>
+        </form>
+      }
+
+      @if (approvalCase.decisions.length) {
+        <section>
+          <h3>{{ 'Decision history' | translate }}</h3>
+          @for (decision of approvalCase.decisions; track decision.caseVersion) {
+            <div class="decision-record">
+              <strong>{{ decision.decision | translate }} — {{ decision.authority | translate }}</strong>
+              <span>{{ decision.comments }}</span>
+              @for (condition of decisionConditions(decision); track condition) {
+                <span>• {{ condition }}</span>
+              }
+            </div>
+          }
+        </section>
+      }
+    }
+  </mat-card-content>
+</mat-card>

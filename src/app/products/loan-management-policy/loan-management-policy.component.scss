@@ -1,0 +1,289 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  background: #f4f7fc;
+}
+
+.loan-policy-page {
+  display: grid;
+  gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.policy-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 32px;
+  border-radius: 24px;
+  color: #fff;
+  background: linear-gradient(120deg, #17366f, #2854a1);
+}
+
+.policy-hero h1,
+.policy-hero p,
+.section-heading h2,
+.section-heading p,
+.subsection h3 {
+  margin: 0;
+}
+
+.policy-hero h1 {
+  margin-top: 8px;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.2;
+}
+
+.policy-hero p {
+  margin-top: 8px;
+  color: rgb(255 255 255 / 80%);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.policy-status {
+  display: grid;
+  min-width: 240px;
+  align-content: center;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 16px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.policy-status strong {
+  font-size: 24px;
+}
+
+.policy-status small {
+  color: rgb(255 255 255 / 72%);
+}
+
+.product-selector-card,
+.policy-section,
+.save-bar {
+  border-radius: 16px;
+}
+
+.product-selector-card mat-card-content,
+.policy-section mat-card-content,
+.save-bar mat-card-content {
+  padding: 24px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.section-heading > div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 16px;
+}
+
+.section-heading p {
+  grid-column: 2;
+  margin-top: 8px;
+  color: #64748b;
+}
+
+.section-number {
+  display: grid;
+  grid-row: 1 / span 2;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #2854a1;
+  font-weight: 700;
+}
+
+.product-select {
+  width: min(100%, 560px);
+}
+
+.policy-form {
+  display: grid;
+  gap: 24px;
+}
+
+.field-grid,
+.check-grid,
+.rail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.check-grid,
+.rail-grid {
+  margin-top: 8px;
+}
+
+.subsection + .subsection {
+  margin-top: 32px;
+}
+
+.subsection h3 {
+  margin-bottom: 16px;
+}
+
+.factor-list,
+.rules-table,
+.document-list {
+  display: grid;
+  gap: 16px;
+}
+
+.factor-row,
+.rule-row,
+.approval-row,
+.document-row {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #dbe4f3;
+  border-radius: 16px;
+  background: #f8faff;
+}
+
+.factor-row {
+  grid-template-columns: minmax(240px, 1fr) repeat(2, 160px);
+}
+
+.rule-row {
+  grid-template-columns: minmax(160px, 1fr) repeat(2, 160px) minmax(240px, 1fr);
+}
+
+.approval-row {
+  grid-template-columns: minmax(200px, 1fr) repeat(2, minmax(160px, 1fr)) minmax(240px, 1fr);
+}
+
+.document-row {
+  grid-template-columns: minmax(160px, 1fr) minmax(240px, 2fr) minmax(200px, 1fr) auto auto;
+}
+
+.factor-row mat-form-field,
+.rule-row mat-form-field,
+.approval-row mat-form-field,
+.document-row mat-form-field {
+  margin-bottom: -24px;
+}
+
+.locked-rule,
+.loading-label {
+  padding: 8px 16px;
+  border-radius: 24px;
+  color: #2854a1;
+  background: #e9f0fd;
+  font-weight: 600;
+}
+
+.policy-message {
+  padding: 16px 24px;
+  border-radius: 16px;
+}
+
+.policy-message.success {
+  color: #1b5e20;
+  background: #e8f5e9;
+}
+
+.policy-message.error {
+  color: #b3261e;
+  background: #ffedea;
+}
+
+.empty-state {
+  padding: 24px;
+  border: 1px dashed #b8c9e8;
+  border-radius: 16px;
+  color: #64748b;
+  text-align: center;
+}
+
+.save-bar {
+  position: sticky;
+  z-index: 3;
+  bottom: 16px;
+  box-shadow: 0 16px 40px rgb(28 49 87 / 16%);
+}
+
+.save-bar mat-card-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+}
+
+.save-bar div {
+  display: grid;
+  gap: 8px;
+}
+
+.save-bar span {
+  color: #64748b;
+}
+
+@media (max-width: 1040px) {
+  .field-grid,
+  .check-grid,
+  .rail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rule-row,
+  .approval-row,
+  .document-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .loan-policy-page {
+    padding: 16px;
+  }
+
+  .policy-hero,
+  .section-heading,
+  .save-bar mat-card-content {
+    flex-direction: column;
+  }
+
+  .policy-status {
+    width: auto;
+    min-width: 0;
+  }
+
+  .field-grid,
+  .check-grid,
+  .rail-grid,
+  .factor-row,
+  .rule-row,
+  .approval-row,
+  .document-row {
+    grid-template-columns: 1fr;
+  }
+}

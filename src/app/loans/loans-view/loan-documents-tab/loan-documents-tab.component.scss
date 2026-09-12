@@ -22,3 +22,61 @@ table {
   padding: 1%;
   margin: 1%;
 }
+
+.workflow-checklist {
+  margin: 16px;
+}
+
+.workflow-checklist mat-card-content,
+.requirement-list {
+  display: grid;
+  gap: 16px;
+}
+
+.workflow-checklist mat-card-content {
+  padding-top: 16px;
+}
+
+.requirement-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto minmax(240px, 1fr) auto auto auto;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #dbe4f3;
+  border-radius: 16px;
+}
+
+.requirement-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.requirement-copy span {
+  color: #64748b;
+}
+
+.requirement-status {
+  padding: 8px 16px;
+  border-radius: 24px;
+  color: #8a4b00;
+  background: #fff3dc;
+  font-weight: 600;
+}
+
+.requirement-status.verified {
+  color: #1b5e20;
+  background: #e8f5e9;
+}
+
+.workflow-message {
+  padding: 16px;
+  border-radius: 8px;
+  background: #e9f0fd;
+}
+
+@media (max-width: 960px) {
+  .requirement-row {
+    grid-template-columns: 1fr;
+  }
+}

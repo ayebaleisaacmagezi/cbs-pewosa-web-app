@@ -37,6 +37,12 @@ import { ManageGroupMembersComponent } from './groups-view/group-actions/manage-
 import { EditGroupMeetingComponent } from './groups-view/group-actions/edit-group-meeting/edit-group-meeting.component';
 import { EditGroupMeetingScheduleComponent } from './groups-view/group-actions/edit-group-meeting-schedule/edit-group-meeting-schedule.component';
 import { GroupTransferClientsComponent } from './groups-view/group-actions/group-transfer-clients/group-transfer-clients.component';
+import { PewosaGroupProfileComponent } from './groups-view/pewosa-group-profile/pewosa-group-profile.component';
+import { PewosaGroupEligibilityComponent } from './groups-view/pewosa-group-eligibility/pewosa-group-eligibility.component';
+import { PewosaGroupApplicationComponent } from './groups-view/pewosa-group-application/pewosa-group-application.component';
+import { PewosaGroupDistributionComponent } from './groups-view/pewosa-group-distribution/pewosa-group-distribution.component';
+import { PewosaGroupMeetingComponent } from './groups-view/pewosa-group-meeting/pewosa-group-meeting.component';
+import { PewosaGroupRecoveryComponent } from './groups-view/pewosa-group-recovery/pewosa-group-recovery.component';
 
 /**
  * Groups Module
@@ -69,7 +75,13 @@ import { GroupTransferClientsComponent } from './groups-view/group-actions/group
     ManageGroupMembersComponent,
     EditGroupMeetingComponent,
     EditGroupMeetingScheduleComponent,
-    GroupTransferClientsComponent
+    GroupTransferClientsComponent,
+    PewosaGroupProfileComponent,
+    PewosaGroupEligibilityComponent,
+    PewosaGroupApplicationComponent,
+    PewosaGroupDistributionComponent,
+    PewosaGroupMeetingComponent,
+    PewosaGroupRecoveryComponent
   ],
   providers: []
 })

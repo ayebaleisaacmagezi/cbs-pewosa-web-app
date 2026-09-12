@@ -24,6 +24,12 @@ import { DatatableTabsComponent } from './groups-view/datatable-tabs/datatable-t
 import { AddRoleComponent } from './groups-view/add-role/add-role.component';
 import { GroupActionsComponent } from './groups-view/group-actions/group-actions.component';
 import { EditGroupComponent } from './edit-group/edit-group.component';
+import { PewosaGroupProfileComponent } from './groups-view/pewosa-group-profile/pewosa-group-profile.component';
+import { PewosaGroupEligibilityComponent } from './groups-view/pewosa-group-eligibility/pewosa-group-eligibility.component';
+import { PewosaGroupApplicationComponent } from './groups-view/pewosa-group-application/pewosa-group-application.component';
+import { PewosaGroupDistributionComponent } from './groups-view/pewosa-group-distribution/pewosa-group-distribution.component';
+import { PewosaGroupMeetingComponent } from './groups-view/pewosa-group-meeting/pewosa-group-meeting.component';
+import { PewosaGroupRecoveryComponent } from './groups-view/pewosa-group-recovery/pewosa-group-recovery.component';
 
 /** Custom Resolvers */
 import { GroupViewResolver } from './common-resolvers/group-view.resolver';
@@ -100,6 +106,36 @@ const routes: Routes = [
                   path: 'committee',
                   component: CommitteeTabComponent,
                   data: { title: 'Committee', breadcrumb: 'Committee', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-profile',
+                  component: PewosaGroupProfileComponent,
+                  data: { title: 'PEWOSA Profile', breadcrumb: 'PEWOSA Profile', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-eligibility',
+                  component: PewosaGroupEligibilityComponent,
+                  data: { title: 'PEWOSA Eligibility', breadcrumb: 'PEWOSA Eligibility', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-application',
+                  component: PewosaGroupApplicationComponent,
+                  data: { title: 'PEWOSA Application', breadcrumb: 'PEWOSA Application', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-distribution',
+                  component: PewosaGroupDistributionComponent,
+                  data: { title: 'PEWOSA Distribution', breadcrumb: 'PEWOSA Distribution', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-meeting',
+                  component: PewosaGroupMeetingComponent,
+                  data: { title: 'PEWOSA Meeting', breadcrumb: 'PEWOSA Meeting', routeParamBreadcrumb: false }
+                },
+                {
+                  path: 'pewosa-recovery',
+                  component: PewosaGroupRecoveryComponent,
+                  data: { title: 'PEWOSA Recovery', breadcrumb: 'PEWOSA Recovery', routeParamBreadcrumb: false }
                 },
                 {
                   path: 'datatables',

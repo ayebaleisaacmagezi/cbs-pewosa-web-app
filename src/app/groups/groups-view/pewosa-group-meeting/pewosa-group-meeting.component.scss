@@ -1,0 +1,82 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.pewosa-meeting-container {
+  padding: 16px;
+
+  .tab-content {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-card,
+  .list-card {
+    border-radius: 8px;
+  }
+
+  .gap-16 {
+    gap: 16px;
+  }
+
+  .gap-12 {
+    gap: 12px;
+  }
+
+  .mt-16 {
+    margin-top: 16px;
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .align-end {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .tx-row {
+    background-color: #fcfcfc;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 8px 12px;
+  }
+
+  .idempotency-display {
+    padding: 8px 12px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+
+    code {
+      font-weight: 700;
+      color: #0056b3;
+    }
+  }
+
+  .chip-success {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+  }
+
+  .empty-state {
+    padding: 32px;
+    text-align: center;
+    color: #6c757d;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+  }
+}

@@ -1,0 +1,263 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="pewosa-recovery-container">
+  @if (loading) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <!-- Section 1: Aggregate Group Exposure Summary Cards -->
+  @if (exposure) {
+    <div class="exposure-metrics-grid">
+      <mat-card class="metric-card">
+        <div class="metric-content">
+          <span class="label">{{ 'labels.inputs.Outstanding Principal' | translate }}</span>
+          <span class="value">{{
+            exposure.summary.totalOutstandingPrincipal | currency: exposure.currency : 'symbol' : '1.0-0'
+          }}</span>
+          <span class="subtext"
+            >Original:
+            {{ exposure.summary.totalOriginalPrincipal | currency: exposure.currency : 'symbol' : '1.0-0' }}</span
+          >
+        </div>
+      </mat-card>
+
+      <mat-card class="metric-card overdue-card">
+        <div class="metric-content">
+          <span class="label">{{ 'labels.inputs.Total Overdue' | translate }}</span>
+          <span class="value text-warn">{{
+            exposure.summary.totalOverdueAmount | currency: exposure.currency : 'symbol' : '1.0-0'
+          }}</span>
+          <span class="subtext">{{ exposure.summary.membersInArrearsCount }} member(s) in arrears</span>
+        </div>
+      </mat-card>
+
+      <mat-card class="metric-card">
+        <div class="metric-content">
+          <span class="label">{{ 'labels.inputs.Group Savings Balance' | translate }}</span>
+          <span class="value">{{
+            exposure.summary.nativeGroupSavingsBalance | currency: exposure.currency : 'symbol' : '1.0-0'
+          }}</span>
+          <span class="subtext"
+            >Social Fund:
+            {{ exposure.summary.nativeSocialFundBalance | currency: exposure.currency : 'symbol' : '1.0-0' }}</span
+          >
+        </div>
+      </mat-card>
+
+      <mat-card class="metric-card">
+        <div class="metric-content">
+          <span class="label">{{ 'labels.inputs.Collective Liability Ratio' | translate }}</span>
+          <span class="value">{{ exposure.summary.collectiveLiabilityRatio | number: '1.2-2' }}x</span>
+          <span class="subtext">Exposure / Group Savings</span>
+        </div>
+      </mat-card>
+    </div>
+  }
+
+  <mat-tab-group animationDuration="0ms">
+    <!-- Tab 1: Member Exposure Table -->
+    <mat-tab [label]="'labels.heading.Member Exposure Breakdown' | translate">
+      <div class="tab-content">
+        <mat-card class="list-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Solidarity Member Risk Matrix' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{
+              'labels.subheading.Tracks individual exposure, overdue amounts and joint guarantee exposure' | translate
+            }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            @if (exposure && exposure.memberExposure.length > 0) {
+              <table mat-table [dataSource]="exposure.memberExposure" class="full-width">
+                <ng-container matColumnDef="name">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Member' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">{{ m.clientName }} (#{{ m.clientId }})</td>
+                </ng-container>
+
+                <ng-container matColumnDef="outstanding">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Outstanding Principal' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">
+                    {{ m.outstandingBalance | currency: exposure.currency : 'symbol' : '1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="overdue">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Overdue Amount' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">
+                    <span [class.text-warn]="m.overdueAmount > 0">{{
+                      m.overdueAmount | currency: exposure.currency : 'symbol' : '1.0-0'
+                    }}</span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="daysInArrears">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Days in Arrears' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">
+                    <mat-chip [ngClass]="m.daysInArrears > 0 ? 'chip-danger' : 'chip-success'">
+                      {{ m.daysInArrears }} d
+                    </mat-chip>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="savings">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Savings Balance' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">
+                    {{ m.savingsBalance | currency: exposure.currency : 'symbol' : '1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="guarantorExposure">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Joint Guarantee Share' | translate }}</th>
+                  <td mat-cell *matCellDef="let m">
+                    {{ m.jointGuarantorExposure | currency: exposure.currency : 'symbol' : '1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="memberColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: memberColumns"></tr>
+              </table>
+            } @else {
+              <div class="empty-state">
+                <mat-icon>check_circle</mat-icon>
+                <p>{{ 'labels.msg.No active exposures found' | translate }}</p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Default Recovery Execution -->
+    <mat-tab [label]="'labels.heading.Default Recovery Cascade' | translate">
+      <div class="tab-content">
+        <mat-card class="form-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Execute Default Recovery' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{
+              'labels.subheading.Offsets arrears from social fund or group savings' | translate
+            }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <form [formGroup]="recoveryForm" (ngSubmit)="executeRecovery()" class="layout-column gap-16">
+              <div class="layout-row gap-16">
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Defaulting Member' | translate }}</mat-label>
+                  <mat-select formControlName="defaultingClientId">
+                    @for (m of exposure?.memberExposure; track m.clientId) {
+                      <mat-option [value]="m.clientId">
+                        {{ m.clientName }} (Overdue:
+                        {{ m.overdueAmount | currency: exposure?.currency : 'symbol' : '1.0-0' }})
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Recovery Amount' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="recoveryAmount" />
+                </mat-form-field>
+              </div>
+
+              <div class="layout-row gap-16">
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Recovery Source' | translate }}</mat-label>
+                  <mat-select formControlName="recoverySource">
+                    @for (src of recoverySources; track src.value) {
+                      <mat-option [value]="src.value">{{ src.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-50">
+                  <mat-label>{{ 'labels.inputs.Source Savings Account' | translate }}</mat-label>
+                  <mat-select formControlName="sourceSavingsAccountId">
+                    @for (acc of groupSavingsAccounts; track acc.id) {
+                      <mat-option [value]="acc.id">
+                        {{ acc.productName }} ({{ acc.accountNo }}) - Balance:
+                        {{ acc.accountBalance | currency: exposure?.currency : 'symbol' : '1.0-0' }}
+                      </mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ 'labels.inputs.Resolution / Action Comments' | translate }}</mat-label>
+                <textarea matInput formControlName="comments" rows="2"></textarea>
+              </mat-form-field>
+
+              <div class="align-end">
+                <button mat-raised-button color="warn" type="submit" [disabled]="executing || recoveryForm.invalid">
+                  <mat-icon>gavel</mat-icon>
+                  {{ 'labels.buttons.Execute Recovery' | translate }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <mat-card class="list-card mt-16">
+          <mat-card-header>
+            <mat-card-title>{{ 'labels.heading.Recovery Actions History' | translate }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            @if (recoveryHistory.length > 0) {
+              <table mat-table [dataSource]="recoveryHistory" class="full-width">
+                <ng-container matColumnDef="date">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Date' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">{{ r.actionDate | dateFormat }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="defaultingClient">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Client ID' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">#{{ r.defaultingClientId }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="source">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Source' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">{{ r.recoverySource }}</td>
+                </ng-container>
+
+                <ng-container matColumnDef="recoveredAmount">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Recovered' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">
+                    {{ r.recoveredAmount | currency: exposure?.currency : 'symbol' : '1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="status">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Status' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">
+                    <mat-chip class="chip-success">{{ r.status }}</mat-chip>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="nativeRef">
+                  <th mat-header-cell *matHeaderCellDef>{{ 'labels.inputs.Native Transaction Refs' | translate }}</th>
+                  <td mat-cell *matCellDef="let r">
+                    Savings Tx: #{{ r.nativeSavingsTransactionId }} | Loan Repayment: #{{ r.nativeLoanTransactionId }}
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="historyColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: historyColumns"></tr>
+              </table>
+            } @else {
+              <div class="empty-state">
+                <mat-icon>shield</mat-icon>
+                <p>{{ 'labels.msg.No recovery operations executed' | translate }}</p>
+              </div>
+            }
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

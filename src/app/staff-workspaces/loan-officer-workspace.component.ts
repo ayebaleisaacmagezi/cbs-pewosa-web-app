@@ -19,6 +19,9 @@ import { LoanOfficerWorkspaceView, WorkspaceNavigationService } from 'app/core/s
 import { Dates } from 'app/core/utils/dates';
 import { GroupsService } from 'app/groups/groups.service';
 import { LoansService } from 'app/loans/loans.service';
+import { LoanPrequalificationResult } from 'app/loans/pewosa-loan-application.models';
+import { PewosaLoanApplicationService } from 'app/loans/pewosa-loan-application.service';
+import { ProductsService } from 'app/products/products.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { MemberSearchComponent } from './member-search/member-search.component';
@@ -43,6 +46,8 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   private clientsService = inject(ClientsService);
   private groupsService = inject(GroupsService);
   private loansService = inject(LoansService);
+  private loanApplicationService = inject(PewosaLoanApplicationService);
+  private productsService = inject(ProductsService);
   private settingsService = inject(SettingsService);
   private dates = inject(Dates);
   private router = inject(Router);
@@ -57,6 +62,9 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   clients: any[] = [];
   selectedClient: any = null;
   selectedLoanApplicant: any = null;
+  loanProducts: any[] = [];
+  eligibilityResult: LoanPrequalificationResult | null = null;
+  checkingEligibility = false;
   accounts: any = null;
   charges: any[] = [];
   applications: any[] = [];
@@ -71,6 +79,28 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
 
   currencyCodeFor(source: unknown): string {
     return resolveTellerCurrencyCode([source]);
+  }
+
+  get hasServicingPermission(): boolean {
+    const permissions = this.credentials?.permissions || [];
+    return (
+      permissions.includes('ALL_FUNCTIONS') ||
+      permissions.includes('ALL_FUNCTIONS_READ') ||
+      permissions.includes('READ_PEWOSALOANSERVICING')
+    );
+  }
+
+  get hasApprovalPermission(): boolean {
+    const permissions = this.credentials?.permissions || [];
+    return (
+      permissions.includes('ALL_FUNCTIONS') ||
+      permissions.includes('ALL_FUNCTIONS_READ') ||
+      permissions.includes('READ_PEWOSALOANAPPROVAL') ||
+      permissions.includes('APPROVE_PEWOSALOANAPPROVAL') ||
+      permissions.includes('APPROVE_PEWOSALOANBRANCHMANAGER') ||
+      permissions.includes('APPROVE_PEWOSALOANCREDITCOMMITTEE') ||
+      permissions.includes('APPROVE_PEWOSALOANBOARD')
+    );
   }
 
   memberSearchControl = this.formBuilder.control('', [
@@ -95,6 +125,13 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       Validators.required
     ]
   });
+  eligibilityForm = this.formBuilder.group({
+    loanProductId: this.formBuilder.control<number | null>(null, Validators.required),
+    requestedAmount: this.formBuilder.control<number | null>(null, [
+      Validators.required,
+      Validators.min(1)
+    ])
+  });
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {
@@ -111,8 +148,12 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       this.setView(view);
       this.changeDetectorRef.markForCheck();
     });
+    this.eligibilityForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.eligibilityResult = null;
+    });
     this.loadApplications();
     this.loadGroups();
+    this.loadLoanProducts();
   }
 
   setView(view: LoanOfficerWorkspaceView): void {
@@ -249,7 +290,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
 
   startLoan(clientId?: any): void {
     const id = clientId || this.selectedClient?.id;
-    if (id)
+    if (id && this.eligibilityResult?.eligible)
       this.router.navigate(
         [
           '/clients',
@@ -258,14 +299,64 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
           'create'
         ],
         {
-          queryParams: { workspace: 'loan-officer' }
+          queryParams: {
+            workspace: 'loan-officer',
+            loanProductId: this.eligibilityResult.loanProductId,
+            requestedAmount: this.eligibilityResult.requestedAmount,
+            eligibilityReference: this.eligibilityResult.reference
+          }
         }
       );
   }
 
   selectLoanApplicant(client: any): void {
     this.selectedLoanApplicant = client;
+    this.eligibilityResult = null;
+    this.eligibilityForm.reset();
     this.message = '';
+  }
+
+  clearLoanApplicant(): void {
+    this.selectedLoanApplicant = null;
+    this.eligibilityResult = null;
+    this.eligibilityForm.reset();
+  }
+
+  beginLoanForMember(client: any): void {
+    this.selectLoanApplicant(client);
+    this.setView('new-loan');
+  }
+
+  checkEligibility(): void {
+    if (!this.selectedLoanApplicant || this.eligibilityForm.invalid || this.checkingEligibility) {
+      this.eligibilityForm.markAllAsTouched();
+      this.showMessage('Choose a member, loan product, and valid requested amount.', 'error');
+      return;
+    }
+    const values = this.eligibilityForm.getRawValue();
+    this.checkingEligibility = true;
+    this.eligibilityResult = null;
+    this.message = '';
+    this.loanApplicationService
+      .evaluatePrequalification({
+        clientId: this.selectedLoanApplicant.id,
+        loanProductId: values.loanProductId as number,
+        requestedAmount: values.requestedAmount as number
+      })
+      .pipe(finalize(() => (this.checkingEligibility = false)))
+      .subscribe({
+        next: (result) => {
+          this.eligibilityResult = result;
+          if (!result.eligible)
+            this.showMessage('This member does not currently meet the selected product rules.', 'error');
+          this.changeDetectorRef.markForCheck();
+        },
+        error: () =>
+          this.showMessage(
+            'Pre-qualification could not be completed. Confirm that this product has an active loan policy.',
+            'error'
+          )
+      });
   }
 
   openApplication(application: any): void {
@@ -285,6 +376,13 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
     this.loansService.getLoansForOfficer(this.credentials.staffId).subscribe({
       next: (response: any) => (this.applications = response?.pageItems || response || []),
       error: () => this.showMessage('Loan applications assigned to you could not be loaded.', 'error')
+    });
+  }
+
+  private loadLoanProducts(): void {
+    this.productsService.getLoanProductsBasicDetails().subscribe({
+      next: (response: any) => (this.loanProducts = response || []),
+      error: () => this.showMessage('Loan products could not be loaded.', 'error')
     });
   }
 

@@ -1,0 +1,93 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.appraisal-card {
+  margin: 16px;
+  border-radius: 16px;
+}
+
+.appraisal-card mat-card-content,
+.appraisal-card form {
+  display: grid;
+  gap: 24px;
+}
+
+.appraisal-card mat-card-content {
+  padding-top: 24px;
+}
+
+.appraisal-card h3 {
+  margin: 0 0 16px;
+}
+
+.field-grid,
+.calculation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.calculation-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.calculation-grid div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f4f7fc;
+}
+
+.calculation-grid span,
+.appraisal-footer span {
+  color: #64748b;
+}
+
+.calculation-grid strong {
+  font-size: 20px;
+}
+
+.appraisal-message,
+.loading-state {
+  padding: 16px;
+  border-radius: 8px;
+  color: #1b5e20;
+  background: #e8f5e9;
+}
+
+.appraisal-message.error {
+  color: #b3261e;
+  background: #ffedea;
+}
+
+.appraisal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding-top: 24px;
+  border-top: 1px solid #dbe4f3;
+}
+
+.appraisal-footer div {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 800px) {
+  .field-grid,
+  .calculation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .appraisal-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

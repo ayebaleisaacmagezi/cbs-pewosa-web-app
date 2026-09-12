@@ -1,0 +1,156 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="pewosa-group-profile-container">
+  <mat-progress-bar *ngIf="loading" mode="indeterminate" class="loading-bar"></mat-progress-bar>
+
+  <div class="profile-header">
+    <div>
+      <h2 class="mat-headline-6 title">PEWOSA Group Profile & Governance</h2>
+      <p class="subtitle text-muted">
+        Manage group registration, constitution adoption, leadership training, and linked group savings accounts.
+      </p>
+    </div>
+    <div class="header-badges" *ngIf="profile">
+      <span class="version-badge">Version {{ profile.version }}</span>
+      <span class="status-badge" [class.badge-success]="profile.constitutionAdopted" [class.badge-warn]="!profile.constitutionAdopted">
+        {{ profile.constitutionAdopted ? 'Constitution Adopted' : 'Constitution Pending' }}
+      </span>
+      <span class="status-badge" [class.badge-success]="profile.trainingCompleted" [class.badge-warn]="!profile.trainingCompleted">
+        {{ profile.trainingCompleted ? 'Training Completed' : 'Training Pending' }}
+      </span>
+    </div>
+  </div>
+
+  <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+    <!-- Card 1: Registration & Constitution -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Registration & Constitution</mat-card-title>
+        <mat-card-subtitle>Group formal registration and governance adoption records</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Registration Number</mat-label>
+          <input matInput formControlName="registrationNumber" placeholder="e.g. PEWOSA-GRP-2026-081" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Registration Date</mat-label>
+          <input matInput type="date" formControlName="registrationDate" />
+        </mat-form-field>
+
+        <div class="toggle-container">
+          <mat-slide-toggle formControlName="constitutionAdopted" color="primary">
+            Constitution Formally Adopted
+          </mat-slide-toggle>
+        </div>
+
+        <mat-form-field appearance="outline" *ngIf="profileForm.get('constitutionAdopted')?.value">
+          <mat-label>Constitution Adopted Date</mat-label>
+          <input matInput type="date" formControlName="constitutionAdoptedDate" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Card 2: Training & Governance -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Group Training & Capacity</mat-card-title>
+        <mat-card-subtitle>Solidarity group lending and financial literacy training records</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <div class="toggle-container">
+          <mat-slide-toggle formControlName="trainingCompleted" color="primary">
+            Mandatory Group Training Completed
+          </mat-slide-toggle>
+        </div>
+
+        <mat-form-field appearance="outline" *ngIf="profileForm.get('trainingCompleted')?.value">
+          <mat-label>Training Completed Date</mat-label>
+          <input matInput type="date" formControlName="trainingCompletedDate" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Trainer Staff ID</mat-label>
+          <input matInput type="number" formControlName="trainerStaffId" placeholder="Staff ID" />
+          <mat-hint *ngIf="profile?.trainerStaffName">Trainer: {{ profile?.trainerStaffName }}</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Minimum Active Members</mat-label>
+          <input matInput type="number" formControlName="minimumActiveMembers" min="1" />
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Card 3: Meeting Cadence & Savings Accounts -->
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Meeting Schedule & Dedicated Accounts</mat-card-title>
+        <mat-card-subtitle>Meeting frequency and native group accounts for social fund and group savings</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Meeting Frequency</mat-label>
+          <mat-select formControlName="meetingFrequency">
+            <mat-option *ngFor="let freq of meetingFrequencies" [value]="freq">{{ freq }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Meeting Day of Week</mat-label>
+          <mat-select formControlName="meetingDayOfWeek">
+            <mat-option *ngFor="let day of daysOfWeek" [value]="day">{{ day }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Current Cycle Number</mat-label>
+          <input matInput type="number" formControlName="cycleNumber" min="1" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Social Fund Savings Account</mat-label>
+          <mat-select formControlName="socialFundSavingsAccountId">
+            <mat-option [value]="null">-- None --</mat-option>
+            <mat-option *ngFor="let acc of groupSavingsAccounts" [value]="acc.id">
+              {{ acc.accountNo }} - {{ acc.productName }} (Balance: {{ acc.accountBalance | number }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Group Savings Account</mat-label>
+          <mat-select formControlName="groupSavingsAccountId">
+            <mat-option [value]="null">-- None --</mat-option>
+            <mat-option *ngFor="let acc of groupSavingsAccounts" [value]="acc.id">
+              {{ acc.accountNo }} - {{ acc.productName }} (Balance: {{ acc.accountBalance | number }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Audit Footer -->
+    <div class="audit-footer" *ngIf="profile">
+      <span>Group ID: {{ profile.groupId }}</span>
+      <span *ngIf="profile.lastModifiedBy">&bull; Last Modified By: {{ profile.lastModifiedBy }}</span>
+      <span *ngIf="profile.lastModifiedDate">&bull; On: {{ profile.lastModifiedDate | dateFormat }}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-bar">
+      <button mat-raised-button color="primary" type="submit" [disabled]="saving || profileForm.invalid">
+        <mat-icon *ngIf="!saving">save</mat-icon>
+        <span *ngIf="!saving">Save Group Profile</span>
+        <span *ngIf="saving">Saving...</span>
+      </button>
+    </div>
+  </form>
+</div>

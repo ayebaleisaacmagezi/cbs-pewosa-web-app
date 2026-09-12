@@ -1,0 +1,212 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.closure-container {
+  padding: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px;
+  font-size: 16px;
+  color: #555;
+}
+
+.access-denied-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  background-color: var(--mat-sys-error-container, #fde8e8);
+  border-radius: 8px;
+  color: var(--mat-sys-on-error-container, #9b1c1c);
+
+  mat-icon {
+    font-size: 48px;
+    height: 48px;
+    width: 48px;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+  }
+}
+
+.conflict-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 24px;
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+  color: #92400e;
+
+  .conflict-text {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    p {
+      margin: 0;
+    }
+  }
+}
+
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background-color: var(--mat-sys-error-container, #fde8e8);
+  border-radius: 8px;
+  color: var(--mat-sys-on-error-container, #9b1c1c);
+
+  p {
+    margin: 0;
+  }
+}
+
+.success-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background-color: #ecfdf5;
+  border-radius: 8px;
+  color: #065f46;
+
+  p {
+    margin: 0;
+  }
+}
+
+.readiness-card,
+.form-card,
+.result-card {
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 8px 0;
+
+  .metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .label {
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .value {
+      font-size: 15px;
+      font-weight: 600;
+
+      &.warn-text {
+        color: #dc2626;
+      }
+
+      &.success-text {
+        color: #16a34a;
+      }
+    }
+  }
+}
+
+.blocking-reasons-box {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #fff1f2;
+  border-radius: 6px;
+  border: 1px solid #fecdd3;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    color: #9f1239;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #881337;
+
+    li {
+      margin-bottom: 6px;
+
+      .release-link {
+        margin-left: 8px;
+        font-weight: 600;
+        text-decoration: underline;
+        color: #be123c;
+      }
+    }
+  }
+}
+
+.action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  .flex-50 {
+    flex: 1 1 calc(50% - 16px);
+    min-width: 250px;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.result-card {
+  border-left: 4px solid #10b981;
+}

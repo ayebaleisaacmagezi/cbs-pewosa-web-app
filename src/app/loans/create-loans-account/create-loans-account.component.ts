@@ -20,6 +20,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+import { catchError, map, of, switchMap } from 'rxjs';
 
 /** Custom Services */
 import { LoansService } from '../loans.service';
@@ -39,6 +40,7 @@ import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { LoanProductBasicDetails } from '../models/loan-product.model';
 import { LoanProductBaseComponent } from 'app/products/loan-products/common/loan-product-base.component';
 import { Dates } from 'app/core/utils/dates';
+import { PewosaLoanApplicationService } from '../pewosa-loan-application.service';
 
 /**
  * Create loans account
@@ -71,6 +73,7 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   private clientService = inject(ClientsService);
   private cdr = inject(ChangeDetectorRef);
   private dateUtils = inject(Dates);
+  private pewosaLoanApplicationService = inject(PewosaLoanApplicationService);
 
   /** Imports all the step component */
   @ViewChild(LoansAccountDetailsStepComponent, { static: false })
@@ -259,6 +262,19 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
 
     this.loansService
       .createLoansAccount(this.loanProductService.loanAccountPath, payload)
+      .pipe(
+        switchMap((response: any) => {
+          const eligibilityReference = this.route.snapshot.queryParamMap.get('eligibilityReference');
+          return eligibilityReference
+            ? this.pewosaLoanApplicationService
+                .initializeDocumentChecklist(response.resourceId, eligibilityReference)
+                .pipe(
+                  map(() => response),
+                  catchError(() => of(response))
+                )
+            : of(response);
+        })
+      )
       .subscribe((response: any) => {
         this.router.navigate(
           [

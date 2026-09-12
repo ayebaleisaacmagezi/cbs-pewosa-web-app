@@ -177,6 +177,17 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
         this.getProductTemplate(false);
       }
     }
+    const requestedProductId = Number(this.route.snapshot.queryParamMap.get('loanProductId'));
+    if (!this.productSelected && requestedProductId) {
+      this.productSelected = this.loanProductsBasicDetails.find(
+        (product: LoanProductBasicDetails) => product.id === requestedProductId
+      );
+      if (this.productSelected) {
+        this.loansAccountDetailsForm.patchValue({ productId: this.productSelected.shortName });
+        this.loanProductSelected = true;
+        this.getProductTemplate(false);
+      }
+    }
     this.filterFormCtrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.searchItem();
     });

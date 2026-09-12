@@ -161,6 +161,14 @@ const routes: Routes = [
           component: ProductsComponent
         },
         {
+          path: 'loan-management-policy',
+          loadComponent: () =>
+            import('./loan-management-policy/loan-management-policy.component').then(
+              (component) => component.LoanManagementPolicyComponent
+            ),
+          data: { title: 'Loan Management Policy', breadcrumb: 'Loan Management Policy' }
+        },
+        {
           path: 'loan-products',
           data: { title: 'Loan Products', breadcrumb: 'Loan Products' },
           children: [

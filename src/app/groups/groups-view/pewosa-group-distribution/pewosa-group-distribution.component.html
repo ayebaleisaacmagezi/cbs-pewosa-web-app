@@ -1,0 +1,126 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<div class="pewosa-distribution-container">
+  @if (loading) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+  }
+
+  <mat-card class="application-selector-card">
+    <mat-card-header>
+      <mat-card-title>{{ 'labels.heading.Member Loan Distribution & Exact Reconciliation' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'labels.subheading.Sub-allocations must equal approved group amount' | translate }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="layout-row gap-16 align-center">
+        <mat-form-field appearance="outline" class="flex-50">
+          <mat-label>{{ 'labels.inputs.Select Group Loan Application' | translate }}</mat-label>
+          <mat-select [value]="selectedApplicationId" (selectionChange)="selectApplication($event.value)">
+            @for (app of applications; track app.id) {
+              <mat-option [value]="app.id">
+                {{ app.applicationReference }} - {{ app.productName }} ({{ (app.approvedAmount || app.requestedAmount) | currency:'UGX':'symbol':'1.0-0' }})
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (selectedApplication) {
+          <div class="reconciliation-summary flex-50 layout-row gap-16">
+            <div class="summary-metric">
+              <span class="label">{{ 'labels.inputs.Group Target' | translate }}:</span>
+              <span class="value">{{ targetApprovedAmount | currency:'UGX':'symbol':'1.0-0' }}</span>
+            </div>
+            <div class="summary-metric">
+              <span class="label">{{ 'labels.inputs.Total Allocated' | translate }}:</span>
+              <span class="value" [class.mismatch]="!reconciled">{{ totalDistributed | currency:'UGX':'symbol':'1.0-0' }}</span>
+            </div>
+            <div class="summary-metric">
+              <span class="label">{{ 'labels.inputs.Status' | translate }}:</span>
+              <mat-chip [ngClass]="reconciled ? 'chip-reconciled' : 'chip-mismatch'">
+                {{ reconciled ? ('labels.status.Reconciled' | translate) : ('labels.status.Difference: ' | translate) + (remainingToDistribute | currency:'UGX':'symbol':'1.0-0') }}
+              </mat-chip>
+            </div>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  @if (selectedApplication) {
+    <mat-card class="distribution-table-card">
+      <mat-card-header class="make-flex space-between align-center">
+        <mat-card-title>{{ 'labels.heading.Member Loan Allocations' | translate }}</mat-card-title>
+        <button mat-stroked-button color="primary" (click)="addMemberRow()">
+          <mat-icon>person_add</mat-icon>
+          {{ 'labels.buttons.Add Member' | translate }}
+        </button>
+      </mat-card-header>
+
+      <mat-card-content>
+        <form [formGroup]="distributionForm" (ngSubmit)="saveDistribution()">
+          <div formArrayName="distributions" class="distribution-rows layout-column gap-12">
+            @for (row of distributionsArray.controls; track $index) {
+              <div [formGroupName]="$index" class="member-row layout-row gap-16 align-center">
+                <mat-form-field appearance="outline" class="flex-30">
+                  <mat-label>{{ 'labels.inputs.Member' | translate }}</mat-label>
+                  <mat-select formControlName="clientId">
+                    @for (member of groupMembers; track member.id) {
+                      <mat-option [value]="member.id">{{ member.displayName }} (#{{ member.id }})</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-20">
+                  <mat-label>{{ 'labels.inputs.Requested Amount' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="requestedAmount" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-20">
+                  <mat-label>{{ 'labels.inputs.Approved Amount' | translate }}</mat-label>
+                  <input matInput type="number" formControlName="approvedAmount" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="flex-25">
+                  <mat-label>{{ 'labels.inputs.Loan Purpose' | translate }}</mat-label>
+                  <input matInput formControlName="purpose" />
+                </mat-form-field>
+
+                <div class="flex-5">
+                  <button mat-icon-button color="warn" type="button" (click)="removeMemberRow($index)" matTooltip="Remove">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="actions-bar make-flex space-between align-center">
+            <div class="reconciliation-badge">
+              @if (reconciled) {
+                <span class="text-success">
+                  <mat-icon>check_circle</mat-icon>
+                  {{ 'labels.msg.Member allocations exactly match the approved group amount.' | translate }}
+                </span>
+              } @else {
+                <span class="text-warn">
+                  <mat-icon>error_outline</mat-icon>
+                  {{ 'labels.msg.Allocations must exactly equal' | translate }} {{ targetApprovedAmount | currency:'UGX':'symbol':'1.0-0' }} ({{ remainingToDistribute | currency:'UGX':'symbol':'1.0-0' }} remaining)
+                </span>
+              }
+            </div>
+
+            <button mat-raised-button color="primary" type="submit" [disabled]="saving || !reconciled">
+              <mat-icon>save</mat-icon>
+              {{ 'labels.buttons.Save & Reconcile Distribution' | translate }}
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+</div>

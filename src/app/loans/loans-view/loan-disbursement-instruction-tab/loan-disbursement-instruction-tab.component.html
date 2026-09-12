@@ -1,0 +1,165 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<mat-card class="instruction-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'Reviewed disbursement instruction' | translate }}</mat-card-title>
+    <mat-card-subtitle>{{
+      'Fineract validates approval, documents, charges, amount, and payment rail' | translate
+    }}</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (error) {
+      <div class="error-message">{{ error | translate }}</div>
+    }
+    @if (loading) {
+      <div class="loading-state">{{ 'Loading disbursement instruction' | translate }}...</div>
+    } @else if (instruction) {
+      <section class="amount-summary">
+        <div>
+          <span>{{ 'Gross amount' | translate }}</span
+          ><strong>{{ instruction.grossAmount | number }} {{ instruction.currencyCode }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Charges at disbursement' | translate }}</span
+          ><strong>{{ instruction.chargesDueAtDisbursement | number }} {{ instruction.currencyCode }}</strong>
+        </div>
+        <div class="net">
+          <span>{{ 'Net amount' | translate }}</span
+          ><strong>{{ instruction.netAmount | number }} {{ instruction.currencyCode }}</strong>
+        </div>
+        <div>
+          <span>{{ 'Payment rail' | translate }}</span
+          ><strong>{{ instruction.rail | translate }}</strong>
+        </div>
+      </section>
+      <p>
+        {{ 'Status' | translate }}: <strong class="instruction-status">{{ instruction.status | translate }}</strong> ·
+        {{ instruction.feeSettlementMode | translate }}
+      </p>
+
+      @if (instruction.status === 'CONSUMED') {
+        <section class="consumed-details">
+          <div>
+            <span>{{ 'Native transaction ID' | translate }}:</span>
+            <strong class="native-transaction-id">{{ instruction.nativeTransactionId }}</strong>
+          </div>
+          @if (instruction.consumedOn) {
+            <div>
+              <span>{{ 'Consumed on' | translate }}:</span>
+              <strong>{{ instruction.consumedOn }}</strong>
+            </div>
+          }
+          @if (instruction.consumedBy) {
+            <div>
+              <span>{{ 'Consumed by' | translate }}:</span>
+              <strong>{{ instruction.consumedBy }}</strong>
+            </div>
+          }
+        </section>
+      }
+
+      @if (instruction.status === 'READY') {
+        <div *mifosxHasPermission="'EXECUTE_PEWOSALOANDISBURSEMENT'" class="execute-container">
+          @if (!showConfirmation) {
+            <button
+              mat-raised-button
+              color="primary"
+              type="button"
+              class="execute-btn"
+              (click)="promptConfirmation()"
+              [disabled]="executing"
+            >
+              {{ 'Execute disbursement' | translate }}
+            </button>
+          } @else {
+            <section class="confirmation-section">
+              <h4>{{ 'Confirm disbursement execution' | translate }}</h4>
+              <div class="confirmation-details">
+                <div>
+                  <span>{{ 'Gross amount' | translate }}:</span>
+                  <strong>{{ instruction.grossAmount | number }} {{ instruction.currencyCode }}</strong>
+                </div>
+                <div>
+                  <span>{{ 'Deductions' | translate }}:</span>
+                  <strong>{{ instruction.chargesDueAtDisbursement | number }} {{ instruction.currencyCode }}</strong>
+                </div>
+                <div>
+                  <span>{{ 'Net amount' | translate }}:</span>
+                  <strong>{{ instruction.netAmount | number }} {{ instruction.currencyCode }}</strong>
+                </div>
+                <div>
+                  <span>{{ 'Currency' | translate }}:</span>
+                  <strong>{{ instruction.currencyCode }}</strong>
+                </div>
+                <div>
+                  <span>{{ 'Payment rail' | translate }}:</span>
+                  <strong>{{ instruction.rail | translate }}</strong>
+                </div>
+              </div>
+              <div class="confirmation-actions">
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  class="confirm-execute-btn"
+                  (click)="execute()"
+                  [disabled]="executing"
+                >
+                  {{ (executing ? 'Executing disbursement' : 'Confirm and execute') | translate }}
+                </button>
+                <button
+                  mat-button
+                  type="button"
+                  class="cancel-btn"
+                  (click)="cancelConfirmation()"
+                  [disabled]="executing"
+                >
+                  {{ 'Cancel' | translate }}
+                </button>
+              </div>
+            </section>
+          }
+        </div>
+      }
+    } @else {
+      <form [formGroup]="instructionForm" (ngSubmit)="create()">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Payment rail' | translate }}</mat-label>
+          <mat-select formControlName="rail">
+            <mat-option value="ACCOUNT_CREDIT">{{ 'Account credit' | translate }}</mat-option>
+            <mat-option value="CASH">{{ 'Cash' | translate }}</mat-option>
+            <mat-option value="CHEQUE">{{ 'Cheque' | translate }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+        @if (instructionForm.controls.rail.value === 'ACCOUNT_CREDIT') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Destination savings account ID' | translate }}</mat-label>
+            <input matInput type="number" min="1" formControlName="destinationSavingsAccountId" />
+          </mat-form-field>
+        }
+        @if (instructionForm.controls.rail.value === 'CHEQUE') {
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Cheque number' | translate }}</mat-label>
+            <input matInput formControlName="chequeNumber" />
+          </mat-form-field>
+        }
+        <p>{{ 'Mobile-money disbursement is unavailable in this release' | translate }}.</p>
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="saving"
+          *mifosxHasPermission="'CREATE_PEWOSALOANDISBURSEMENT'"
+        >
+          {{ (saving ? 'Validating instruction' : 'Validate and create instruction') | translate }}
+        </button>
+      </form>
+    }
+  </mat-card-content>
+</mat-card>

@@ -53,6 +53,8 @@
   min-height: 150px;
   padding: 24px;
   box-shadow: 0 8px 24px rgb(28 49 87 / 6%);
+  text-decoration: none;
+  color: inherit;
 }
 
 .action-tile strong {
@@ -173,6 +175,52 @@
   font-size: 40px;
 }
 
+.eligibility-form,
+.eligibility-rules {
+  display: grid;
+  gap: 16px;
+}
+
+.eligibility-result {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #ef9a9a;
+  border-radius: 16px;
+  background: #fff5f5;
+}
+
+.eligibility-result.passed {
+  border-color: #a5d6a7;
+  background: #f1f8f2;
+}
+
+.eligibility-summary,
+.eligibility-rule {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.eligibility-summary div {
+  display: grid;
+  gap: 4px;
+}
+
+.eligibility-summary small,
+.eligibility-reference {
+  color: #64748b;
+}
+
+.eligibility-rule {
+  color: #b3261e;
+}
+
+.eligibility-rule.passed,
+.eligibility-result.passed .eligibility-summary > fa-icon {
+  color: #2e7d32;
+}
+
 .panel {
   border-radius: 18px;
 }
@@ -201,13 +249,13 @@
   box-shadow: 0 6px 18px rgb(35 76 152 / 8%);
 }
 
-@media (max-width: 960px) {
+@media (width <= 960px) {
   .workspace-tabs {
     display: flex;
   }
 }
 
-@media (max-width: 680px) {
+@media (width <= 680px) {
   .staff-workspace {
     padding: 18px 14px 32px;
   }

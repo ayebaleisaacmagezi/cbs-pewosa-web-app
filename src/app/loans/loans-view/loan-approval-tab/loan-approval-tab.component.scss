@@ -1,0 +1,63 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.approval-card {
+  margin: 16px;
+}
+
+.approval-card mat-card-content,
+.approval-card form,
+.decision-record {
+  display: grid;
+  gap: 16px;
+}
+
+.approval-card mat-card-content {
+  padding-top: 24px;
+}
+
+.case-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 25%));
+  gap: 16px;
+}
+
+.case-summary div,
+.approval-message,
+.loading-state,
+.empty-state,
+.decision-record {
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.case-summary div {
+  display: grid;
+  gap: 8px;
+}
+
+.approval-message {
+  color: var(--mat-sys-on-primary-container);
+  background: var(--mat-sys-primary-container);
+}
+
+.approval-message.error {
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+}
+
+.full-width {
+  width: 100%;
+}
+
+@media (width <= 800px) {
+  .case-summary {
+    grid-template-columns: 100%;
+  }
+}

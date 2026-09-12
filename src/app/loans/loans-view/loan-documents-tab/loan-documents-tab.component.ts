@@ -7,8 +7,9 @@
  */
 
 /** Angular Imports */
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 /** Custom Services */
@@ -17,6 +18,8 @@ import { LoansService } from 'app/loans/loans.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { EntityDocumentsTabComponent } from '../../../shared/tabs/entity-documents-tab/entity-documents-tab.component';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
+import { LoanDocumentChecklist } from '../../pewosa-loan-application.models';
+import { PewosaLoanApplicationService } from '../../pewosa-loan-application.service';
 
 /**
  * Overdue charges tab component
@@ -36,12 +39,18 @@ export class LoanDocumentsTabComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private loansService = inject(LoansService);
   private settingsService = inject(SettingsService);
+  private pewosaLoanApplicationService = inject(PewosaLoanApplicationService);
+  private changeDetectorRef = inject(ChangeDetectorRef);
 
   /** Stores the resolved loan documents data */
   entityDocuments: any;
   /** Loan account Id */
   entityId: string;
   entityType = 'loans';
+  documentChecklist: LoanDocumentChecklist | null = null;
+  selectedDocumentByRequirement: Record<string, number | null> = {};
+  rejectionReasonByRequirement: Record<string, FormControl<string>> = {};
+  workflowMessage = '';
 
   /**
    * Retrieves the loans data from `resolve`.
@@ -58,7 +67,49 @@ export class LoanDocumentsTabComponent implements OnInit {
   ngOnInit(): void {
     this.route.parent.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.entityId = params['loanId'];
+      this.loadDocumentChecklist();
     });
+  }
+
+  linkRequirement(requirementCode: string): void {
+    const documentId = this.selectedDocumentByRequirement[requirementCode];
+    if (!documentId) return;
+    this.pewosaLoanApplicationService.linkDocument(Number(this.entityId), requirementCode, documentId).subscribe({
+      next: (checklist) => {
+        this.documentChecklist = checklist;
+        this.workflowMessage = 'Document linked and awaiting independent verification.';
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.workflowMessage = 'The document could not be linked to this requirement.';
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+  }
+
+  verifyRequirement(requirementCode: string, decision: 'VERIFIED' | 'REJECTED'): void {
+    const reason = this.rejectionReasonControl(requirementCode).value.trim();
+    if (decision === 'REJECTED' && !reason) {
+      this.workflowMessage = 'Enter a reason before rejecting the document.';
+      return;
+    }
+    this.pewosaLoanApplicationService
+      .verifyDocument(Number(this.entityId), requirementCode, decision, reason)
+      .subscribe({
+        next: (checklist) => {
+          this.documentChecklist = checklist;
+          this.workflowMessage = decision === 'VERIFIED' ? 'Document verified.' : 'Document rejected.';
+          this.changeDetectorRef.markForCheck();
+        },
+        error: () => {
+          this.workflowMessage = 'The verification decision could not be recorded.';
+          this.changeDetectorRef.markForCheck();
+        }
+      });
+  }
+
+  rejectionReasonControl(requirementCode: string): FormControl<string> {
+    return (this.rejectionReasonByRequirement[requirementCode] ??= new FormControl('', { nonNullable: true }));
   }
 
   getLoanDocumentsData(data: any) {
@@ -95,5 +146,19 @@ export class LoanDocumentsTabComponent implements OnInit {
 
   deleteDocument(documentId: any) {
     this.loansService.deleteLoanDocument(this.entityId, documentId).subscribe((res: any) => {});
+  }
+
+  private loadDocumentChecklist(): void {
+    if (!this.entityId) return;
+    this.pewosaLoanApplicationService.getDocumentChecklist(Number(this.entityId)).subscribe({
+      next: (checklist) => {
+        this.documentChecklist = checklist;
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.documentChecklist = null;
+        this.changeDetectorRef.markForCheck();
+      }
+    });
   }
 }

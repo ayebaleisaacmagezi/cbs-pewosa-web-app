@@ -1,0 +1,118 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<mat-card class="appraisal-card">
+  <mat-card-header>
+    <mat-card-title>{{ 'Loan appraisal' | translate }}</mat-card-title>
+    <mat-card-subtitle
+      >{{
+        'Assess repayment capacity and make a recommendation without approving the loan' | translate
+      }}.</mat-card-subtitle
+    >
+  </mat-card-header>
+  <mat-card-content>
+    @if (message) {
+      <div class="appraisal-message" [class.error]="messageType === 'error'">{{ message }}</div>
+    }
+    @if (loading) {
+      <div class="loading-state">{{ 'Loading appraisal' | translate }}...</div>
+    } @else {
+      <form [formGroup]="appraisalForm" (ngSubmit)="save()">
+        <section>
+          <h3>{{ 'Affordability assessment' | translate }}</h3>
+          <div class="field-grid">
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'Monthly income' | translate }}</mat-label
+              ><input matInput type="number" min="1" formControlName="monthlyIncome"
+            /></mat-form-field>
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'Monthly expenses' | translate }}</mat-label
+              ><input matInput type="number" min="0" formControlName="monthlyExpenses"
+            /></mat-form-field>
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'Existing monthly debt' | translate }}</mat-label
+              ><input matInput type="number" min="0" formControlName="existingMonthlyDebt"
+            /></mat-form-field>
+          </div>
+          @if (savedAppraisal) {
+            <div class="calculation-grid">
+              <div>
+                <span>{{ 'Disposable income' | translate }}</span
+                ><strong>{{ savedAppraisal.disposableIncome | number }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Debt-to-income ratio' | translate }}</span
+                ><strong>{{ savedAppraisal.debtToIncomeRatio | percent: '1.0-2' }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Policy version' | translate }}</span
+                ><strong>{{ savedAppraisal.policyVersion }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Appraisal version' | translate }}</span
+                ><strong>{{ savedAppraisal.version }}</strong>
+              </div>
+            </div>
+          }
+        </section>
+
+        <section>
+          <h3>{{ 'Findings and recommendation' | translate }}</h3>
+          <mat-form-field appearance="outline" class="full-width"
+            ><mat-label>{{ 'Appraisal notes' | translate }}</mat-label
+            ><textarea matInput rows="6" formControlName="notes"></textarea>
+          </mat-form-field>
+          <div class="field-grid">
+            <mat-form-field appearance="outline"
+              ><mat-label>{{ 'Recommendation' | translate }}</mat-label
+              ><mat-select formControlName="recommendation"
+                ><mat-option value="RECOMMEND">{{ 'Recommend' | translate }}</mat-option
+                ><mat-option value="RECOMMEND_WITH_CONDITIONS">{{ 'Recommend with conditions' | translate }}</mat-option
+                ><mat-option value="DO_NOT_RECOMMEND">{{ 'Do not recommend' | translate }}</mat-option></mat-select
+              ></mat-form-field
+            >
+          </div>
+          @if (appraisalForm.controls.recommendation.value === 'RECOMMEND_WITH_CONDITIONS') {
+            <mat-form-field appearance="outline" class="full-width"
+              ><mat-label>{{ 'Conditions one per line' | translate }}</mat-label
+              ><textarea matInput rows="4" formControlName="conditions"></textarea>
+            </mat-form-field>
+          }
+        </section>
+
+        <div class="appraisal-footer">
+          <div>
+            <strong>{{ 'Loan Officers cannot approve loans' | translate }}</strong
+            ><span>{{ 'Saving records an appraisal and recommendation only' | translate }}.</span>
+          </div>
+          @if (savedAppraisal) {
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="saving"
+              *mifosxHasPermission="'UPDATE_PEWOSALOANAPPRAISAL'"
+            >
+              {{ (saving ? 'Saving appraisal' : 'Update appraisal') | translate }}
+            </button>
+          } @else {
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="saving"
+              *mifosxHasPermission="'CREATE_PEWOSALOANAPPRAISAL'"
+            >
+              {{ (saving ? 'Saving appraisal' : 'Save appraisal') | translate }}
+            </button>
+          }
+        </div>
+      </form>
+    }
+  </mat-card-content>
+</mat-card>

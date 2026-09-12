@@ -56,6 +56,24 @@
             </mat-list-item>
           </div>
 
+          <div>
+            <mat-list-item [routerLink]="['loan-management-policy']" *mifosxHasPermission="'READ_PEWOSALOANPOLICY'">
+              <div class="menu-list-item-content">
+                <div class="menu-left-section" [routerLink]="['loan-management-policy']">
+                  <mat-icon matListIcon>
+                    <fa-icon icon="cogs" size="sm"></fa-icon>
+                  </mat-icon>
+                  <div matLine>
+                    {{ 'labels.heading.Loan Management Policy' | translate }}
+                    <p matLine class="menu-explanation">
+                      {{ 'labels.text.Configure eligibility scoring approvals documents and disbursement' | translate }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </mat-list-item>
+          </div>
+
           <div #charges>
             <mat-list-item [routerLink]="['charges']" *mifosxHasPermission="'READ_CHARGE'">
               <div class="menu-list-item-content">

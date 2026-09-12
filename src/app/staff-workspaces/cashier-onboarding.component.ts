@@ -49,17 +49,6 @@ export class CashierOnboardingComponent implements OnInit {
   message = '';
   messageType: 'error' | 'success' | '' = '';
 
-  startForm = this.formBuilder.group({
-    nationalId: [
-      '',
-      Validators.required
-    ],
-    mobileNo: [
-      '',
-      Validators.required
-    ]
-  });
-
   checklistForm = this.formBuilder.group({
     bioDataCaptured: [false],
     photoCaptured: [false],
@@ -135,26 +124,11 @@ export class CashierOnboardingComponent implements OnInit {
   ngOnInit(): void {
     const reference = this.route.snapshot.paramMap.get('reference');
     const clientId = Number(this.route.snapshot.queryParamMap.get('clientId') || 0) || undefined;
-    if (reference) this.load(reference, clientId);
-  }
-
-  startOnboarding(): void {
-    if (this.startForm.invalid || this.submitting) return;
-    const value = this.startForm.getRawValue();
-    this.submitting = true;
-    this.tellerApi
-      .startOnboarding({ nationalId: value.nationalId || '', mobileNo: value.mobileNo || '', checklist: {} })
-      .pipe(finalize(() => (this.submitting = false)))
-      .subscribe({
-        next: (onboarding) => {
-          this.onboarding = onboarding;
-          void this.router.navigate([
-            '/staff-workspaces/cashier/onboarding',
-            onboarding.reference
-          ]);
-        },
-        error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
-      });
+    if (reference) {
+      this.load(reference, clientId);
+      return;
+    }
+    void this.router.navigate(['/clients/create'], { queryParams: { workspace: 'cashier' } });
   }
 
   openClientRegistration(): void {
@@ -277,7 +251,6 @@ export class CashierOnboardingComponent implements OnInit {
   private apply(onboarding: TellerOnboarding): void {
     this.onboarding = onboarding;
     this.beneficiaries = onboarding.beneficiaries || [];
-    this.startForm.patchValue({ nationalId: onboarding.nationalId || '', mobileNo: onboarding.mobileNo || '' });
     this.checklistForm.patchValue({ ...onboarding.checklist, unavailableReason: onboarding.unavailableReason || '' });
     this.financialStepsForm.controls.forEach((control, index) => {
       const stepType = this.financialStepDefinitions[index].stepType;
