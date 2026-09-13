@@ -6,13 +6,13 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, HostListener, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { catchError, finalize, forkJoin, map, of, switchMap } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of, switchMap, timeout } from 'rxjs';
 
 import { ClientsService } from 'app/clients/clients.service';
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
@@ -66,6 +66,18 @@ function cashCountMatchesAmount(control: AbstractControl): ValidationErrors | nu
   styleUrls: ['./cashier-workspace.component.scss']
 })
 export class CashierWorkspaceComponent implements OnInit {
+  readonly ugxDenominations = [
+    50000,
+    20000,
+    10000,
+    5000,
+    2000,
+    1000,
+    500,
+    200,
+    100
+  ];
+
   private authenticationService = inject(AuthenticationService);
   private clientsService = inject(ClientsService);
   private loansService = inject(LoansService);
@@ -76,11 +88,13 @@ export class CashierWorkspaceComponent implements OnInit {
   private dates = inject(Dates);
   private formBuilder = inject(FormBuilder);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private workspaceNavigation = inject(WorkspaceNavigationService);
   private tellerApi = inject(TellerApiService);
   private transactionState = inject(TellerTransactionStateService);
   private destroyRef = inject(DestroyRef);
   private changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly requestTimeoutMs = 30000;
 
   credentials = this.authenticationService.getCredentials();
   activeView: CashierWorkspaceView = 'transactions';
@@ -100,10 +114,12 @@ export class CashierWorkspaceComponent implements OnInit {
   submitting = false;
   reviewAttempted = false;
   message = '';
-  messageType: 'error' | 'success' | '' = '';
+  messageType: 'error' | 'success' | 'warning' | '' = '';
   pendingTransaction: CashierTransactionDraft | null = null;
   receipt: CashierTransactionResult | null = null;
   shift: TellerShift | null = null;
+  drawerPanel: 'request' | 'reconcile' | null = null;
+  tillSheetOpen = false;
   awaitingCashReceipt: TellerCashMovement | null = null;
   reversal: TellerReversal | null = null;
   reversalOriginalTransaction: TellerTransactionDetail | null = null;
@@ -129,20 +145,14 @@ export class CashierWorkspaceComponent implements OnInit {
       [Validators.min(1)]
     ],
     note: [''],
-    identityMethod: [
-      '',
-      Validators.required
-    ],
-    slipReference: [
-      '',
-      Validators.required
-    ],
+    identityMethod: [''],
+    paperSlipUsed: [false],
+    slipReference: [''],
     slipVerified: [false],
     amountVerified: [false],
     countedAmount: [
       null as number | null,
       [
-        Validators.required,
         Validators.min(1),
         cashCountMatchesAmount
       ]
@@ -210,6 +220,12 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const navigationState = this.router.getCurrentNavigation()?.extras.state as
+      | { cashierMessage?: string; cashierMessageType?: 'success' | 'warning' }
+      | undefined;
+    if (navigationState?.cashierMessage) {
+      this.showMessage(navigationState.cashierMessage, navigationState.cashierMessageType ?? 'success');
+    }
     this.transactionForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.pendingTransaction = null;
       this.transactionForm.controls.countedAmount.updateValueAndValidity({ emitEvent: false });
@@ -231,9 +247,19 @@ export class CashierWorkspaceComponent implements OnInit {
       this.setView(view);
       this.changeDetectorRef.markForCheck();
     });
-    this.restoreTransactionState();
+    if (this.route.snapshot.queryParamMap.get('view') === 'home') {
+      this.transactionState.reset();
+    } else {
+      this.restoreTransactionState();
+    }
     this.loadDrawer();
     this.loadApprovedLoanQueue();
+  }
+
+  @HostListener('wheel', ['$event'])
+  disableNumberInputWheel(event: WheelEvent): void {
+    const input = event.target as HTMLInputElement | null;
+    if (input?.type === 'number') input.blur();
   }
 
   setView(view: CashierWorkspaceView): void {
@@ -241,8 +267,16 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   startTransaction(action: TellerTransactionAction): void {
+    if (!this.selectedClient) this.resetMemberSelection();
     this.workspaceNavigation.setCashierView('transactions');
     this.selectAction(action);
+  }
+
+  selectCharge(charge: any): void {
+    this.transactionForm.patchValue({
+      chargeId: charge.id,
+      amount: Number(charge.amountOutstanding ?? charge.amount ?? 0) || null
+    });
   }
 
   get cashierName(): string {
@@ -257,6 +291,27 @@ export class CashierWorkspaceComponent implements OnInit {
       .map((part: string) => part[0])
       .join('')
       .toUpperCase();
+  }
+
+  get shiftAllowsTransactions(): boolean {
+    return this.shift?.status === 'OPEN';
+  }
+
+  get shiftGateTitle(): string {
+    if (!this.shift) return 'Open your teller shift';
+    if (this.shift.status === 'PENDING_APPROVAL') return 'Shift is awaiting approval';
+    if (this.shift.status === 'RECONCILED') return 'Shift is ready to close';
+    return 'Complete your current shift';
+  }
+
+  get shiftGateDescription(): string {
+    if (!this.shift) return 'Activate your shift before posting member transactions.';
+    if (this.shift.status === 'STOPPED')
+      return 'This shift has stopped accepting transactions. Continue with the cash count.';
+    if (this.shift.status === 'COUNTING') return 'Complete the cash count and submit the shift for approval.';
+    if (this.shift.status === 'PENDING_APPROVAL') return 'A different authorised officer must approve this shift.';
+    if (this.shift.status === 'RECONCILED') return 'Close the reconciled shift before starting another shift.';
+    return 'This shift is closed and cannot accept new transactions.';
   }
 
   get drawerRecords(): TellerDrawerTransaction[] {
@@ -298,22 +353,28 @@ export class CashierWorkspaceComponent implements OnInit {
 
     const form = this.transactionForm.getRawValue();
     const amount = Number(form.amount || 0);
-    const countedAmount = Number(form.countedAmount || 0);
-
     return [
       !form.savingsAccountId,
       amount < 1,
-      !form.identityMethod,
-      !form.slipReference?.trim(),
-      !form.slipVerified,
-      !form.amountVerified,
-      !form.cashAuthenticityVerified,
-      countedAmount < 1 || countedAmount !== amount
+      form.paperSlipUsed && !form.slipReference?.trim()
     ].filter(Boolean).length;
   }
 
   get availableCash(): number {
     return Number(this.drawer?.netCash || 0);
+  }
+
+  showDrawerPanel(panel: 'request' | 'reconcile'): void {
+    this.drawerPanel = this.drawerPanel === panel ? null : panel;
+  }
+
+  openTillSheet(): void {
+    this.tillSheetOpen = true;
+  }
+
+  printTillSheet(): void {
+    this.changeDetectorRef.detectChanges();
+    window.print();
   }
 
   addDenominationLine(): void {
@@ -357,7 +418,7 @@ export class CashierWorkspaceComponent implements OnInit {
         denominations,
         note: value.note || undefined
       })
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: (movement) => {
           this.cashRequestForm.reset({ amount: null, note: '', denominations: [] });
@@ -374,7 +435,7 @@ export class CashierWorkspaceComponent implements OnInit {
     this.submitting = true;
     this.tellerApi
       .updateCashMovement(this.awaitingCashReceipt.reference, 'ACKNOWLEDGE')
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: () => {
           this.awaitingCashReceipt = null;
@@ -391,7 +452,7 @@ export class CashierWorkspaceComponent implements OnInit {
     this.submitting = true;
     this.tellerApi
       .requestReversal(value.originalReference || '', value.reason || '')
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: (reversal) => {
           this.reversal = reversal;
@@ -408,7 +469,7 @@ export class CashierWorkspaceComponent implements OnInit {
     this.submitting = true;
     this.tellerApi
       .getReversal(reference)
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: (reversal) => {
           this.reversal = reversal;
@@ -449,14 +510,21 @@ export class CashierWorkspaceComponent implements OnInit {
     this.submitting = true;
     this.tellerApi
       .openShift(Number(this.cashierId), this.currencyCode)
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: (shift) => {
           this.shift = shift;
-          this.showMessage('The teller shift is open.', 'success');
+          if (shift.status === 'OPEN') {
+            this.showMessage('The teller shift is open.', 'success');
+          }
+          this.changeDetectorRef.markForCheck();
         },
         error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
       });
+  }
+
+  manageShift(): void {
+    this.workspaceNavigation.setCashierView('drawer');
   }
 
   stopShift(): void {
@@ -524,6 +592,8 @@ export class CashierWorkspaceComponent implements OnInit {
       chargeId: '',
       amount: null,
       requestedShares: null,
+      identityMethod: '',
+      paperSlipUsed: false,
       slipReference: '',
       slipVerified: false,
       amountVerified: false,
@@ -565,6 +635,7 @@ export class CashierWorkspaceComponent implements OnInit {
       requestedShares: null,
       note: '',
       identityMethod: '',
+      paperSlipUsed: false,
       slipReference: '',
       slipVerified: false,
       amountVerified: false,
@@ -601,6 +672,7 @@ export class CashierWorkspaceComponent implements OnInit {
       charges: this.clientsService.getClientChargesData(client.id).pipe(catchError(() => of([])))
     })
       .pipe(
+        timeout(this.requestTimeoutMs),
         finalize(() => {
           if (requestId === this.memberDetailsRequestId) this.loading = false;
           this.changeDetectorRef.markForCheck();
@@ -621,9 +693,9 @@ export class CashierWorkspaceComponent implements OnInit {
           if (restoredState) this.applyRestoredState(restoredState);
           this.message = '';
         },
-        error: () => {
+        error: (error: unknown) => {
           if (requestId !== this.memberDetailsRequestId) return;
-          this.showMessage('This member’s accounts could not be opened. Check your account permissions.', 'error');
+          this.showMessage(this.tellerApi.mapError(error).message, 'error');
         }
       });
   }
@@ -744,20 +816,18 @@ export class CashierWorkspaceComponent implements OnInit {
       );
       return;
     }
-    if (this.shift && this.shift.status !== 'OPEN') {
-      this.showMessage('This teller shift is not open for new transactions.', 'error');
+    if (!this.shiftAllowsTransactions) {
       return;
     }
     this.pendingTransaction = null;
     const form = this.transactionForm.getRawValue();
     const amount = Number(form.amount || 0);
-    const countedAmount = Number(form.countedAmount || 0);
     const configuredNetDisbursement = Number(this.loanDisbursementPreview?.netDisbursalAmount);
     const netDisbursementAmount =
       this.selectedAction === 'loanDisbursement' && Number.isFinite(configuredNetDisbursement)
         ? configuredNetDisbursement
         : amount;
-    if (!form.identityMethod) {
+    if (this.selectedAction !== 'deposit' && this.selectedAction !== 'fee' && !form.identityMethod) {
       this.showMessage('Select the identity evidence checked for this member.', 'error');
       return;
     }
@@ -802,30 +872,29 @@ export class CashierWorkspaceComponent implements OnInit {
       this.showMessage('Choose a savings account and enter a valid amount.', 'error');
       return;
     }
-    if ((this.selectedAction === 'deposit' || this.selectedAction === 'withdrawal') && !form.slipReference?.trim()) {
+    if (
+      (this.selectedAction === 'deposit' ||
+        this.selectedAction === 'withdrawal' ||
+        this.selectedAction === 'loanRepayment') &&
+      form.paperSlipUsed &&
+      !form.slipReference?.trim()
+    ) {
       this.showMessage('Enter the member slip or voucher reference.', 'error');
       return;
     }
-    if (this.selectedAction === 'deposit' && (!form.slipVerified || !form.amountVerified)) {
-      this.showMessage('Confirm the deposit slip and the amount in words before continuing.', 'error');
-      return;
-    }
-    if (
-      (this.selectedAction === 'deposit' ||
-        this.selectedAction === 'loanRepayment' ||
-        this.selectedAction === 'shares' ||
-        this.selectedAction === 'fee') &&
-      !form.cashAuthenticityVerified
-    ) {
+    if (this.selectedAction === 'shares' && !form.cashAuthenticityVerified) {
       this.showMessage('Confirm that the received cash was counted and checked for authenticity.', 'error');
       return;
     }
-    if (this.selectedAction === 'withdrawal' && !form.signatureVerified) {
-      this.showMessage('Confirm that the member signature matches the specimen.', 'error');
-      return;
-    }
     const expectedCashCount = this.selectedAction === 'loanDisbursement' ? netDisbursementAmount : amount;
+    const usesSimplifiedCounterFlow =
+      this.selectedAction === 'deposit' ||
+      this.selectedAction === 'withdrawal' ||
+      this.selectedAction === 'loanRepayment' ||
+      this.selectedAction === 'fee';
+    const countedAmount = usesSimplifiedCounterFlow ? expectedCashCount : Number(form.countedAmount || 0);
     if (
+      !usesSimplifiedCounterFlow &&
       !(this.selectedAction === 'loanDisbursement' && form.disbursementMode !== 'CASH') &&
       countedAmount !== expectedCashCount
     ) {
@@ -858,10 +927,10 @@ export class CashierWorkspaceComponent implements OnInit {
       amount,
       netDisbursementAmount: this.selectedAction === 'loanDisbursement' ? netDisbursementAmount : undefined,
       countedAmount,
-      identityMethod: form.identityMethod || '',
-      slipReference: form.slipReference || undefined,
-      slipVerified: Boolean(form.slipVerified),
-      amountVerified: Boolean(form.amountVerified),
+      identityMethod: form.identityMethod || 'MEMBER_PROFILE',
+      slipReference: form.paperSlipUsed ? form.slipReference || undefined : undefined,
+      slipVerified: Boolean(form.paperSlipUsed),
+      amountVerified: Boolean(form.paperSlipUsed),
       cashAuthenticityVerified: Boolean(form.cashAuthenticityVerified),
       signatureVerified: Boolean(form.signatureVerified),
       disbursementMode: form.disbursementMode || 'CASH',
@@ -947,6 +1016,7 @@ export class CashierWorkspaceComponent implements OnInit {
       .pipe(
         finalize(() => {
           this.submitting = false;
+          this.changeDetectorRef.markForCheck();
           this.logTransactionEvent('recovery.verification-finished', { reference });
         })
       )
@@ -1205,8 +1275,10 @@ export class CashierWorkspaceComponent implements OnInit {
 
     request$
       .pipe(
+        timeout(this.requestTimeoutMs),
         finalize(() => {
           this.submitting = false;
+          this.changeDetectorRef.markForCheck();
           this.logTransactionEvent('post.finished', { action });
         })
       )
@@ -1469,7 +1541,7 @@ export class CashierWorkspaceComponent implements OnInit {
     this.submitting = true;
     this.tellerApi
       .updateShift(this.shift.reference, action, data)
-      .pipe(finalize(() => (this.submitting = false)))
+      .pipe(finalize(() => this.finishSubmitting()))
       .subscribe({
         next: (shift) => {
           this.shift = shift;
@@ -1498,9 +1570,10 @@ export class CashierWorkspaceComponent implements OnInit {
     });
   }
 
-  private showMessage(message: string, type: 'error' | 'success'): void {
+  private showMessage(message: string, type: 'error' | 'success' | 'warning'): void {
     this.message = message;
     this.messageType = type;
+    this.changeDetectorRef.markForCheck();
     if (this.activeView === 'transactions') {
       this.logTransactionEvent(
         `message.${type}`,
@@ -1508,6 +1581,11 @@ export class CashierWorkspaceComponent implements OnInit {
         type === 'error' ? 'warning' : 'info'
       );
     }
+  }
+
+  private finishSubmitting(): void {
+    this.submitting = false;
+    this.changeDetectorRef.markForCheck();
   }
 
   private logTransactionEvent(
@@ -1612,6 +1690,7 @@ export class CashierWorkspaceComponent implements OnInit {
         requestedShares: state.draft.requestedShares,
         note: state.draft.note || '',
         identityMethod: state.draft.identityMethod,
+        paperSlipUsed: Boolean(state.draft.slipReference),
         slipReference: state.draft.slipReference || '',
         slipVerified: state.draft.slipVerified,
         amountVerified: state.draft.amountVerified,

@@ -8,6 +8,7 @@
 
 /** Angular Imports */
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   HttpContextToken,
   HttpEvent,
@@ -43,6 +44,7 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
   private alertService = inject(AlertService);
   private translate = inject(TranslateService);
   private diagnosticsService = inject(DiagnosticsService);
+  private router = inject(Router);
   private databaseErrorCodes: string[] = [
     'error.msg.data.integrity.issue.entity.duplicated',
     'error.msg.data.integrity.issue'
@@ -56,7 +58,12 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
         if (error instanceof HttpErrorResponse) {
           this.diagnosticsService.reportHttpFailure(tracedRequest, error, correlationId);
         }
-        if (tracedRequest.context.get(SUPPRESS_HTTP_ERROR_ALERT)) return throwError(() => error);
+        const cashierWorkspaceRequest =
+          this.router.url.startsWith('/staff-workspaces/cashier') ||
+          (this.router.url.startsWith('/clients/create') && this.router.url.includes('workspace=cashier'));
+        if (tracedRequest.context.get(SUPPRESS_HTTP_ERROR_ALERT) || cashierWorkspaceRequest) {
+          return throwError(() => error);
+        }
         return this.handleError(error, tracedRequest, correlationId);
       })
     );

@@ -12,6 +12,8 @@ import {
   Component,
   OnInit,
   Input,
+  EventEmitter,
+  Output,
   TemplateRef,
   ElementRef,
   ViewChild,
@@ -56,6 +58,31 @@ import {
 
 import { catchError, finalize, of, take } from 'rxjs';
 
+const WORKSPACE_ICON_PATHS: Record<string, string> = {
+  home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z',
+  transactions:
+    'M7 7h11l-4-4 1.4-1.4L21.8 8l-6.4 6.4L14 13l4-4H7V7zm10 10H6l4 4-1.4 1.4L2.2 16l6.4-6.4L10 11l-4 4h11v2z',
+  drawer:
+    'M21 7V6c0-1.1-.9-2-2-2H5a3 3 0 0 0 0 6h14v2h-3a3 3 0 0 0 0 6h3v2H5a3 3 0 0 1-3-3V7.5A3.5 3.5 0 0 1 5 4h14c1.1 0 2 .9 2 2v1zm-5 7a1 1 0 1 0 0 2h5v-2h-5z',
+  reversals: 'M7.5 7H16a5 5 0 0 1 0 10h-4v-2h4a3 3 0 0 0 0-6H7.5l3 3L9 13.5 3.5 8 9 2.5 10.5 4l-3 3z',
+  drawers: 'M4 10h16v9h2v2H2v-2h2v-9zm2 2v7h3v-7H6zm5 0v7h2v-7h-2zm4 0v7h3v-7h-3zM12 2l10 5v2H2V7l10-5z',
+  movement: 'M7 7h9l-3-3 1.4-1.4L19.8 8l-5.4 5.4L13 12l3-3H7V7zm10 10H8l3 3-1.4 1.4L4.2 16l5.4-5.4L11 12l-3 3h9v2z',
+  approvals: 'M12 2 4 5v6c0 5.1 3.4 9.7 8 11 4.6-1.3 8-5.9 8-11V5l-8-3zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10l-6 6z',
+  reconciliation:
+    'M19 3h-4.2A3 3 0 0 0 12 1a3 3 0 0 0-2.8 2H5a2 2 0 0 0-2 2v16h18V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-2 14-4-4 1.4-1.4L10 14.2l6.6-6.6L18 9l-8 8z',
+  requests:
+    'M20 6h-4V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v12h20V8a2 2 0 0 0-2-2zM10 4h4v2h-4V4zm3 11v3h-2v-3H8l4-4 4 4h-3z',
+  cases: 'M12 2 4 5v6c0 5.1 3.4 9.7 8 11 4.6-1.3 8-5.9 8-11V5l-8-3zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z',
+  records: 'M13 3a9 9 0 1 1-8.9 10H1l4-4 4 4H6.1A7 7 0 1 0 13 5V3zm-1 4h2v5.2l4 2.3-1 1.7-5-3V7z',
+  receipts: 'M6 2h12v20l-3-2-3 2-3-2-3 2V2zm3 5v2h6V7H9zm0 4v2h6v-2H9zm0 4v2h4v-2H9z',
+  members: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4.4 0-8 2-8 4.5V21h16v-2.5C20 16 16.4 14 12 14z',
+  'new-loan':
+    'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm1 15h-2v2h-2v-2H9v-2h2v-2h2v2h2v2zm-2-8V3.5L18.5 9H13z',
+  groups:
+    'M16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 2c-3.3 0-6 1.5-6 3.5V19h12v-2.5C14 14.5 11.3 13 8 13zm8 0c-.4 0-.8 0-1.2.1 1.3.9 2.2 2 2.2 3.4V19h5v-2.5c0-2-2.7-3.5-6-3.5z',
+  applications: 'M6 2h9l5 5v15H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12v2h8v-2H8zm0 4v2h6v-2H8z'
+};
+
 /**
  * Sidenav component.
  */
@@ -92,6 +119,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
 
   /** True if sidenav is in collapsed state. */
   @Input() sidenavCollapsed: boolean;
+  @Output() collapse = new EventEmitter<boolean>();
   /** Tooltip position */
   tooltipPosition = 'after';
   /** Username of authenticated user. */
@@ -108,6 +136,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   mifosRemittanceEnabled = remittanceConfig.isRemittanceEnabled;
   /** Focused operational workspace for dedicated staff roles. */
   workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | 'vault-officer' | 'compliance-officer' | null = null;
+
+  toggleWorkspaceSidebar(): void {
+    this.collapse.emit(!this.sidenavCollapsed);
+  }
   /** Role-specific navigation links. */
   workspaceLinks: { label: string; view: string }[] = [];
   activeWorkspaceView = '';
@@ -216,7 +248,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceRole = 'cashier';
       this.workspaceLinks = [
         { label: 'Cashier home', view: 'home' },
-        { label: 'Member transactions', view: 'transactions' },
         { label: 'Teller drawer', view: 'drawer' },
         { label: 'Transaction reversals', view: 'reversals' },
         { label: "Today's transactions", view: 'records' },
@@ -266,6 +297,10 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     return this.activeWorkspaceView === view;
   }
 
+  workspaceIconPath(view: string): string {
+    return WORKSPACE_ICON_PATHS[view] || WORKSPACE_ICON_PATHS['applications'];
+  }
+
   private isCashierView(view: string | undefined): view is CashierWorkspaceView {
     return (
       view === 'home' ||
@@ -293,16 +328,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
 
   private isVaultView(view: string | undefined): view is VaultWorkspaceView {
     return view === 'requests';
-  }
-
-  get staffInitials(): string {
-    return (this.staffDisplayName || this.username || 'C')
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part: string) => part[0])
-      .join('')
-      .toUpperCase();
   }
 
   get workspaceHomeView(): string {

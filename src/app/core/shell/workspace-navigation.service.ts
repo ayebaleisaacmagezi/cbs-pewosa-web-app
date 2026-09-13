@@ -16,7 +16,7 @@ export type VaultWorkspaceView = 'requests';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceNavigationService {
-  private cashierViewSubject = new BehaviorSubject<CashierWorkspaceView>('transactions');
+  private cashierViewSubject = new BehaviorSubject<CashierWorkspaceView>('home');
   private loanOfficerViewSubject = new BehaviorSubject<LoanOfficerWorkspaceView>('home');
   private chiefTellerViewSubject = new BehaviorSubject<ChiefTellerWorkspaceView>('drawers');
   private vaultViewSubject = new BehaviorSubject<VaultWorkspaceView>('requests');

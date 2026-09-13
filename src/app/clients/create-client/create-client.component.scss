@@ -5,3 +5,53 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
+.cashier-onboarding-page {
+  display: grid;
+  gap: 16px;
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.onboarding-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  border-left: 4px solid var(--md-sys-color-error, #ba1a1a);
+  border-radius: 8px;
+  color: var(--md-sys-color-on-error-container, #410002);
+  background: var(--md-sys-color-error-container, #ffdad6);
+
+  span {
+    flex: 1;
+  }
+}
+
+.address-card {
+  border-radius: 16px;
+  box-shadow: none;
+
+  mat-card-content {
+    padding: 24px;
+  }
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 0;
+}
+
+@media (width <= 768px) {
+  .cashier-onboarding-page {
+    width: min(100% - 16px, 1120px);
+    padding-top: 16px;
+  }
+
+  .address-card mat-card-content {
+    padding: 16px;
+  }
+}

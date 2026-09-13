@@ -62,6 +62,8 @@ export class ClientAddressStepComponent {
   @Input() clientAddressFieldConfig: any;
   /** Client Template */
   @Input() clientTemplate: any;
+  /** Hides stepper navigation when embedded in the cashier registration page. */
+  @Input() compactMode = false;
 
   /** Client Address Data */
   clientAddressData: any[] = [];

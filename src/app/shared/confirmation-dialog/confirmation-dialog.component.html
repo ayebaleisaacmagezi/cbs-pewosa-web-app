@@ -13,6 +13,6 @@
 <mat-dialog-actions align="end">
   <button mat-raised-button mat-dialog-close>{{ 'labels.buttons.Cancel' | translate }}</button>
   <button mat-raised-button color="{{ color }}" [mat-dialog-close]="{ confirm: true }">
-    {{ 'labels.buttons.Confirm' | translate }}
+    {{ data.submitLabel || ('labels.buttons.Confirm' | translate) }}
   </button>
 </mat-dialog-actions>

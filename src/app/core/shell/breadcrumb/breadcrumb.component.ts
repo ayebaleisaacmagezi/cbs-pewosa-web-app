@@ -254,6 +254,12 @@ export class BreadcrumbComponent implements AfterViewInit {
             }
           });
         }
+        if (this.router.url.startsWith('/clients/create') && this.router.url.includes('workspace=cashier')) {
+          const currentPage = this.breadcrumbs.at(-1);
+          if (currentPage) {
+            currentPage.label = 'Create Member';
+          }
+        }
         this.cdr.markForCheck();
       });
   }

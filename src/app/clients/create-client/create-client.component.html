@@ -6,76 +6,134 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<div class="container">
-  <mat-stepper orientation="vertical" [linear]="false" class="mat-elevation-z8" labelPosition="bottom" #clientStepper>
-    <ng-template matStepperIcon="number">
-      <fa-icon icon="pencil-alt" size="sm"></fa-icon>
-    </ng-template>
-
-    <ng-template matStepperIcon="edit">
-      <fa-icon icon="pencil-alt" size="sm"></fa-icon>
-    </ng-template>
-
-    <ng-template matStepperIcon="done">
-      <fa-icon icon="check" size="sm"></fa-icon>
-    </ng-template>
-
-    <ng-template matStepperIcon="error">
-      <fa-icon icon="exclamation-triangle" size="lg"></fa-icon>
-    </ng-template>
-
-    <ng-template matStepperIcon="preview">
-      <fa-icon icon="eye" size="sm"></fa-icon>
-    </ng-template>
-
-    <mat-step [stepControl]="clientGeneralForm">
-      <ng-template matStepLabel>{{ 'labels.inputs.GENERAL' | translate }}</ng-template>
-
-      <mifosx-client-general-step
-        [clientTemplate]="clientTemplate"
-        (legalFormChangeEvent)="legalFormChange($event)"
-      ></mifosx-client-general-step>
-    </mat-step>
-
-    <mat-step>
-      <ng-template matStepLabel>{{ 'labels.inputs.FAMILY MEMBERS' | translate }}</ng-template>
-
-      <mifosx-client-family-members-step
-        #clientFamily
-        [clientTemplate]="clientTemplate"
-      ></mifosx-client-family-members-step>
-    </mat-step>
+@if (isCashierWorkspace) {
+  <main class="cashier-onboarding-page">
+    @if (onboardingMessage) {
+      <div class="onboarding-alert" role="alert">
+        <mat-icon aria-hidden="true">error_outline</mat-icon>
+        <span>{{ onboardingMessage }}</span>
+        <button
+          mat-icon-button
+          type="button"
+          [attr.aria-label]="'Close message' | translate"
+          (click)="onboardingMessage = ''"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    }
+    <mifosx-client-general-step
+      [clientTemplate]="clientTemplate"
+      [cashierMode]="true"
+      (legalFormChangeEvent)="legalFormChange($event)"
+    ></mifosx-client-general-step>
 
     @if (clientTemplate.isAddressEnabled) {
-      <mat-step>
-        <ng-template matStepLabel>{{ 'labels.inputs.ADDRESS' | translate }}</ng-template>
-        <mifosx-client-address-step
-          #clientAddress
-          [clientTemplate]="clientTemplate"
-          [clientAddressFieldConfig]="clientAddressFieldConfig"
-        >
-        </mifosx-client-address-step>
-      </mat-step>
+      <mat-card class="address-card">
+        <mat-card-content>
+          <mifosx-client-address-step
+            #clientAddress
+            [clientTemplate]="clientTemplate"
+            [clientAddressFieldConfig]="clientAddressFieldConfig"
+            [compactMode]="true"
+          ></mifosx-client-address-step>
+        </mat-card-content>
+      </mat-card>
     }
 
-    @for (datatable of datatables; track datatable) {
-      <mat-step>
-        <ng-template matStepLabel>{{ datatable.registeredTableName }}</ng-template>
-        <mifosx-client-datatable-step [datatableData]="datatable" #dtclient></mifosx-client-datatable-step>
-      </mat-step>
-    }
+    <footer class="onboarding-actions">
+      <a mat-button routerLink="/staff-workspaces/cashier" [queryParams]="{ view: 'home' }">
+        {{ 'Cancel' | translate }}
+      </a>
+      <button
+        mat-raised-button
+        color="primary"
+        [disabled]="!areFormvalids() || checkingForDuplicate || creatingClient"
+        (click)="submit()"
+      >
+        {{
+          (checkingForDuplicate
+            ? 'Checking member records...'
+            : creatingClient
+              ? 'Creating member...'
+              : 'Create member'
+          ) | translate
+        }}
+      </button>
+    </footer>
+  </main>
+} @else {
+  <div class="container">
+    <mat-stepper orientation="vertical" [linear]="false" class="mat-elevation-z8" labelPosition="bottom" #clientStepper>
+      <ng-template matStepperIcon="number">
+        <fa-icon icon="pencil-alt" size="sm"></fa-icon>
+      </ng-template>
 
-    @if (areFormvalids()) {
-      <mat-step completed>
-        <ng-template matStepLabel>{{ 'labels.inputs.PREVIEW' | translate }}</ng-template>
-        <mifosx-client-preview-step
+      <ng-template matStepperIcon="edit">
+        <fa-icon icon="pencil-alt" size="sm"></fa-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="done">
+        <fa-icon icon="check" size="sm"></fa-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="error">
+        <fa-icon icon="exclamation-triangle" size="lg"></fa-icon>
+      </ng-template>
+
+      <ng-template matStepperIcon="preview">
+        <fa-icon icon="eye" size="sm"></fa-icon>
+      </ng-template>
+
+      <mat-step [stepControl]="clientGeneralForm">
+        <ng-template matStepLabel>{{ 'labels.inputs.GENERAL' | translate }}</ng-template>
+
+        <mifosx-client-general-step
           [clientTemplate]="clientTemplate"
-          [clientAddressFieldConfig]="clientAddressFieldConfig"
-          [client]="client"
-          (submitEvent)="submit()"
-        >
-        </mifosx-client-preview-step>
+          (legalFormChangeEvent)="legalFormChange($event)"
+        ></mifosx-client-general-step>
       </mat-step>
-    }
-  </mat-stepper>
-</div>
+
+      <mat-step>
+        <ng-template matStepLabel>{{ 'labels.inputs.FAMILY MEMBERS' | translate }}</ng-template>
+
+        <mifosx-client-family-members-step
+          #clientFamily
+          [clientTemplate]="clientTemplate"
+        ></mifosx-client-family-members-step>
+      </mat-step>
+
+      @if (clientTemplate.isAddressEnabled) {
+        <mat-step>
+          <ng-template matStepLabel>{{ 'labels.inputs.ADDRESS' | translate }}</ng-template>
+          <mifosx-client-address-step
+            #clientAddress
+            [clientTemplate]="clientTemplate"
+            [clientAddressFieldConfig]="clientAddressFieldConfig"
+          >
+          </mifosx-client-address-step>
+        </mat-step>
+      }
+
+      @for (datatable of datatables; track datatable) {
+        <mat-step>
+          <ng-template matStepLabel>{{ datatable.registeredTableName }}</ng-template>
+          <mifosx-client-datatable-step [datatableData]="datatable" #dtclient></mifosx-client-datatable-step>
+        </mat-step>
+      }
+
+      @if (areFormvalids()) {
+        <mat-step completed>
+          <ng-template matStepLabel>{{ 'labels.inputs.PREVIEW' | translate }}</ng-template>
+          <mifosx-client-preview-step
+            [clientTemplate]="clientTemplate"
+            [clientAddressFieldConfig]="clientAddressFieldConfig"
+            [client]="client"
+            (submitEvent)="submit()"
+          >
+          </mifosx-client-preview-step>
+        </mat-step>
+      }
+    </mat-stepper>
+  </div>
+}

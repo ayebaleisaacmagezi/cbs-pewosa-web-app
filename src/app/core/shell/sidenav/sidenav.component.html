@@ -19,37 +19,37 @@
     workspaceRole === 'vault-officer'
   ) {
     <div class="cashier-side-panel">
-      <div
-        class="cashier-brand"
-        role="button"
-        tabindex="0"
-        (click)="openWorkspaceView(workspaceHomeView)"
-        (keydown.enter)="openWorkspaceView(workspaceHomeView)"
-      >
-        <img src="assets/images/kcps-logo.png" alt="app-logo" />
-        <div>
-          <strong>{{ 'APP_NAME' | translate }}</strong
-          ><small>{{
-            workspaceRole === 'cashier'
-              ? 'Cashier portal'
-              : workspaceRole === 'chief-teller'
-                ? 'Chief Teller portal'
-                : workspaceRole === 'vault-officer'
-                  ? 'Vault Officer portal'
-                  : 'Loan Officer portal'
-          }}</small>
+      <div class="cashier-sidebar-header">
+        <button
+          mat-icon-button
+          type="button"
+          class="cashier-sidebar-toggle"
+          (click)="toggleWorkspaceSidebar()"
+          [matTooltip]="sidenavCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        >
+          <fa-icon icon="bars"></fa-icon>
+        </button>
+        <div
+          class="cashier-brand"
+          role="button"
+          tabindex="0"
+          (click)="openWorkspaceView(workspaceHomeView)"
+          (keydown.enter)="openWorkspaceView(workspaceHomeView)"
+        >
+          <img src="assets/images/kcps-logo.png" alt="app-logo" />
+          <div>
+            <strong>{{ 'APP_NAME' | translate }}</strong
+            ><small>{{
+              workspaceRole === 'cashier'
+                ? 'Cashier portal'
+                : workspaceRole === 'chief-teller'
+                  ? 'Chief Teller portal'
+                  : workspaceRole === 'vault-officer'
+                    ? 'Vault Officer portal'
+                    : 'Loan Officer portal'
+            }}</small>
+          </div>
         </div>
-      </div>
-      <div class="cashier-nav-title">
-        {{
-          workspaceRole === 'cashier'
-            ? 'Cashier operations'
-            : workspaceRole === 'chief-teller'
-              ? 'Cash control'
-              : workspaceRole === 'vault-officer'
-                ? 'Vault control'
-                : 'Loan operations'
-        }}
       </div>
       <nav
         class="cashier-nav"
@@ -69,46 +69,15 @@
             [class.active]="isWorkspaceViewActive(link.view)"
             (click)="openWorkspaceView(link.view)"
           >
-            <mat-icon>{{
-              link.view === 'home'
-                ? 'home'
-                : link.view === 'transactions'
-                  ? 'swap_horiz'
-                  : link.view === 'drawer'
-                    ? 'account_balance_wallet'
-                    : link.view === 'reversals'
-                      ? 'undo'
-                      : link.view === 'drawers'
-                        ? 'account_balance'
-                        : link.view === 'movement'
-                          ? 'currency_exchange'
-                          : link.view === 'approvals'
-                            ? 'approval'
-                            : link.view === 'reconciliation'
-                              ? 'fact_check'
-                              : link.view === 'requests'
-                                ? 'inventory_2'
-                                : link.view === 'cases'
-                                  ? 'policy'
-                                  : link.view === 'records'
-                                    ? 'history'
-                                    : link.view === 'receipts'
-                                      ? 'receipt'
-                                      : link.view === 'members'
-                                        ? 'group'
-                                        : link.view === 'new-loan'
-                                          ? 'note_add'
-                                          : link.view === 'groups'
-                                            ? 'groups'
-                                            : 'description'
-            }}</mat-icon>
+            <svg class="workspace-nav-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path [attr.d]="workspaceIconPath(link.view)" />
+            </svg>
             <span>{{ link.label | translate }}</span>
           </button>
         }
       </nav>
       <div class="cashier-profile">
         <div class="cashier-profile-row">
-          <span class="cashier-avatar">{{ staffInitials }}</span>
           <span class="cashier-profile-copy"
             ><strong>{{ staffDisplayName }}</strong
             ><small

@@ -8,7 +8,7 @@
 
 import { HttpClient, HttpContext, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of, throwError } from 'rxjs';
+import { Observable, TimeoutError, catchError, of, throwError, timeout } from 'rxjs';
 
 import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.interceptor';
 
@@ -36,7 +36,18 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class TellerApiService {
-  private readonly http = inject(HttpClient);
+  private readonly httpClient = inject(HttpClient);
+  private readonly requestTimeoutMs = 30000;
+  private readonly http = {
+    get: <T>(url: string, options?: { params?: HttpParams; context?: HttpContext }): Observable<T> =>
+      this.httpClient
+        .get<T>(url, { ...options, context: this.suppressedErrorContext(options?.context) })
+        .pipe(timeout(this.requestTimeoutMs)),
+    post: <T>(url: string, body: unknown): Observable<T> =>
+      this.httpClient
+        .post<T>(url, body, { context: this.suppressedErrorContext() })
+        .pipe(timeout(this.requestTimeoutMs))
+  };
   private readonly basePath = '/pewosa/teller';
 
   preflight(request: TellerPreflightRequest): Observable<TellerPreflightResponse> {
@@ -269,6 +280,15 @@ export class TellerApiService {
 
   mapError(error: unknown): TellerApiError {
     if (this.isTellerApiError(error)) return error;
+    if (error instanceof TimeoutError) {
+      return {
+        status: 408,
+        code: 'TELLER_REQUEST_TIMEOUT',
+        message: 'The request is taking too long. Check your connection and try again.',
+        violations: [],
+        retryable: true
+      };
+    }
     const response = error instanceof HttpErrorResponse ? error : null;
     const body = response?.error && typeof response.error === 'object' ? response.error : {};
     const bodyRecord = body as Record<string, unknown>;
@@ -284,6 +304,12 @@ export class TellerApiService {
     const firstViolation = violations[0];
     const status = response?.status ?? 0;
 
+    const backendMessage =
+      this.stringValue(bodyRecord['defaultUserMessage'] ?? bodyRecord['developerMessage']) ??
+      firstViolation?.message ??
+      (error instanceof Error ? error.message : undefined) ??
+      response?.message;
+
     return {
       status,
       code: String(
@@ -292,16 +318,31 @@ export class TellerApiService {
           firstViolation?.code ??
           'TELLER_REQUEST_FAILED'
       ),
-      message:
-        this.stringValue(bodyRecord['defaultUserMessage'] ?? bodyRecord['developerMessage']) ??
-        firstViolation?.message ??
-        (error instanceof Error ? error.message : undefined) ??
-        response?.message ??
-        'Teller request failed',
+      message: this.friendlyErrorMessage(status, backendMessage),
       parameterName: firstViolation?.parameterName,
       violations,
       retryable: status === 0 || status === 408 || status === 429 || status >= 500
     };
+  }
+
+  private friendlyErrorMessage(status: number, backendMessage?: string): string {
+    if (status === 0)
+      return 'The server could not be reached. No changes were made. Check your connection and try again.';
+    if (status === 401) return 'Your session has expired. Sign in again to continue.';
+    if (status === 403 || /no authority|not authorized|permission/i.test(backendMessage ?? '')) {
+      return 'You do not have permission to perform this action. Contact an administrator.';
+    }
+    if (status === 404) return 'The requested record could not be found. Refresh the page and try again.';
+    if (status === 408) return 'The request is taking too long. Check your connection and try again.';
+    if (status === 409)
+      return 'This request may already have been submitted. Check the transaction history before retrying.';
+    if (status === 429) return 'Too many requests were sent. Wait a moment and try again.';
+    if (status >= 500) return 'The server could not complete this request. No changes were made. Try again.';
+    return backendMessage || 'Something went wrong. No changes were made. Review the details and try again.';
+  }
+
+  private suppressedErrorContext(context = new HttpContext()): HttpContext {
+    return context.set(SUPPRESS_HTTP_ERROR_ALERT, true);
   }
 
   private stringValue(value: unknown): string | undefined {

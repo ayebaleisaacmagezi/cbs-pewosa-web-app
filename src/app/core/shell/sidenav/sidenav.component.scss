@@ -6,8 +6,16 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+:host {
+  display: block;
+  height: 100%;
+  overflow: hidden;
+}
+
 .sidebar-full,
 .sidebar-compact {
+  height: 100%;
+
   .navigation-panel {
     width: 100%;
     height: 100%;
@@ -208,30 +216,43 @@
   height: 100%;
   min-height: 0;
   flex-direction: column;
-  padding: 0 16px 16px;
-  overflow-y: auto;
+  padding: 0 8px 8px;
+  overflow: hidden;
   color: #17213a;
   background: #fff;
   box-sizing: border-box;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 
   &::-webkit-scrollbar {
-    width: 4px;
+    display: none;
   }
+}
+
+.cashier-sidebar-header {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 4px;
+}
+
+.cashier-sidebar-toggle {
+  flex: 0 0 40px;
+  color: #17213a;
 }
 
 .cashier-brand {
   display: flex;
-  min-height: 82px;
+  min-width: 0;
+  min-height: 64px;
+  flex: 1;
   align-items: center;
   gap: 12px;
-  padding: 12px 6px;
-  border-bottom: 1px solid #dbe3f0;
+  padding: 8px;
   cursor: pointer;
 
   img {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
   }
   strong,
@@ -253,8 +274,8 @@
 }
 
 .cashier-nav-title {
-  margin: 22px 0 9px;
-  padding: 0 12px;
+  margin: 8px 0;
+  padding: 0 8px;
   color: #68758c;
   font-size: 11px;
   font-weight: 800;
@@ -264,17 +285,18 @@
 
 .cashier-nav {
   display: grid;
-  gap: 8px;
-  padding-bottom: 24px;
+  gap: 4px;
+  padding-top: 16px;
+  padding-bottom: 8px;
 
   a,
   button {
     display: flex;
     width: 100%;
-    min-height: 48px;
+    min-height: 40px;
     align-items: center;
     gap: 8px;
-    padding: 8px;
+    padding: 4px 8px;
     border: 0;
     border-radius: 11px;
     color: #4e5d77;
@@ -287,58 +309,43 @@
     cursor: pointer;
 
     &:hover {
-      color: #244d9a;
-      background: #f1f5fc;
+      color: #17213a;
+      background: #f3f4f6;
     }
     &.active {
-      color: #244d9a;
-      background: #e8effc;
-      box-shadow: inset 3px 0 #244d9a;
+      color: #fff;
+      background: #244d9a;
+      box-shadow: none;
       font-weight: 700;
     }
     &:focus-visible {
       outline: 2px solid #244d9a;
       outline-offset: 2px;
     }
-    mat-icon {
+    .workspace-nav-icon {
       display: grid;
       width: 32px;
       height: 32px;
       flex: 0 0 32px;
-      place-items: center;
-      border-radius: 8px;
-      font-size: 20px;
+      padding: 6px;
+      fill: currentcolor;
     }
-    &.active mat-icon {
-      background: #fff;
+    &.active .workspace-nav-icon {
+      background: transparent;
     }
   }
 }
 
 .cashier-profile {
   margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid #dbe3f0;
+  padding-top: 8px;
 }
 
 .cashier-profile-row {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 8px 3px;
-}
-
-.cashier-avatar {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: #244d9a;
-  font-size: 12px;
-  font-weight: 900;
+  padding: 4px 8px;
 }
 
 .cashier-profile-copy {
@@ -367,6 +374,9 @@
     padding-inline: 10px;
   }
   .cashier-brand {
+    display: none;
+  }
+  .cashier-sidebar-header {
     justify-content: center;
   }
   .cashier-brand div,

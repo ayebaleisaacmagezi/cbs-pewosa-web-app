@@ -11,7 +11,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, HostListener, HostBinding, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { Title } from '@angular/platform-browser';
-import { MatSnackBar, MatSnackBarRef } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 
 /** rxjs Imports */
@@ -35,7 +34,6 @@ import { IdleTimeoutService } from './home/timeout-dialog/idle-timeout.service';
 import { SessionTimeoutDialogComponent } from './home/timeout-dialog/session-timeout-dialog.component';
 
 /** Custom Items */
-import { Alert } from './core/alert/alert.model';
 import { KeyboardShortcutsConfiguration } from './keyboards-shortcut-config';
 import { Dates } from './core/utils/dates';
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -111,7 +109,6 @@ export class WebAppComponent implements OnInit, OnDestroy {
    * @param {Title} titleService Title Service.
    * @param {TranslateService} translateService Translate Service.
    * @param {ThemeStorageService} themeStorageService Theme Storage Service.
-   * @param {MatSnackBar} snackBar Material Snackbar for notifications.
    * @param {AlertService} alertService Alert Service.
    * @param {SettingsService} settingsService Settings Service.
    * @param {AuthenticationService} authenticationService Authentication service.
@@ -125,7 +122,6 @@ export class WebAppComponent implements OnInit, OnDestroy {
     private titleService: Title,
     private translateService: TranslateService,
     private themeStorageService: ThemeStorageService,
-    public snackBar: MatSnackBar,
     private alertService: AlertService,
     private settingsService: SettingsService,
     private authenticationService: AuthenticationService,
@@ -146,8 +142,6 @@ export class WebAppComponent implements OnInit, OnDestroy {
    * 2) Language and Translations
    *
    * 3) Page Title
-   *
-   * 4) Alerts
    */
 
   ngOnInit() {
@@ -211,21 +205,6 @@ export class WebAppComponent implements OnInit, OnDestroy {
       localStorage.setItem('mifosXLocation', JSON.stringify(activities));
     });
 
-    // Setup alerts with hover behavior
-    this.alertService.alertEvent.subscribe((alertEvent: Alert) => {
-      const snackBarRef = this.snackBar.open(
-        `${alertEvent.message}`,
-        this.translateService.instant('labels.buttons.Close'),
-        {
-          duration: 0, // Set to 0 - no auto-dismiss initially
-          horizontalPosition: 'right',
-          verticalPosition: 'top'
-        }
-      );
-      // Handle hover behavior
-      this.handleSnackbarHover(snackBarRef, 2000);
-    });
-
     this.buttonConfig = new KeyboardShortcutsConfiguration();
 
     // initialize language and date format if they are null.
@@ -265,49 +244,6 @@ export class WebAppComponent implements OnInit, OnDestroy {
         }, 1000);
       });
     }
-  }
-
-  /**
-   * Handle snackbar hover behavior - pause dismiss on hover, resume on leave
-   * @param snackBarRef Reference to the snackbar
-   * @param defaultDuration Default duration in milliseconds before auto-dismiss
-   */
-  private handleSnackbarHover(snackBarRef: MatSnackBarRef<any>, defaultDuration: number): void {
-    snackBarRef
-      .afterOpened()
-      .pipe(take(1))
-      .subscribe(() => {
-        const snackbarContainer = document.querySelector('.mat-mdc-snack-bar-container');
-        if (!snackbarContainer) {
-          snackBarRef.dismiss();
-          return;
-        }
-
-        let dismissTimer: any;
-
-        // Start the auto-dismiss timer
-        const startDismissTimer = () => {
-          dismissTimer = setTimeout(() => {
-            snackBarRef.dismiss();
-          }, defaultDuration);
-        };
-
-        // Pause auto-dismiss on hover (mouseenter)
-        snackbarContainer.addEventListener('mouseenter', () => {
-          if (dismissTimer) {
-            clearTimeout(dismissTimer);
-            dismissTimer = null;
-          }
-        });
-
-        // Resume auto-dismiss when cursor leaves (mouseleave)
-        snackbarContainer.addEventListener('mouseleave', () => {
-          startDismissTimer();
-        });
-
-        // Start initial timer
-        startDismissTimer();
-      });
   }
 
   ngOnDestroy() {

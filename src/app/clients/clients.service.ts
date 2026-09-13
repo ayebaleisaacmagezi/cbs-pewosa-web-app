@@ -8,13 +8,14 @@
 
 /** Angular Imports */
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpBackend, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpBackend, HttpHeaders, HttpContext } from '@angular/common/http';
 
 /** rxjs Imports */
 import { Observable, forkJoin, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
+import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.interceptor';
 
 /**
  * Clients service.
@@ -32,9 +33,9 @@ export class ClientsService {
   /**
    * Searches client fields while preserving the authenticated user's office scope.
    */
-  searchClientsInOffice(query: string, officeId: number): Observable<any[]> {
+  searchClientsInOffice(query: string, officeId: number, suppressHttpErrorAlert = false): Observable<any[]> {
     const normalizedQuery = this.normalizeClientSearchValue(query);
-    return this.searchByText(query.trim(), 0, 50).pipe(
+    return this.searchByText(query.trim(), 0, 50, '', '', suppressHttpErrorAlert).pipe(
       map((response: any) =>
         (Array.isArray(response?.content) ? response.content : [])
           .filter((client: any) => Number(client.officeId) === Number(officeId))
@@ -109,8 +110,9 @@ export class ClientsService {
     return this.http.get(`/clients/${clientId}`);
   }
 
-  createClient(client: any) {
-    return this.http.post(`/clients`, client);
+  createClient(client: any, suppressHttpErrorAlert = false) {
+    const context = new HttpContext().set(SUPPRESS_HTTP_ERROR_ALERT, suppressHttpErrorAlert);
+    return this.http.post(`/clients`, client, { context });
   }
 
   updateClient(clientId: string, client: any) {
@@ -245,11 +247,12 @@ export class ClientsService {
       );
   }
 
-  uploadClientProfileImage(clientId: string, image: File) {
+  uploadClientProfileImage(clientId: string, image: File, suppressHttpErrorAlert = false) {
     const formData = new FormData();
     formData.append('file', image);
     formData.append('filename', 'file');
-    return this.http.post(`/clients/${clientId}/images`, formData);
+    const context = new HttpContext().set(SUPPRESS_HTTP_ERROR_ALERT, suppressHttpErrorAlert);
+    return this.http.post(`/clients/${clientId}/images`, formData, { context });
   }
 
   uploadCapturedClientProfileImage(clientId: string, imageURL: string) {
@@ -464,7 +467,14 @@ export class ClientsService {
     return this.http.get(`/clients/${clientId}/collaterals/template`);
   }
 
-  searchByText(text: string, page: number, pageSize: number, sortAttribute: string = '', sortDirection: string = '') {
+  searchByText(
+    text: string,
+    page: number,
+    pageSize: number,
+    sortAttribute: string = '',
+    sortDirection: string = '',
+    suppressHttpErrorAlert = false
+  ) {
     let request: any = {
       request: {
         text
@@ -483,7 +493,8 @@ export class ClientsService {
         ]
       };
     }
-    return this.http.post(`/v2/clients/search`, request);
+    const context = new HttpContext().set(SUPPRESS_HTTP_ERROR_ALERT, suppressHttpErrorAlert);
+    return this.http.post(`/v2/clients/search`, request, { context });
   }
 
   /**

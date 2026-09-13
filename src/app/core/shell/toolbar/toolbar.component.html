@@ -12,7 +12,7 @@
   id="mifosx-toolbar"
   [class.cashier-workspace-toolbar]="focusedWorkspace"
 >
-  @if (!sidenavCollapsed) {
+  @if (!focusedWorkspace && !sidenavCollapsed) {
     <button
       mat-icon-button
       (click)="toggleSidenav()"
@@ -23,7 +23,20 @@
     </button>
   }
 
-  @if (sidenav.opened) {
+  @if (focusedWorkspace) {
+    <button
+      mat-icon-button
+      class="show-lt-md"
+      (click)="toggleSidenav()"
+      matTooltip="{{ 'tooltips.Toggle Hide/Open' | translate }}"
+      tabindex="0"
+    >
+      <fa-icon icon="bars" size="lg"></fa-icon>
+    </button>
+    <button mat-icon-button type="button" (click)="backToWorkspace()" matTooltip="Back to workspace" tabindex="0">
+      <fa-icon icon="chevron-left"></fa-icon>
+    </button>
+  } @else if (sidenav.opened) {
     <button
       mat-icon-button
       (click)="toggleSidenavCollapse()"
@@ -41,23 +54,7 @@
   }
 
   @if (focusedWorkspace) {
-    <div class="cashier-toolbar-title">
-      <span class="cashier-toolbar-icon"
-        ><mat-icon>{{ workspaceIcon }}</mat-icon></span
-      >
-      <span
-        ><strong>{{ workspaceTitle }}</strong
-        ><small>{{ workspaceSubtitle }}</small></span
-      >
-    </div>
     <span class="toolbar-spacer"></span>
-    <div class="cashier-toolbar-session">
-      <span class="cashier-toolbar-avatar">{{ cashierInitials }}</span>
-      <span
-        ><strong>{{ cashierName }}</strong
-        ><small>{{ workspaceTitle }} · {{ cashierOffice }}</small></span
-      >
-    </div>
   } @else {
     <div class="tab-nav-bar">
       <a

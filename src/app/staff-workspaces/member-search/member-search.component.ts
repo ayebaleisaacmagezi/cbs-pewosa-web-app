@@ -10,7 +10,7 @@ import { ChangeDetectorRef, Component, DestroyRef, EventEmitter, Input, OnInit, 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { MatIcon } from '@angular/material/icon';
-import { catchError, distinctUntilChanged, map, of, switchMap, tap, timer } from 'rxjs';
+import { catchError, distinctUntilChanged, map, of, switchMap, tap, timer, timeout } from 'rxjs';
 
 import { ClientsService } from 'app/clients/clients.service';
 import { Logger } from 'app/core/logger/logger.service';
@@ -71,7 +71,8 @@ export class MemberSearchComponent implements OnInit {
               const startedAt = performance.now();
               log.debug('Search request started', { officeId: this.officeId });
 
-              return this.clientsService.searchClientsInOffice(query, this.officeId).pipe(
+              return this.clientsService.searchClientsInOffice(query, this.officeId, true).pipe(
+                timeout(30000),
                 tap({
                   next: (members) =>
                     log.debug('Search request completed', {

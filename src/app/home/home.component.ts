@@ -139,7 +139,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
     if (this.isCashierWorkspace) {
-      this.router.navigate(['/staff-workspaces/cashier'], { replaceUrl: true });
+      this.router.navigate(['/staff-workspaces/cashier'], { queryParams: { view: 'home' }, replaceUrl: true });
       return;
     }
     if (this.isLoanOfficerWorkspace) {

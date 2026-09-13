@@ -33,15 +33,11 @@ import { TranslateService } from '@ngx-translate/core';
 /** Environment Imports */
 import { environment } from '../../environments/environment';
 import { SettingsService } from 'app/settings/settings.service';
-import { LanguageSelectorComponent } from '../shared/language-selector/language-selector.component';
-import { ThemeToggleComponent } from '../shared/theme-toggle/theme-toggle.component';
-import { ServerSelectorComponent } from '../shared/server-selector/server-selector.component';
 import { TenantSelectorComponent } from '../shared/tenant-selector/tenant-selector.component';
 import { LoginFormComponent } from './login-form/login-form.component';
 import { ResetPasswordComponent } from './reset-password/reset-password.component';
 import { TwoFactorAuthenticationComponent } from './two-factor-authentication/two-factor-authentication.component';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
-import { M3IconComponent } from '../shared/m3-ui/m3-icon/m3-icon.component';
 
 import { VersionService } from '../system/version.service';
 
@@ -54,14 +50,10 @@ import { VersionService } from '../system/version.service';
   styleUrls: ['./login.component.scss'],
   imports: [
     ...STANDALONE_SHARED_IMPORTS,
-    LanguageSelectorComponent,
-    ThemeToggleComponent,
-    ServerSelectorComponent,
     TenantSelectorComponent,
     LoginFormComponent,
     ResetPasswordComponent,
-    TwoFactorAuthenticationComponent,
-    M3IconComponent
+    TwoFactorAuthenticationComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -189,10 +181,6 @@ export class LoginComponent implements OnInit {
       return false;
     }
     return true;
-  }
-
-  allowServerSwitch(): boolean {
-    return environment.allowServerSwitch === 'false' ? false : true;
   }
 
   updateLogo(): void {

@@ -13,7 +13,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { NgIf, NgFor } from '@angular/common';
 
-import { MatCard, MatCardContent, MatCardActions } from '@angular/material/card';
+import {
+  MatCard,
+  MatCardActions,
+  MatCardContent,
+  MatCardHeader,
+  MatCardSubtitle,
+  MatCardTitle
+} from '@angular/material/card';
 import { MatFormField, MatLabel, MatError, MatSuffix, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
@@ -38,6 +45,9 @@ export const STANDALONE_SHARED_IMPORTS = [
   MatCard,
   MatCardContent,
   MatCardActions,
+  MatCardHeader,
+  MatCardTitle,
+  MatCardSubtitle,
   MatFormField,
   MatLabel,
   MatError,

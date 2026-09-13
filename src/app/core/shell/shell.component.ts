@@ -34,10 +34,10 @@ import { SidenavComponent } from './sidenav/sidenav.component';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 import { BreadcrumbComponent } from './breadcrumb/breadcrumb.component';
 import { ContentComponent } from './content/content.component';
-import { FooterComponent } from '../../shared/footer/footer.component';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { environment } from '../../../environments/environment';
 import { AuthenticationService } from '../authentication/authentication.service';
+import { Router } from '@angular/router';
 
 /**
  * Shell component.
@@ -56,7 +56,6 @@ import { AuthenticationService } from '../authentication/authentication.service'
     ToolbarComponent,
     BreadcrumbComponent,
     ContentComponent,
-    FooterComponent,
     AsyncPipe
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -67,6 +66,7 @@ export class ShellComponent implements OnInit, AfterViewInit {
   private cdr = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
   private authenticationService = inject(AuthenticationService);
+  private router = inject(Router);
 
   /** Host for the lazily-loaded Copilot panel. */
   @ViewChild('copilotHost', { read: ViewContainerRef }) copilotHost?: ViewContainerRef;
@@ -80,6 +80,11 @@ export class ShellComponent implements OnInit, AfterViewInit {
   sidenavCollapsed = true;
   /** Progress bar mode. */
   progressBarMode: string;
+
+  /** Hide the generic client breadcrumb on the dedicated cashier onboarding page. */
+  get isCashierMemberCreation(): boolean {
+    return this.router.url.startsWith('/clients/create') && this.router.url.includes('workspace=cashier');
+  }
 
   /**
    * Subscribes to progress bar to update its mode.

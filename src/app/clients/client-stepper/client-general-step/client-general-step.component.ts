@@ -24,10 +24,12 @@ import { ClientsService } from 'app/clients/clients.service';
 import { Dates } from 'app/core/utils/dates';
 import { LegalFormId } from 'app/clients/models/legal-form.enum';
 import { ExternalNationalIdService } from 'app/clients/services/external-national-id.service';
+import { AuthenticationService } from 'app/core/authentication/authentication.service';
 
 /** Custom Services */
 import { SettingsService } from 'app/settings/settings.service';
 import { MatDivider } from '@angular/material/divider';
+import { MatIcon } from '@angular/material/icon';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatStepperPrevious, MatStepperNext } from '@angular/material/stepper';
@@ -45,6 +47,7 @@ import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
   imports: [
     ...STANDALONE_SHARED_IMPORTS,
     MatDivider,
+    MatIcon,
     CdkTextareaAutosize,
     MatCheckbox,
     MatStepperPrevious,
@@ -58,6 +61,7 @@ export class ClientGeneralStepComponent implements OnInit {
   private dateUtils = inject(Dates);
   private settingsService = inject(SettingsService);
   private clientService = inject(ClientsService);
+  private authenticationService = inject(AuthenticationService);
   externalNationalIdService = inject(ExternalNationalIdService);
   private destroyRef = inject(DestroyRef);
 
@@ -73,8 +77,14 @@ export class ClientGeneralStepComponent implements OnInit {
 
   /** Client Template */
   @Input() clientTemplate: any;
+  /** Uses the compact member-registration form in the cashier workspace. */
+  @Input() cashierMode = false;
   /** Create Client Form */
   createClientForm: FormGroup;
+  /** Optional member photo selected during cashier onboarding. */
+  profileImageFile: File | null = null;
+  /** Local preview URL for the selected member photo. */
+  profileImagePreviewUrl: string | null = null;
 
   /** Office Options */
   officeOptions: any;
@@ -112,13 +122,65 @@ export class ClientGeneralStepComponent implements OnInit {
    */
   constructor() {
     this.setClientForm();
+    this.buildDependencies();
   }
 
   ngOnInit() {
     this.maxDate = this.settingsService.businessDate;
     this.setOptions();
-    this.buildDependencies();
+    console.info('[MemberOnboarding] template options loaded', {
+      offices: this.officeOptions?.length ?? 0,
+      genders: this.genderOptions?.length ?? 0,
+      memberCategories: this.clientTypeOptions?.length ?? 0,
+      savingsProducts: this.savingProductOptions?.length ?? 0
+    });
+    if (this.cashierMode) {
+      this.configureCashierForm();
+    }
+    console.info('[MemberOnboarding] form ready', {
+      cashierMode: this.cashierMode,
+      controls: Object.keys(this.createClientForm.controls),
+      valid: this.createClientForm.valid
+    });
     this.externalNationalIdService.watchExternalId(this.createClientForm, this.genderOptions);
+  }
+
+  private configureCashierForm(): void {
+    const credentials = this.authenticationService.getCredentials();
+    this.createClientForm.controls.externalId.setValidators(Validators.required);
+    this.createClientForm.controls.dateOfBirth.setValidators(Validators.required);
+    this.createClientForm.controls.clientTypeId.setValidators(Validators.required);
+    this.createClientForm.patchValue({
+      officeId: credentials?.officeId || this.officeOptions?.[0]?.id || '',
+      legalFormId: LegalFormId.PERSON,
+      active: true,
+      addSavings: true,
+      memberAccountType: 'SAVINGS'
+    });
+    if (!this.createClientForm.contains('activationDate')) {
+      this.createClientForm.addControl(
+        'activationDate',
+        new FormControl(this.settingsService.businessDate, Validators.required)
+      );
+    }
+    if (!this.createClientForm.contains('savingsProductId')) {
+      this.createClientForm.addControl('savingsProductId', new FormControl('', Validators.required));
+    }
+    const voluntarySavingsProduct = this.savingProductOptions?.find(
+      (product: any) => /voluntary/i.test(product.name ?? '') && !/group/i.test(product.name ?? '')
+    );
+    this.createClientForm.get('savingsProductId')?.setValue(voluntarySavingsProduct?.id ?? '');
+    this.createClientForm.get('activationDate')?.setValue(this.settingsService.businessDate);
+    this.createClientForm.controls.externalId.updateValueAndValidity();
+    this.createClientForm.controls.dateOfBirth.updateValueAndValidity();
+    this.createClientForm.controls.clientTypeId.updateValueAndValidity();
+    console.info('[MemberOnboarding] cashier form configured', {
+      controls: Object.keys(this.createClientForm.controls),
+      voluntarySavingsProductId: voluntarySavingsProduct?.id ?? null,
+      requiredControls: Object.keys(this.createClientForm.controls).filter((controlName) =>
+        this.createClientForm.controls[controlName].hasValidator(Validators.required)
+      )
+    });
   }
 
   /**
@@ -159,6 +221,7 @@ export class ClientGeneralStepComponent implements OnInit {
       dateOfBirth: [''],
       clientTypeId: [''],
       clientClassificationId: [''],
+      memberAccountType: ['SAVINGS'],
       submittedOnDate: [
         this.settingsService.businessDate,
         Validators.required
@@ -179,6 +242,21 @@ export class ClientGeneralStepComponent implements OnInit {
     this.constitutionOptions = this.clientTemplate.clientNonPersonConstitutionOptions;
     this.genderOptions = this.clientTemplate.genderOptions;
     this.savingProductOptions = this.clientTemplate.savingProductOptions;
+  }
+
+  onProfileImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (this.profileImagePreviewUrl) {
+      URL.revokeObjectURL(this.profileImagePreviewUrl);
+      this.profileImagePreviewUrl = null;
+    }
+    this.profileImageFile = file && file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024 ? file : null;
+    if (!this.profileImageFile) {
+      input.value = '';
+      return;
+    }
+    this.profileImagePreviewUrl = URL.createObjectURL(this.profileImageFile);
   }
 
   /**
@@ -276,20 +354,21 @@ export class ClientGeneralStepComponent implements OnInit {
   }
 
   validateMobileNumber(control: AbstractControl): ValidationErrors | null {
-    const digits = String(control.value || '')
-      .replace(/\D/g, '')
-      .replace(/^0/, '');
-    if (!digits) {
+    const countryCode = this.createClientForm?.get('mobileCountryCode')?.value || '+256';
+    const enteredDigits = String(control.value || '').replace(/\D/g, '');
+    const localDigits = this.localMobileDigits(control.value, countryCode);
+    if (!enteredDigits) {
       return null;
     }
-    if (/^(\d)\1+$/.test(digits)) {
+    if (!localDigits) return { invalidMobileNumber: true };
+    if (/^(\d)\1+$/.test(localDigits)) {
       return { invalidMobileNumber: true };
     }
-    return this.createClientForm?.get('mobileCountryCode')?.value === '+256'
-      ? /^[37]\d{8}$/.test(digits)
+    return this.countryCodeDigits(countryCode) === '256'
+      ? /^[37]\d{8}$/.test(localDigits)
         ? null
         : { invalidMobileNumber: true }
-      : /^\d{6,12}$/.test(digits)
+      : /^\d{6,12}$/.test(localDigits)
         ? null
         : { invalidMobileNumber: true };
   }
@@ -301,9 +380,11 @@ export class ClientGeneralStepComponent implements OnInit {
     const generalDetails = this.createClientForm.getRawValue();
     const countryCode = generalDetails.mobileCountryCode;
     if (generalDetails.mobileNo) {
-      generalDetails.mobileNo = countryCode + String(generalDetails.mobileNo).replace(/\D/g, '').replace(/^0/, '');
+      generalDetails.mobileNo =
+        this.countryCodeDigits(countryCode) + this.localMobileDigits(generalDetails.mobileNo, countryCode);
     }
     delete generalDetails.mobileCountryCode;
+    delete generalDetails.memberAccountType;
     const dateFormat = this.settingsService.dateFormat;
     const locale = this.settingsService.language.code;
     for (const key in generalDetails) {
@@ -333,5 +414,18 @@ export class ClientGeneralStepComponent implements OnInit {
       };
     }
     return generalDetails;
+  }
+
+  private countryCodeDigits(countryCode: unknown): string {
+    return String(countryCode || '').replace(/\D/g, '');
+  }
+
+  private localMobileDigits(mobileNo: unknown, countryCode: unknown): string {
+    const countryDigits = this.countryCodeDigits(countryCode);
+    const enteredDigits = String(mobileNo || '').replace(/\D/g, '');
+    if (countryDigits && enteredDigits.startsWith(countryDigits)) {
+      return enteredDigits.slice(countryDigits.length).replace(/^0/, '');
+    }
+    return enteredDigits.replace(/^0/, '');
   }
 }

@@ -14,7 +14,26 @@
   width: 100vw;
 }
 
-.lottie-spinner {
-  width: 250px;
-  height: 250px;
+.cbs-pewosa-loader {
+  width: 240px;
+  max-width: calc(100vw - 32px);
+  height: auto;
+  transform-origin: center;
+  animation: cbs-pewosa-loader-pulse 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes cbs-pewosa-loader-pulse {
+  from {
+    transform: scale(0.88);
+  }
+
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cbs-pewosa-loader {
+    animation: none;
+  }
 }

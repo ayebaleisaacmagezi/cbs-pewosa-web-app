@@ -314,6 +314,7 @@ export interface CashierTransactionDraft {
   requestedShares: number;
   note?: string;
   identityMethod: string;
+  paperSlipUsed?: boolean;
   slipReference?: string;
   slipVerified: boolean;
   amountVerified: boolean;

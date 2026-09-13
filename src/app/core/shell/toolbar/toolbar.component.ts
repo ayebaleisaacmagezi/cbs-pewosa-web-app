@@ -53,6 +53,7 @@ import { NotificationsTrayComponent as NotificationsTrayComponent_1 } from '../.
 import { ThemeToggleComponent } from '../../../shared/theme-toggle/theme-toggle.component';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { DocumentationLinksService } from 'app/shared/services/documentation-links.service';
+import { WorkspaceNavigationService } from '../workspace-navigation.service';
 
 /**
  * Toolbar component.
@@ -87,6 +88,7 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
   private dialog = inject(MatDialog);
   private changeDetector = inject(ChangeDetectorRef);
   private documentationLinks = inject(DocumentationLinksService);
+  private workspaceNavigation = inject(WorkspaceNavigationService);
   private destroyRef = inject(DestroyRef);
 
   /* Reference of institution */
@@ -215,6 +217,38 @@ export class ToolbarComponent implements OnInit, AfterViewInit, AfterContentChec
   toggleSidenavCollapse(sidenavCollapsed?: boolean) {
     this.sidenavCollapsed = sidenavCollapsed ?? !this.sidenavCollapsed;
     this.collapse.emit(this.sidenavCollapsed);
+  }
+
+  backToWorkspace(): void {
+    const workspace = this.cashierWorkspace
+      ? 'cashier'
+      : this.chiefTellerWorkspace
+        ? 'chief-teller'
+        : this.vaultOfficerWorkspace
+          ? 'vault-officer'
+          : this.complianceOfficerWorkspace
+            ? 'compliance-officer'
+            : 'loan-officer';
+    const homeView = this.cashierWorkspace
+      ? 'home'
+      : this.chiefTellerWorkspace
+        ? 'drawers'
+        : this.vaultOfficerWorkspace
+          ? 'requests'
+          : 'home';
+
+    if (this.cashierWorkspace) this.workspaceNavigation.setCashierView('home');
+    if (this.chiefTellerWorkspace) this.workspaceNavigation.setChiefTellerView('drawers');
+    if (this.vaultOfficerWorkspace) this.workspaceNavigation.setVaultView('requests');
+    if (this.loanOfficerWorkspace) this.workspaceNavigation.setLoanOfficerView('home');
+
+    void this.router.navigate(
+      [
+        '/staff-workspaces',
+        workspace
+      ],
+      { queryParams: { view: homeView } }
+    );
   }
 
   get cashierInitials(): string {

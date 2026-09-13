@@ -5,49 +5,18 @@
   License, v. 2.0. If a copy of the MPL was not distributed with this
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
-<div class="login-wrapper">
-  <div class="hero-panel hide-lt-lg" [class.production-mode]="productionMode">
-    <div class="hero-overlay"></div>
-    <div class="hero-content">
-      <div class="portal-entry">
-        <img src="assets/images/kcps-logo.png" alt="CBS PEWOSA Logo" class="portal-entry-logo" />
-        <div class="portal-entry-copy">
-          <p class="portal-entry-kicker">CBS PEWOSA SACCO</p>
-          <h1 class="portal-entry-title">Member Services Portal</h1>
-          <p class="portal-entry-text">
-            Manage members, savings, loans, shares, and branch operations from one secure workspace.
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-
+<div class="login-wrapper cbs-login">
   <div class="login-panel">
-    <div class="login-header">
-      @if (allowServerSwitch()) {
-        <mifosx-server-selector class="header-control" appearance="outline" [showLabel]="false">
-        </mifosx-server-selector>
-      }
-      <mifosx-theme-toggle class="header-control theme-toggle"></mifosx-theme-toggle>
-      <mifosx-language-selector class="header-control" appearance="outline" [showLabel]="false">
-      </mifosx-language-selector>
-    </div>
-
-    <div class="login-card-container">
-      <div class="login-card">
+    <main class="login-card-container">
+      <section class="login-card" aria-labelledby="login-heading">
         <div class="logo-section">
-          @if (!themeDarkEnabled) {
-            <img [src]="logoPath" (error)="onLogoError()" alt="{{ 'APP_NAME' | translate }} Logo" class="logo-image" />
-          } @else {
-            <img
-              [src]="logoPathDark"
-              (error)="onLogoErrorDark()"
-              alt="{{ 'APP_NAME' | translate }} Logo"
-              class="logo-image"
-            />
-          }
-          <h2 class="login-heading">Sign in to CBS PEWOSA</h2>
-          <p class="login-subheading">Use your staff account to continue.</p>
+          <img
+            src="assets/images/cbs_pewosa_sacco-bgtrans.png"
+            [alt]="'CBS PEWOSA SACCO logo' | translate"
+            class="logo-image"
+          />
+          <h1 id="login-heading" class="login-heading">{{ 'Welcome to CBS PEWOSA' | translate }}</h1>
+          <p class="login-subheading">{{ 'Sign in to continue' | translate }}</p>
         </div>
 
         <div class="form-section">
@@ -69,7 +38,7 @@
             <mifosx-two-factor-authentication></mifosx-two-factor-authentication>
           }
         </div>
-      </div>
+      </section>
 
       <div class="login-footer">
         <button
@@ -80,9 +49,11 @@
           matTooltip="Reload Settings"
           attr.aria-label="Reload Settings"
         >
-          <mifosx-m3-icon name="refresh"></mifosx-m3-icon>
+          <svg class="reload-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M17.65 6.35A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h8V3l-3.35 3.35Z" />
+          </svg>
         </button>
       </div>
-    </div>
+    </main>
   </div>
 </div>

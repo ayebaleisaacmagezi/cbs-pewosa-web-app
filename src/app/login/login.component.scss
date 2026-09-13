@@ -640,6 +640,13 @@
   }
 }
 
+.reload-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  fill: currentcolor;
+}
+
 // ===== Modern Menus =====
 ::ng-deep .modern-menu {
   border-radius: 12px;
@@ -1084,5 +1091,143 @@
 
   .login-card-container {
     padding: 1rem;
+  }
+}
+
+// ===== CBS PEWOSA Centered Sign-In =====
+:host {
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.cbs-login {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgb(30 69 147 / 14%), transparent 42%),
+    linear-gradient(180deg, #f8fbff 0%, #eef3f8 100%);
+
+  .login-panel {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .login-header {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 2;
+    width: 100%;
+    justify-content: flex-end;
+    padding: 16px 24px;
+  }
+
+  .login-card-container {
+    height: 100%;
+    min-height: 0;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 80px 24px 32px;
+  }
+
+  .login-card {
+    width: min(100%, 440px);
+    margin: 0;
+    padding: 40px;
+    border: 1px solid rgb(18 43 94 / 10%);
+    border-radius: 24px;
+    background: rgb(255 255 255 / 96%);
+    box-shadow: 0 24px 64px rgb(18 43 94 / 14%);
+  }
+
+  .logo-section {
+    margin: 0 0 32px;
+    padding: 0;
+    border: 0;
+  }
+
+  .logo-image {
+    width: 144px;
+    height: 144px;
+    margin: 0 auto 24px;
+    object-fit: contain;
+  }
+
+  .login-heading {
+    margin: 0;
+    color: #122b5e;
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .login-subheading {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .form-section {
+    margin: 0;
+  }
+
+  .login-footer {
+    position: absolute;
+    right: 16px;
+    bottom: 8px;
+    padding: 0;
+  }
+}
+
+:host-context(.dark-theme) .cbs-login {
+  background: radial-gradient(circle at 50% 0%, rgb(80 124 208 / 22%), transparent 42%), #0f172a;
+
+  .login-card {
+    border-color: rgb(255 255 255 / 10%);
+    background: #172033;
+    box-shadow: 0 24px 64px rgb(0 0 0 / 32%);
+  }
+
+  .login-heading {
+    color: #f8fafc;
+  }
+
+  .login-subheading {
+    color: #cbd5e1;
+  }
+}
+
+/* stylelint-disable-next-line media-feature-range-notation -- Safari compatibility */
+@media (max-width: 600px) {
+  .cbs-login {
+    .login-header {
+      padding: 8px 16px;
+    }
+
+    .login-card-container {
+      padding: 72px 16px 24px;
+    }
+
+    .login-card {
+      padding: 32px 24px;
+    }
+
+    .logo-image {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 16px;
+    }
+
+    .login-heading {
+      font-size: 28px;
+    }
   }
 }
