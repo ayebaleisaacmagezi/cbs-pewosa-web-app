@@ -27,6 +27,7 @@ import {
   TellerReversal,
   TellerRule,
   TellerShift,
+  TellerShiftReport,
   TellerShiftAction,
   TellerSharePurchaseRequest,
   TellerSharePurchaseResponse,
@@ -142,9 +143,9 @@ export class TellerApiService {
     );
   }
 
-  getShiftReports(reference: string): Observable<Record<string, unknown>> {
+  getShiftReports(reference: string): Observable<TellerShiftReport> {
     return this.http
-      .get<Record<string, unknown>>(`${this.basePath}/shifts/${encodeURIComponent(reference)}/reports`)
+      .get<TellerShiftReport>(`${this.basePath}/shifts/${encodeURIComponent(reference)}/reports`)
       .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
   }
 

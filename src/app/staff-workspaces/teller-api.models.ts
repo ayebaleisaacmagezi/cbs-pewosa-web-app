@@ -217,6 +217,7 @@ export interface TellerShift {
   cashierId: number;
   currencyCode: string;
   status: 'OPEN' | 'STOPPED' | 'COUNTING' | 'PENDING_APPROVAL' | 'RECONCILED' | 'CLOSED';
+  businessDate?: string | number[];
   expectedCash?: number;
   physicalCash?: number;
   variance?: number;
@@ -224,6 +225,24 @@ export interface TellerShift {
   denominations?: TellerDenominationLine[];
   explanation?: string;
   audit?: TellerAuditData;
+}
+
+export interface TellerShiftTransaction {
+  reference: string;
+  operationType: TellerOperationType;
+  amount: number;
+  currencyCode: string;
+  productEntityType?: string;
+  productTransactionId?: number;
+  cashierTransactionId?: number;
+  status: string;
+  complianceStatus?: string;
+  notificationStatus?: string;
+}
+
+export interface TellerShiftReport extends TellerShift {
+  transactions?: TellerShiftTransaction[];
+  drawerMovements?: TellerDrawerTransaction[];
 }
 
 export type TellerShiftAction = 'STOP' | 'COUNT' | 'SUBMIT' | 'APPROVE' | 'CLOSE';

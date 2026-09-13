@@ -37,6 +37,7 @@ import {
   TellerPreflightResponse,
   TellerReversal,
   TellerShift,
+  TellerShiftTransaction,
   TellerTransactionDetail,
   TellerTransactionAction,
   TellerTransactionStage,
@@ -123,6 +124,9 @@ export class CashierWorkspaceComponent implements OnInit {
   awaitingCashReceipt: TellerCashMovement | null = null;
   reversal: TellerReversal | null = null;
   reversalOriginalTransaction: TellerTransactionDetail | null = null;
+  selectedReversalTransaction: TellerShiftTransaction | null = null;
+  shiftTransactions: TellerShiftTransaction[] = [];
+  reversalRequests: TellerReversal[] = [];
   private memberDetailsRequestId = 0;
   private queuedLoanId: number | null = null;
   transactionForm = this.formBuilder.group({
@@ -190,7 +194,7 @@ export class CashierWorkspaceComponent implements OnInit {
   });
   reversalForm = this.formBuilder.group({
     originalReference: [
-      '',
+      { value: '', disabled: true },
       Validators.required
     ],
     reason: [
@@ -254,6 +258,7 @@ export class CashierWorkspaceComponent implements OnInit {
     }
     this.loadDrawer();
     this.loadApprovedLoanQueue();
+    this.loadKnownReversals();
   }
 
   @HostListener('wheel', ['$event'])
@@ -264,6 +269,71 @@ export class CashierWorkspaceComponent implements OnInit {
 
   setView(view: CashierWorkspaceView): void {
     this.activeView = view;
+    if ((view === 'records' || view === 'reversals') && this.shift?.reference) {
+      this.loadShiftTransactions(this.shift.reference);
+    }
+  }
+
+  requestReversalFor(transaction: TellerShiftTransaction): void {
+    if (!this.canRequestReversal(transaction)) return;
+    this.selectedReversalTransaction = transaction;
+    this.reversal = null;
+    this.reversalOriginalTransaction = null;
+    this.reversalForm.reset({ originalReference: transaction.reference, reason: '' });
+    this.workspaceNavigation.setCashierView('reversals');
+  }
+
+  cancelReversalRequest(): void {
+    this.selectedReversalTransaction = null;
+    this.reversalForm.reset({ originalReference: '', reason: '' });
+  }
+
+  canRequestReversal(transaction: TellerShiftTransaction): boolean {
+    return (
+      transaction.status === 'POSTED' &&
+      !this.reversalRequests.some((request) => request.originalReference === transaction.reference)
+    );
+  }
+
+  transactionTypeLabel(operationType: TellerOperationType): string {
+    const labels: Record<TellerOperationType, string> = {
+      SAVINGS_DEPOSIT: 'Savings deposit',
+      SAVINGS_WITHDRAWAL: 'Savings withdrawal',
+      LOAN_REPAYMENT: 'Loan repayment',
+      LOAN_DISBURSEMENT: 'Loan disbursement',
+      SHARE_PURCHASE: 'Share purchase',
+      CLIENT_CHARGE: 'Fee payment'
+    };
+    return labels[operationType];
+  }
+
+  statusLabel(status: string): string {
+    return status
+      .toLowerCase()
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  shiftBusinessDate(): string {
+    const value = this.shift?.businessDate || this.settingsService.businessDate;
+    if (Array.isArray(value)) {
+      return this.dates.formatDate(new Date(value[0], value[1] - 1, value[2]), this.settingsService.dateFormat);
+    }
+    return String(value || '');
+  }
+
+  selectReversal(reversal: TellerReversal): void {
+    this.reversal = reversal;
+    this.loadReversalEvidence(reversal.originalReference);
+  }
+
+  refreshReversals(): void {
+    this.loadKnownReversals();
+  }
+
+  showTodayTransactions(): void {
+    this.workspaceNavigation.setCashierView('records');
   }
 
   startTransaction(action: TellerTransactionAction): void {
@@ -456,24 +526,11 @@ export class CashierWorkspaceComponent implements OnInit {
       .subscribe({
         next: (reversal) => {
           this.reversal = reversal;
+          this.rememberReversal(reversal);
+          this.selectedReversalTransaction = null;
+          this.reversalForm.reset({ originalReference: '', reason: '' });
           this.loadReversalEvidence(reversal.originalReference);
           this.showMessage('The reversal request was recorded for authorized review.', 'success');
-        },
-        error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
-      });
-  }
-
-  findReversal(): void {
-    const reference = this.reversalForm.value.originalReference?.trim();
-    if (!reference || this.submitting) return;
-    this.submitting = true;
-    this.tellerApi
-      .getReversal(reference)
-      .pipe(finalize(() => this.finishSubmitting()))
-      .subscribe({
-        next: (reversal) => {
-          this.reversal = reversal;
-          this.loadReversalEvidence(reversal.originalReference);
         },
         error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
       });
@@ -1517,9 +1574,72 @@ export class CashierWorkspaceComponent implements OnInit {
   private loadActiveShift(): void {
     if (!this.cashierId) return;
     this.tellerApi.getActiveShift(Number(this.cashierId), this.currencyCode).subscribe({
-      next: (shift) => (this.shift = shift),
+      next: (shift) => {
+        this.shift = shift;
+        if (shift?.reference) this.loadShiftTransactions(shift.reference);
+        else this.shiftTransactions = [];
+      },
       error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
     });
+  }
+
+  private loadShiftTransactions(reference: string): void {
+    this.tellerApi.getShiftReports(reference).subscribe({
+      next: (report) => {
+        this.shiftTransactions = report.transactions || [];
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.shiftTransactions = [];
+        this.showMessage('Today’s teller transactions could not be loaded.', 'error');
+      }
+    });
+  }
+
+  private loadKnownReversals(): void {
+    const references = this.storedReversalReferences();
+    if (!references.length) {
+      this.reversalRequests = [];
+      return;
+    }
+    forkJoin(
+      references.map((reference) => this.tellerApi.getReversal(reference).pipe(catchError(() => of(null))))
+    ).subscribe((requests) => {
+      this.reversalRequests = requests.filter((request): request is TellerReversal => request !== null);
+      this.changeDetectorRef.markForCheck();
+    });
+  }
+
+  private rememberReversal(reversal: TellerReversal): void {
+    this.reversalRequests = [
+      reversal,
+      ...this.reversalRequests.filter((request) => request.reference !== reversal.reference)
+    ];
+    this.storeReversalReferences(this.reversalRequests.map((request) => request.reference));
+  }
+
+  private storedReversalReferences(): string[] {
+    try {
+      const stored = globalThis.sessionStorage?.getItem(this.reversalStorageKey());
+      const references = stored ? (JSON.parse(stored) as unknown) : [];
+      return Array.isArray(references)
+        ? references.filter((reference): reference is string => typeof reference === 'string')
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private storeReversalReferences(references: string[]): void {
+    try {
+      globalThis.sessionStorage?.setItem(this.reversalStorageKey(), JSON.stringify(references.slice(0, 20)));
+    } catch {
+      // Reversal tracking remains available in memory when browser storage is unavailable.
+    }
+  }
+
+  private reversalStorageKey(): string {
+    return `mifosx.cashier.reversals.${this.credentials?.username || 'cashier'}`;
   }
 
   private loadAwaitingCashReceipt(): void {

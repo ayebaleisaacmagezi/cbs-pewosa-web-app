@@ -900,118 +900,237 @@
   }
 
   @if (activeView === 'reversals') {
-    <section class="workstation">
-      <article class="work-panel">
-        <header class="panel-head">
+    <section class="reversal-page">
+      <mat-card appearance="outlined" class="reversal-intro">
+        <mat-card-content>
           <div>
             <span class="step">{{ 'Controlled correction' | translate }}</span>
-            <h2>{{ 'Request transaction reversal' | translate }}</h2>
+            <h2>{{ 'Transaction reversals' | translate }}</h2>
+            <p>{{ 'Choose a posted transaction from Today’s transactions to request its reversal.' | translate }}</p>
           </div>
-          <mat-icon>undo</mat-icon>
-        </header>
-        <div class="panel-body">
-          <p>
-            {{
-              'The server verifies that the original transaction is posted, reversible, within the allowed period, and permitted for your role.'
-                | translate
-            }}
-          </p>
-          <form [formGroup]="reversalForm" class="reconciliation-form">
-            <mat-form-field appearance="outline">
-              <mat-label>{{ 'Original transaction reference' | translate }}</mat-label>
-              <input matInput formControlName="originalReference" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>{{ 'Reversal reason' | translate }}</mat-label>
-              <textarea matInput formControlName="reason"></textarea>
-            </mat-form-field>
-            <div class="entry-actions">
-              <button mat-stroked-button type="button" [disabled]="submitting" (click)="findReversal()">
-                {{ 'Check request status' | translate }}
-              </button>
-              <button
-                mat-raised-button
-                color="primary"
-                type="button"
-                [disabled]="submitting"
-                (click)="requestReversal()"
-              >
-                {{ 'Submit reversal request' | translate }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </article>
-      <aside class="work-panel">
-        <header class="panel-head">
-          <h2>{{ 'Reversal status' | translate }}</h2>
-        </header>
-        <div class="panel-body">
-          @if (reversal) {
-            <div class="summary-totals">
+          <button mat-stroked-button type="button" (click)="showTodayTransactions()">
+            <mat-icon>receipt_long</mat-icon>
+            {{ 'View today’s transactions' | translate }}
+          </button>
+        </mat-card-content>
+      </mat-card>
+
+      @if (selectedReversalTransaction) {
+        <mat-card appearance="outlined" class="reversal-request-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'Request reversal' | translate }}</mat-card-title>
+            <mat-card-subtitle>{{ 'Confirm the transaction and enter the reason.' | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="reversal-transaction-details">
               <div>
-                <span>{{ 'Reference' | translate }}</span
-                ><b>{{ reversal.reference }}</b>
+                <span>{{ 'Reference' | translate }}</span>
+                <strong>{{ selectedReversalTransaction.reference }}</strong>
               </div>
               <div>
-                <span>{{ 'Original transaction' | translate }}</span
-                ><b>{{ reversal.originalReference }}</b>
+                <span>{{ 'Transaction' | translate }}</span>
+                <strong>{{ transactionTypeLabel(selectedReversalTransaction.operationType) | translate }}</strong>
               </div>
-              <div class="total">
-                <span>{{ 'Status' | translate }}</span
-                ><b>{{ reversal.status }}</b>
+              <div>
+                <span>{{ 'Amount' | translate }}</span>
+                <strong>
+                  {{ selectedReversalTransaction.currencyCode }} {{ selectedReversalTransaction.amount | number }}
+                </strong>
+              </div>
+              <div>
+                <span>{{ 'Status' | translate }}</span>
+                <strong>{{ statusLabel(selectedReversalTransaction.status) | translate }}</strong>
               </div>
             </div>
-            <p>{{ reversal.reason }}</p>
+            <form [formGroup]="reversalForm" class="reversal-reason-form">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'Reason for reversal' | translate }}</mat-label>
+                <textarea matInput formControlName="reason" rows="3" required></textarea>
+                <mat-hint>{{ 'This reason will be reviewed by the Chief Teller.' | translate }}</mat-hint>
+              </mat-form-field>
+              <div class="entry-actions">
+                <button mat-button type="button" [disabled]="submitting" (click)="cancelReversalRequest()">
+                  {{ 'labels.buttons.Cancel' | translate }}
+                </button>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  [disabled]="reversalForm.invalid || submitting"
+                  (click)="requestReversal()"
+                >
+                  {{ submitting ? ('Submitting…' | translate) : ('Submit for approval' | translate) }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+      }
+
+      <mat-card appearance="outlined" class="reversal-history-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'Your reversal requests' | translate }}</mat-card-title>
+          <span class="card-spacer"></span>
+          <button
+            mat-icon-button
+            type="button"
+            [attr.aria-label]="'Refresh reversal requests' | translate"
+            (click)="refreshReversals()"
+          >
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content>
+          @if (reversalRequests.length) {
+            <div class="reversal-list">
+              @for (request of reversalRequests; track request.reference) {
+                <button mat-button type="button" class="reversal-list-item" (click)="selectReversal(request)">
+                  <span>
+                    <strong>{{ request.reference }}</strong>
+                    <small>{{ request.originalReference }} · {{ request.reason }}</small>
+                  </span>
+                  <span class="reversal-status" [attr.data-status]="request.status">
+                    {{ statusLabel(request.status) | translate }}
+                  </span>
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="reversal-empty-state">
+              <mat-icon>undo</mat-icon>
+              <strong>{{ 'No reversal requests in this session' | translate }}</strong>
+              <span>{{ 'Use Today’s transactions to select the posting that needs correction.' | translate }}</span>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      @if (reversal) {
+        <mat-card appearance="outlined" class="reversal-detail-card">
+          <mat-card-header>
+            <mat-card-title>{{ 'Reversal details' | translate }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="reversal-transaction-details">
+              <div>
+                <span>{{ 'Reversal reference' | translate }}</span>
+                <strong>{{ reversal.reference }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Original transaction' | translate }}</span>
+                <strong>{{ reversal.originalReference }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Status' | translate }}</span>
+                <strong>{{ statusLabel(reversal.status) | translate }}</strong>
+              </div>
+              <div>
+                <span>{{ 'Reason' | translate }}</span>
+                <strong>{{ reversal.reason }}</strong>
+              </div>
+            </div>
             @if (reversalOriginalTransaction) {
-              <div class="summary-totals">
-                <div>
-                  <span>{{ 'Original posting status' | translate }}</span>
-                  <b>{{ reversalOriginalTransaction.status }}</b>
-                </div>
-                <div>
-                  <span>{{ 'Product transaction ID' | translate }}</span>
-                  <b>{{
-                    reversalOriginalTransaction.productTransaction?.transactionId || ('Not available' | translate)
-                  }}</b>
-                </div>
-                <div>
-                  <span>{{ 'Drawer movement ID' | translate }}</span>
-                  <b>{{
-                    reversalOriginalTransaction.drawerMovement?.drawerMovementId || ('Not available' | translate)
-                  }}</b>
-                </div>
+              <div class="reversal-evidence">
+                <span>
+                  {{ 'Product transaction ID' | translate }}:
+                  {{ reversalOriginalTransaction.productTransaction?.transactionId || ('Not available' | translate) }}
+                </span>
+                <span>
+                  {{ 'Drawer movement ID' | translate }}:
+                  {{ reversalOriginalTransaction.drawerMovement?.drawerMovementId || ('Not available' | translate) }}
+                </span>
               </div>
             }
-            <button type="button" class="secondary-button" (click)="printReversal()">
+            <button mat-stroked-button type="button" (click)="printReversal()">
+              <mat-icon>print</mat-icon>
               {{ 'Print reversal record' | translate }}
             </button>
-          } @else {
-            <div class="summary-empty">{{ 'No reversal request selected.' | translate }}</div>
-          }
-        </div>
-      </aside>
+          </mat-card-content>
+        </mat-card>
+      }
     </section>
   }
 
-  @if (activeView === 'records' || activeView === 'receipts') {
+  @if (activeView === 'records') {
     <section class="table-card">
       <header>
         <div>
-          <span class="step">{{ activeView === 'receipts' ? 'Receipts' : 'Today' }}</span>
-          <h2>{{ activeView === 'receipts' ? 'Cashier receipts' : 'Drawer transactions' }}</h2>
-          <p>Records returned by Fineract for this cashier drawer.</p>
+          <span class="step">{{ 'Today' | translate }}</span>
+          <h2>{{ 'Today’s transactions' | translate }}</h2>
+          <p>{{ 'Select a posted transaction when a correction is required.' | translate }}</p>
         </div>
       </header>
       <div class="table-scroll">
         <table>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Reference</th>
-              <th>Transaction</th>
-              <th>Amount</th>
-              <th>Status</th>
+              <th>{{ 'Date' | translate }}</th>
+              <th>{{ 'Reference' | translate }}</th>
+              <th>{{ 'Transaction' | translate }}</th>
+              <th>{{ 'Amount' | translate }}</th>
+              <th>{{ 'Status' | translate }}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (transaction of shiftTransactions; track transaction.reference) {
+              <tr>
+                <td>{{ shiftBusinessDate() }}</td>
+                <td>
+                  <strong>{{ transaction.reference }}</strong>
+                </td>
+                <td>{{ transactionTypeLabel(transaction.operationType) | translate }}</td>
+                <td>
+                  <b>{{ transaction.currencyCode }} {{ transaction.amount | number }}</b>
+                </td>
+                <td>
+                  <span class="posted-pill">{{ statusLabel(transaction.status) | translate }}</span>
+                </td>
+                <td>
+                  @if (canRequestReversal(transaction)) {
+                    <button mat-stroked-button type="button" (click)="requestReversalFor(transaction)">
+                      <mat-icon>undo</mat-icon>
+                      {{ 'Request reversal' | translate }}
+                    </button>
+                  } @else if (transaction.status === 'REVERSED') {
+                    <span>{{ 'Reversed' | translate }}</span>
+                  } @else if (transaction.status === 'POSTED') {
+                    <span>{{ 'Reversal requested' | translate }}</span>
+                  }
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="6" class="empty-row">
+                  {{ 'No teller transactions were returned for this shift.' | translate }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+
+  @if (activeView === 'receipts') {
+    <section class="table-card">
+      <header>
+        <div>
+          <span class="step">{{ 'Receipts' | translate }}</span>
+          <h2>{{ 'Cashier receipts' | translate }}</h2>
+          <p>{{ 'Drawer records returned by Fineract for this cashier.' | translate }}</p>
+        </div>
+      </header>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'Date' | translate }}</th>
+              <th>{{ 'Reference' | translate }}</th>
+              <th>{{ 'Transaction' | translate }}</th>
+              <th>{{ 'Amount' | translate }}</th>
+              <th>{{ 'Status' | translate }}</th>
               <th></th>
             </tr>
           </thead>
@@ -1019,21 +1138,24 @@
             @for (record of drawerRecords; track record.id || $index) {
               <tr>
                 <td>{{ record.txnDate || record.transactionDate || '—' }}</td>
-                <td>{{ record.id || record.transactionId || '—' }}</td>
-                <td>{{ record.entityType || record.transactionType || 'Drawer transaction' }}</td>
+                <td>{{ record.transactionId || record.id || '—' }}</td>
+                <td>{{ record.entityType || record.transactionType || ('Drawer transaction' | translate) }}</td>
                 <td>
                   <b>{{ currencyCodeFor(record) }} {{ record.amount || record.txnAmount || 0 | number }}</b>
                 </td>
-                <td><span class="posted-pill">Posted</span></td>
                 <td>
-                  @if (activeView === 'receipts') {
-                    <button type="button" class="table-action" (click)="printReceipt(record)">Print</button>
-                  }
+                  <span class="posted-pill">{{ 'Posted' | translate }}</span>
+                </td>
+                <td>
+                  <button mat-stroked-button type="button" (click)="printReceipt(record)">
+                    <mat-icon>print</mat-icon>
+                    {{ 'Print' | translate }}
+                  </button>
                 </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="empty-row">No drawer records were returned.</td>
+                <td colspan="6" class="empty-row">{{ 'No drawer records were returned.' | translate }}</td>
               </tr>
             }
           </tbody>
