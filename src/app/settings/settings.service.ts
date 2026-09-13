@@ -160,14 +160,25 @@ export class SettingsService {
   }
 
   get languageCode() {
-    const currentLanguage = this.language.code;
-    if (currentLanguage === 'es') {
+    const storedLanguage = String(this.language?.code || environment.defaultLanguage || 'en-US')
+      .trim()
+      .replace('_', '-');
+    const [
+      language,
+      region
+    ] = storedLanguage.split('-');
+    const normalizedLanguage = language.toLowerCase();
+
+    if (region) {
+      return `${normalizedLanguage}-${region.toUpperCase()}`;
+    }
+    if (normalizedLanguage === 'es') {
       return 'es-MX';
     }
-    if (currentLanguage === 'en') {
+    if (normalizedLanguage === 'en') {
       return 'en-US';
     }
-    return currentLanguage + '-' + currentLanguage.toUpperCase();
+    return `${normalizedLanguage}-${normalizedLanguage.toUpperCase()}`;
   }
 
   /**

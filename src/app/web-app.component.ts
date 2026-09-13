@@ -159,11 +159,38 @@ export class WebAppComponent implements OnInit, OnDestroy {
 
     // Setup translations
     this.translateService.addLangs(environment.supportedLanguages.split(','));
-    if (this.settingsService.language) {
-      this.translateService.use(this.settingsService.languageCode);
-    } else {
-      this.translateService.use(environment.defaultLanguage);
-    }
+    const storedLanguage = this.settingsService.language;
+    const selectedLanguage = storedLanguage ? this.settingsService.languageCode : environment.defaultLanguage;
+    const translationUrl = `/assets/translations/${selectedLanguage}.json`;
+    console.info('[TranslationDiagnostics] Loading translations', {
+      storedLanguage,
+      selectedLanguage,
+      translationUrl,
+      supportedLanguages: environment.supportedLanguages
+    });
+    this.translateService
+      .use(selectedLanguage)
+      .pipe(take(1))
+      .subscribe({
+        next: (translations) => {
+          const translationData = translations as Record<string, unknown>;
+          const labels = translationData['labels'];
+          console.info('[TranslationDiagnostics] Translations loaded', {
+            selectedLanguage,
+            translationUrl,
+            topLevelSections: Object.keys(translationData).length,
+            labelSections:
+              labels && typeof labels === 'object' ? Object.keys(labels as Record<string, unknown>).length : 0
+          });
+        },
+        error: (error: unknown) => {
+          console.error('[TranslationDiagnostics] Translation file failed to load', {
+            selectedLanguage,
+            translationUrl,
+            error
+          });
+        }
+      });
 
     this.i18nService = new I18nService(this.translateService);
 

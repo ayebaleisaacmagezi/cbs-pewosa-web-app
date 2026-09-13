@@ -46,7 +46,20 @@ import { OAuthModule } from 'angular-oauth2-oidc';
 import { provideLottieOptions } from 'ngx-lottie';
 
 export class CustomMissingTranslationHandler implements MissingTranslationHandler {
+  private readonly reportedKeys = new Set<string>();
+  private readonly reportLimit = 20;
+
   handle(params: MissingTranslationHandlerParams): string {
+    if (!this.reportedKeys.has(params.key) && this.reportedKeys.size < this.reportLimit) {
+      this.reportedKeys.add(params.key);
+      console.warn('[TranslationDiagnostics] Missing translation key', {
+        language: params.translateService.currentLang || 'not selected',
+        key: params.key
+      });
+      if (this.reportedKeys.size === this.reportLimit) {
+        console.warn('[TranslationDiagnostics] Further missing-key messages are suppressed.');
+      }
+    }
     // Remove the 'labels.catalogs.' prefix and return the fallback value
     return params.key.replace('labels.catalogs.', '');
   }
