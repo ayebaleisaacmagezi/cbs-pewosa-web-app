@@ -242,6 +242,7 @@ export class CashierWorkspaceComponent implements OnInit {
         view === 'home' ||
         view === 'transactions' ||
         view === 'drawer' ||
+        view === 'expenses' ||
         view === 'reversals' ||
         view === 'records' ||
         view === 'receipts'
@@ -275,6 +276,15 @@ export class CashierWorkspaceComponent implements OnInit {
     if ((view === 'records' || view === 'reversals') && this.shift?.reference) {
       this.loadShiftTransactions(this.shift.reference);
     }
+  }
+
+  get canPayExpenses(): boolean {
+    const permissions = this.credentials?.permissions || [];
+    return permissions.includes('ALL_FUNCTIONS') || permissions.includes('PAY_PEWOSAEXPENSE');
+  }
+
+  openExpensePayments(): void {
+    this.workspaceNavigation.setCashierView('expenses');
   }
 
   requestReversalFor(transaction: TellerShiftTransaction): void {
