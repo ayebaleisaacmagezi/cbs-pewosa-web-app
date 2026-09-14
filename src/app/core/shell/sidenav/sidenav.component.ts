@@ -184,7 +184,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     this.username = credentials.username;
     this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.officeName = credentials.officeName;
-    this.setWorkspaceNavigation(credentials.roles, credentials.permissions || []);
+    this.setWorkspaceNavigation(credentials.roles);
     if (this.workspaceRole === 'cashier') {
       const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
       if (this.isCashierView(requestedView)) this.workspaceNavigation.setCashierView(requestedView);
@@ -224,7 +224,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     this.setMappedAcitivites();
   }
 
-  private setWorkspaceNavigation(roles: any, permissions: string[]): void {
+  private setWorkspaceNavigation(roles: any): void {
     if (!Array.isArray(roles)) return;
     const roleNames = roles.map((role: any) =>
       String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
@@ -282,9 +282,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: "Today's transactions", view: 'records' },
         { label: 'Receipts', view: 'receipts' }
       ];
-      if (permissions.includes('ALL_FUNCTIONS') || permissions.includes('PAY_PEWOSAEXPENSE')) {
-        this.workspaceLinks.splice(2, 0, { label: 'Expense payments', view: 'expenses' });
-      }
     } else if (roleNames.includes('loan officer')) {
       this.workspaceRole = 'loan-officer';
       this.workspaceLinks = [

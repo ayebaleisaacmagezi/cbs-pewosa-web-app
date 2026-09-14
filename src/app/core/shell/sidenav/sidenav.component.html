@@ -294,17 +294,6 @@
               <a matLine #frequentPostings>{{ 'labels.menus.Frequent Postings' | translate }}</a>
             </mat-list-item>
             <mat-list-item
-              [routerLink]="['/staff-workspaces/expenses']"
-              [matTooltipPosition]="tooltipPosition"
-              [matTooltip]="'Expense management' | translate"
-              routerLinkActive="active-menu"
-              [routerLinkActiveOptions]="{ exact: false }"
-              *mifosxHasPermission="'READ_PEWOSAEXPENSE'"
-            >
-              <mat-icon matListIcon>receipt_long</mat-icon>
-              <a matLine>{{ 'Expense management' | translate }}</a>
-            </mat-list-item>
-            <mat-list-item
               [routerLink]="['/accounting/journal-entries/create']"
               [matTooltipPosition]="tooltipPosition"
               matTooltip="{{ 'tooltips.Create Journal Entry' | translate }}"
