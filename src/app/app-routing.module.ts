@@ -7,12 +7,16 @@
  */
 
 /** Angular Imports */
-import { NgModule } from '@angular/core';
+import { inject, NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
 // Not Found Component
 import { NotFoundComponent } from './not-found/not-found.component';
 import { CallbackComponent } from './zitadel/callback/callback.component';
+import { ClientsService } from './clients/clients.service';
+
+/** Custom Services */
+import { Route } from './core/route/route.service';
 
 /**
  * App routing module.
@@ -32,6 +36,18 @@ const routes: Routes = [
     path: 'centers',
     loadChildren: () => import('./centers/centers.module').then((m) => m.CentersModule)
   },
+  Route.withShell([
+    {
+      path: 'clients/create',
+      data: { title: 'Create Member', breadcrumb: 'Create Member', routeParamBreadcrumb: false },
+      loadComponent: () =>
+        import('./clients/create-client/create-client.component').then((m) => m.CreateClientComponent),
+      resolve: {
+        clientAddressFieldConfig: () => inject(ClientsService).getAddressFieldConfiguration(),
+        clientTemplate: () => inject(ClientsService).getClientTemplate()
+      }
+    }
+  ]),
   {
     path: 'clients',
     loadChildren: () => import('./clients/clients.module').then((m) => m.ClientsModule)
