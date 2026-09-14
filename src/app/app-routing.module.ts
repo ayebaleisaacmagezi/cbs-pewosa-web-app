@@ -9,6 +9,7 @@
 /** Angular Imports */
 import { inject, NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
+import { Observable, tap } from 'rxjs';
 
 // Not Found Component
 import { NotFoundComponent } from './not-found/not-found.component';
@@ -17,6 +18,45 @@ import { ClientsService } from './clients/clients.service';
 
 /** Custom Services */
 import { Route } from './core/route/route.service';
+
+const CASHIER_ONBOARDING_PERFORMANCE_MARK = 'mifosx.cashier-onboarding.navigation-start';
+
+function logCashierOnboardingNavigationStart(): boolean {
+  performance.clearMarks(CASHIER_ONBOARDING_PERFORMANCE_MARK);
+  performance.mark(CASHIER_ONBOARDING_PERFORMANCE_MARK);
+  console.info('[CashierOnboardingPerformance]', {
+    event: 'navigation.start',
+    timestamp: new Date().toISOString()
+  });
+  return true;
+}
+
+function timedCashierOnboardingRequest<T>(
+  requestName: string,
+  request: () => Observable<T>,
+  summarize: (response: T) => Record<string, number> = () => ({})
+): Observable<T> {
+  const startedAt = performance.now();
+  console.info('[CashierOnboardingPerformance]', { event: 'request.start', request: requestName });
+  return request().pipe(
+    tap({
+      next: (response) =>
+        console.info('[CashierOnboardingPerformance]', {
+          event: 'request.complete',
+          request: requestName,
+          durationMs: Math.round(performance.now() - startedAt),
+          ...summarize(response)
+        }),
+      error: (error: unknown) =>
+        console.error('[CashierOnboardingPerformance]', {
+          event: 'request.failed',
+          request: requestName,
+          durationMs: Math.round(performance.now() - startedAt),
+          status: typeof error === 'object' && error !== null && 'status' in error ? error.status : null
+        })
+    })
+  );
+}
 
 /**
  * App routing module.
@@ -40,11 +80,45 @@ const routes: Routes = [
     {
       path: 'clients/create',
       data: { title: 'Create Member', breadcrumb: 'Create Member', routeParamBreadcrumb: false },
-      loadComponent: () =>
-        import('./clients/create-client/create-client.component').then((m) => m.CreateClientComponent),
+      canMatch: [logCashierOnboardingNavigationStart],
+      loadComponent: () => {
+        const startedAt = performance.now();
+        console.info('[CashierOnboardingPerformance]', { event: 'component-load.start' });
+        return import('./clients/create-client/create-client.component').then(
+          (module) => {
+            console.info('[CashierOnboardingPerformance]', {
+              event: 'component-load.complete',
+              durationMs: Math.round(performance.now() - startedAt)
+            });
+            return module.CreateClientComponent;
+          },
+          (error) => {
+            console.error('[CashierOnboardingPerformance]', {
+              event: 'component-load.failed',
+              durationMs: Math.round(performance.now() - startedAt)
+            });
+            throw error;
+          }
+        );
+      },
       resolve: {
-        clientAddressFieldConfig: () => inject(ClientsService).getAddressFieldConfiguration(),
-        clientTemplate: () => inject(ClientsService).getClientTemplate()
+        clientAddressFieldConfig: () =>
+          timedCashierOnboardingRequest(
+            'address-field-configuration',
+            () => inject(ClientsService).getAddressFieldConfiguration(),
+            (response: any) => ({ fields: Array.isArray(response) ? response.length : 0 })
+          ),
+        clientTemplate: () =>
+          timedCashierOnboardingRequest(
+            'client-template',
+            () => inject(ClientsService).getClientTemplate(),
+            (response: any) => ({
+              offices: response?.officeOptions?.length ?? 0,
+              staff: response?.staffOptions?.length ?? 0,
+              savingsProducts: response?.savingProductOptions?.length ?? 0,
+              datatables: response?.datatables?.length ?? 0
+            })
+          )
       }
     }
   ]),

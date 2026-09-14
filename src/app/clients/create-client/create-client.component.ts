@@ -68,6 +68,7 @@ import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CreateClientComponent {
+  private readonly onboardingPerformanceMark = 'mifosx.cashier-onboarding.navigation-start';
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private clientsService = inject(ClientsService);
@@ -122,6 +123,15 @@ export class CreateClientComponent {
           addressEnabled: !!this.clientTemplate?.isAddressEnabled,
           datatables: this.clientTemplate?.datatables?.length ?? 0
         });
+        if (this.isCashierWorkspace) {
+          const navigationStart = performance.getEntriesByName(this.onboardingPerformanceMark, 'mark').at(-1);
+          console.info('[CashierOnboardingPerformance]', {
+            event: 'screen.ready',
+            totalDurationMs: navigationStart ? Math.round(performance.now() - navigationStart.startTime) : null,
+            addressEnabled: !!this.clientTemplate?.isAddressEnabled,
+            datatables: this.clientTemplate?.datatables?.length ?? 0
+          });
+        }
       });
   }
 
