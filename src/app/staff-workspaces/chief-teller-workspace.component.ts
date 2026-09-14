@@ -24,6 +24,7 @@ import {
   TellerDrawerSummary,
   TellerReversal,
   TellerShift,
+  TellerShiftReport,
   extractTellerTransactionReference,
   resolveTellerCurrencyCode
 } from './teller-api.models';
@@ -73,7 +74,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   approvals: TellerApproval[] = [];
   reversal: TellerReversal | null = null;
   selectedShift: TellerShift | null = null;
-  shiftReports: Record<string, unknown> | null = null;
+  shiftReports: TellerShiftReport | null = null;
   approvalNoteControl = this.formBuilder.control('');
   reversalReferenceControl = this.formBuilder.control('', Validators.required);
   reversalDecisionNoteControl = this.formBuilder.control('');
