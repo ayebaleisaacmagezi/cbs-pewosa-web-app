@@ -1,32 +1,128 @@
-<main class="staff-workspace">
-  <header class="workspace-hero">
-    <div>
-      <span class="eyebrow">Chief Teller portal</span>
-      <h1>Cash control for {{ credentials?.officeName }}</h1>
-      <p>Allocate, recover and reconcile cash without opening the technical administration screens.</p>
-    </div>
-    <div class="hero-stat">
-      <span>Selected cashier cash</span><strong>{{ currencyCode }} {{ cashierSummary?.netCash || 0 | number }}</strong
-      ><small>{{ selectedCashier?.staffName || selectedCashier?.cashierName || 'Choose a cashier' }}</small>
-    </div>
-  </header>
-
-  <nav class="workspace-tabs" aria-label="Chief Teller sections">
-    <button mat-button [class.active]="activeView === 'drawers'" (click)="setView('drawers')">Cashier drawers</button>
-    <button mat-button [class.active]="activeView === 'movement'" (click)="setView('movement')">
-      Allocate or recover
-    </button>
-    <button mat-button [class.active]="activeView === 'approvals'" (click)="setView('approvals')">Approvals</button>
-    <button mat-button [class.active]="activeView === 'reconciliation'" (click)="setView('reconciliation')">
-      Reconciliation
-    </button>
-    <button mat-button [class.active]="activeView === 'records'" (click)="setView('records')">Drawer records</button>
-  </nav>
+<main class="staff-workspace chief-teller-page" [class.home-view]="activeView === 'home'">
+  @if (activeView === 'home') {
+    <section class="chief-teller-home">
+      <mat-card appearance="outlined" class="chief-home-card">
+        <mat-card-content>
+          <h1>{{ 'What would you like to do?' | translate }}</h1>
+          <p>{{ 'Select a cash-control service to begin.' | translate }}</p>
+          <div class="chief-home-actions">
+            <button mat-stroked-button type="button" (click)="setView('drawers')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M3 5h18v14H3V5Zm2 2v10h14V7H5Zm2 2h4v2H7V9Zm0 4h8v2H7v-2Zm10-4h-4v2h4V9Z" />
+              </svg>
+              <span>
+                <strong>{{ 'Cashier drawers' | translate }}</strong>
+                <small>{{ 'Review each cashier’s available cash' | translate }}</small>
+              </span>
+            </button>
+            <button mat-stroked-button type="button" (click)="openMovement('allocate')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M11 3h2v10l3.5-3.5 1.4 1.4-5.9 5.9-5.9-5.9 1.4-1.4L11 13V3Zm-6 16h14v2H5v-2Z" />
+              </svg>
+              <span>
+                <strong>{{ 'Allocate cash' | translate }}</strong>
+                <small>{{ 'Issue cash to a cashier drawer' | translate }}</small>
+              </span>
+            </button>
+            <button mat-stroked-button type="button" (click)="openMovement('settle')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M11 21h2V11l3.5 3.5 1.4-1.4L12 7.2l-5.9 5.9 1.4 1.4L11 11v10ZM5 3h14v2H5V3Z" />
+              </svg>
+              <span>
+                <strong>{{ 'Recover cash' | translate }}</strong>
+                <small>{{ 'Receive cash returned by a cashier' | translate }}</small>
+              </span>
+            </button>
+            <button mat-stroked-button type="button" (click)="setView('approvals')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path
+                  d="M12 2 4 5v6c0 5.1 3.4 9.7 8 11 4.6-1.3 8-5.9 8-11V5l-8-3Zm-1 14-4-4 1.4-1.4 2.6 2.6 4.6-4.6L17 10l-6 6Z"
+                />
+              </svg>
+              <span>
+                <strong>{{ 'Approvals' | translate }}</strong>
+                <small>{{ 'Decide controlled requests and reversals' | translate }}</small>
+              </span>
+            </button>
+            <button mat-stroked-button type="button" (click)="setView('reconciliation')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M7 2h10v2h3v18H4V4h3V2Zm2 2v2h6V4H9ZM6 6v14h12V6h-1v2H7V6H6Zm2 5h8v2H8v-2Zm0 4h5v2H8v-2Z" />
+              </svg>
+              <span>
+                <strong>{{ 'Reconciliation' | translate }}</strong>
+                <small>{{ 'Review and approve shift cash counts' | translate }}</small>
+              </span>
+            </button>
+            <button mat-stroked-button type="button" (click)="setView('records')">
+              <svg class="chief-action-icon" viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M5 3h14v18l-3-2-4 2-4-2-3 2V3Zm3 4v2h8V7H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z" />
+              </svg>
+              <span>
+                <strong>{{ 'Drawer records' | translate }}</strong>
+                <small>{{ 'Review allocations and cash movements' | translate }}</small>
+              </span>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
+  } @else {
+    <header class="chief-workflow-header">
+      <button
+        mat-icon-button
+        type="button"
+        [attr.aria-label]="'Back to Chief Teller home' | translate"
+        (click)="showHome()"
+      >
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div>
+        <h1>{{ workflowTitle | translate }}</h1>
+        <p>{{ workflowDescription | translate }}</p>
+      </div>
+    </header>
+  }
 
   @if (message) {
     <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
       {{ message }}
     </div>
+  }
+
+  @if (
+    activeView === 'drawers' || activeView === 'movement' || activeView === 'reconciliation' || activeView === 'records'
+  ) {
+    <section class="panel drawer-selector">
+      <div class="selector-heading">
+        <span class="selector-icon"><mat-icon>point_of_sale</mat-icon></span>
+        <div>
+          <strong>{{ 'Select cashier drawer' | translate }}</strong>
+          <small>{{ 'Choose the cashier whose drawer you want to manage.' | translate }}</small>
+        </div>
+      </div>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Teller' | translate }}</mat-label>
+          <mat-select [value]="selectedTeller" [disabled]="submitting" (selectionChange)="selectTeller($event.value)">
+            @for (teller of filteredTellers; track teller.id) {
+              <mat-option [value]="teller">{{ teller.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Cashier' | translate }}</mat-label>
+          <mat-select
+            [value]="selectedCashier"
+            [disabled]="submitting || loading"
+            (selectionChange)="selectCashier($event.value)"
+          >
+            @for (cashier of filteredCashiers; track cashier.id) {
+              <mat-option [value]="cashier">{{ cashier.staffName || cashier.cashierName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </section>
   }
 
   @if (activeView === 'approvals') {
@@ -45,9 +141,9 @@
             <strong>{{
               approval.workflowType === 'SHARE_PURCHASE'
                 ? ('Share purchase' | translate)
-                : approval.operationType || 'Teller transaction'
+                : approval.operationType || ('Teller transaction' | translate)
             }}</strong>
-            <small>{{ approval.reference }} · {{ approval.requiredRole || 'Authorized approver' }}</small>
+            <small>{{ approval.reference }} · {{ approval.requiredRole || ('Authorized approver' | translate) }}</small>
             @if (approval.workflowStatus) {
               <small>{{ 'Workflow status' | translate }}: {{ approval.workflowStatus }}</small>
             }
@@ -210,130 +306,101 @@
   }
 
   @if (loading) {
-    <div class="notice loading-notice"><mat-icon>sync</mat-icon> Loading teller information from Fineract…</div>
+    <div class="notice loading-notice">
+      <mat-icon>sync</mat-icon> {{ 'Loading teller information from Fineract…' | translate }}
+    </div>
   }
-
-  <section class="panel drawer-selector">
-    <div class="selector-heading">
-      <span class="selector-icon"><mat-icon>point_of_sale</mat-icon></span>
-      <div>
-        <strong>Select cashier drawer</strong><small>Choose who you are allocating to or recovering from.</small>
-      </div>
-    </div>
-    <div class="form-grid">
-      <mat-form-field appearance="outline"
-        ><mat-label>Search tellers</mat-label><mat-icon matPrefix>search</mat-icon
-        ><input matInput [formControl]="tellerSearchControl" placeholder="Name or office"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Teller</mat-label
-        ><mat-select [value]="selectedTeller" [disabled]="submitting" (selectionChange)="selectTeller($event.value)">
-          @for (teller of filteredTellers; track teller.id) {
-            <mat-option [value]="teller">{{ teller.name }}</mat-option>
-          }
-        </mat-select></mat-form-field
-      >
-      <mat-form-field appearance="outline"
-        ><mat-label>Search cashiers</mat-label><mat-icon matPrefix>search</mat-icon
-        ><input matInput [formControl]="cashierSearchControl" placeholder="Cashier name"
-      /></mat-form-field>
-      <mat-form-field
-        ><mat-label>Cashier</mat-label
-        ><mat-select
-          [value]="selectedCashier"
-          [disabled]="submitting || loading"
-          (selectionChange)="selectCashier($event.value)"
-        >
-          @for (cashier of filteredCashiers; track cashier.id) {
-            <mat-option [value]="cashier">{{ cashier.staffName || cashier.cashierName }}</mat-option>
-          }
-        </mat-select></mat-form-field
-      >
-    </div>
-  </section>
 
   @if (activeView === 'drawers') {
     <section class="section-title">
-      <h2>Current drawer position</h2>
-      <p>These totals come directly from Fineract teller records.</p>
+      <h2>{{ 'Current drawer position' | translate }}</h2>
+      <p>{{ 'These totals come directly from Fineract teller records.' | translate }}</p>
     </section>
     <div class="summary-grid">
       <div class="summary-card">
         <span class="summary-icon allocation"><mat-icon>south_west</mat-icon></span>
-        <span>Allocated</span><strong>{{ currencyCode }} {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
+        <span>{{ 'Allocated' | translate }}</span>
+        <strong>{{ currencyCode }} {{ cashierSummary?.sumCashAllocation || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon cash-in"><mat-icon>arrow_downward</mat-icon></span>
-        <span>Cash in</span><strong>{{ currencyCode }} {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
+        <span>{{ 'Cash in' | translate }}</span>
+        <strong>{{ currencyCode }} {{ cashierSummary?.sumInwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon cash-out"><mat-icon>arrow_upward</mat-icon></span>
-        <span>Cash out</span><strong>{{ currencyCode }} {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
+        <span>{{ 'Cash out' | translate }}</span>
+        <strong>{{ currencyCode }} {{ cashierSummary?.sumOutwardCash || 0 | number }}</strong>
       </div>
       <div class="summary-card">
         <span class="summary-icon settlement"><mat-icon>north_east</mat-icon></span>
-        <span>Settled</span><strong>{{ currencyCode }} {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
+        <span>{{ 'Settled' | translate }}</span>
+        <strong>{{ currencyCode }} {{ cashierSummary?.sumCashSettlement || 0 | number }}</strong>
       </div>
     </div>
     <div class="button-row">
-      <button mat-raised-button color="primary" (click)="chooseMovement('allocate')">Allocate cash</button
-      ><button mat-raised-button (click)="chooseMovement('settle')">Recover cash</button>
+      <button mat-raised-button color="primary" (click)="chooseMovement('allocate')">
+        {{ 'Allocate cash' | translate }}
+      </button>
+      <button mat-stroked-button (click)="chooseMovement('settle')">{{ 'Recover cash' | translate }}</button>
     </div>
   }
 
   @if (activeView === 'movement') {
     <section class="workspace-grid">
       <div class="panel">
-        <div class="section-title">
-          <h2>{{ selectedAction === 'allocate' ? 'Allocate cash' : 'Recover cash' }}</h2>
-          <p>{{ selectedCashier?.staffName || selectedCashier?.cashierName || 'Select a cashier above.' }}</p>
-        </div>
-        <div class="workspace-tabs">
-          <button mat-button [class.active]="selectedAction === 'allocate'" (click)="chooseMovement('allocate')">
-            Allocate</button
-          ><button mat-button [class.active]="selectedAction === 'settle'" (click)="chooseMovement('settle')">
-            Recover
-          </button>
+        <div class="selected-drawer-line">
+          <mat-icon>person</mat-icon>
+          <span>
+            <small>{{ 'Selected cashier' | translate }}</small>
+            <strong>{{
+              selectedCashier?.staffName || selectedCashier?.cashierName || ('Select a cashier' | translate)
+            }}</strong>
+          </span>
         </div>
         <form [formGroup]="movementForm">
-          <mat-form-field class="full-width"
-            ><mat-label>{{ 'labels.inputs.Amount' | translate }} ({{ currencyCode }})</mat-label
-            ><input matInput type="number" formControlName="txnAmount" /></mat-form-field
-          ><mat-form-field class="full-width"
-            ><mat-label>Reason</mat-label><input matInput formControlName="txnNote"
-          /></mat-form-field>
+          <mat-form-field class="full-width">
+            <mat-label>{{ 'labels.inputs.Amount' | translate }} ({{ currencyCode }})</mat-label>
+            <input matInput type="number" formControlName="txnAmount" />
+          </mat-form-field>
+          <mat-form-field class="full-width">
+            <mat-label>{{ 'Reason' | translate }}</mat-label>
+            <input matInput formControlName="txnNote" />
+          </mat-form-field>
           <div class="button-row">
-            <button mat-raised-button color="primary" type="button" (click)="prepareMovement()">Review</button>
+            <button mat-raised-button color="primary" type="button" (click)="prepareMovement()">
+              {{ 'Review' | translate }}
+            </button>
           </div>
         </form>
         @if (pendingMovement) {
           <div class="confirmation">
-            <strong>Confirm {{ pendingMovement.action }}</strong>
+            <strong>{{ 'Confirm cash movement' | translate }}</strong>
             <p>{{ pendingMovement.cashier }} · {{ currencyCode }} {{ pendingMovement.amount | number }}</p>
             <p>{{ pendingMovement.note }}</p>
             <div class="button-row">
-              <button mat-button (click)="cancelMovement()">Go back</button
+              <button mat-button (click)="cancelMovement()">{{ 'Go back' | translate }}</button
               ><button mat-raised-button color="primary" (click)="confirmMovement()" [disabled]="submitting">
-                Confirm and record
+                {{ 'Confirm and record' | translate }}
               </button>
             </div>
           </div>
         }
         @if (lastReference) {
-          <div class="notice success">Recorded successfully. Reference: {{ lastReference }}</div>
+          <div class="notice success">{{ 'Recorded successfully. Reference:' | translate }} {{ lastReference }}</div>
         }
       </div>
       <div class="panel">
         <div class="section-title">
-          <h2>Control check</h2>
-          <p>Verify the physical cash before confirming.</p>
+          <h2>{{ 'Control check' | translate }}</h2>
+          <p>{{ 'Verify the physical cash before confirming.' | translate }}</p>
         </div>
         <div class="summary-card">
-          <span>Expected cashier cash</span
+          <span>{{ 'Expected cashier cash' | translate }}</span
           ><strong>{{ currencyCode }} {{ cashierSummary?.netCash || 0 | number }}</strong>
         </div>
         <div class="notice">
-          Allocation increases the cashier drawer. Recovery reduces it and records the settlement.
+          {{ 'Allocation increases the cashier drawer. Recovery reduces it and records the settlement.' | translate }}
         </div>
       </div>
     </section>
@@ -341,22 +408,23 @@
 
   @if (activeView === 'records') {
     <section class="section-title">
-      <h2>Drawer records</h2>
-      <p>Allocation, member cash movements and settlements for the selected cashier.</p>
+      <h2>{{ 'Drawer records' | translate }}</h2>
+      <p>{{ 'Allocation, member cash movements and settlements for the selected cashier.' | translate }}</p>
     </section>
     <section class="panel records-list">
       @for (record of cashierSummary?.cashierTransactions?.pageItems || []; track record.id || $index) {
         <div class="record-row">
           <div>
-            <strong>{{ record.entityType || record.transactionType || 'Drawer movement' }}</strong
+            <strong>{{ record.entityType || record.transactionType || ('Drawer movement' | translate) }}</strong
             ><small
-              >{{ record.txnDate || record.transactionDate }} · {{ record.txnNote || record.note || 'No note' }}</small
+              >{{ record.txnDate || record.transactionDate }} ·
+              {{ record.txnNote || record.note || ('No note' | translate) }}</small
             >
           </div>
           <div>{{ currencyCodeFor(record) }} {{ record.amount || record.txnAmount || 0 | number }}</div>
         </div>
       } @empty {
-        <div class="empty-state">No drawer records were returned.</div>
+        <div class="empty-state">{{ 'No drawer records were returned.' | translate }}</div>
       }
     </section>
   }

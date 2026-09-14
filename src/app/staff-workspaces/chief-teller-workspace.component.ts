@@ -11,7 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
-import { finalize, of, switchMap } from 'rxjs';
+import { finalize, of, skip, switchMap } from 'rxjs';
 
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
 import { ChiefTellerWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
@@ -57,7 +57,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   credentials = this.authenticationService.getCredentials();
-  activeView: ChiefTellerWorkspaceView = 'drawers';
+  activeView: ChiefTellerWorkspaceView | 'home' = 'home';
   tellers: any[] = [];
   cashiers: any[] = [];
   selectedTeller: any = null;
@@ -120,6 +120,31 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     ]);
   }
 
+  get workflowTitle(): string {
+    const titles: Record<ChiefTellerWorkspaceView, string> = {
+      drawers: 'Cashier drawers',
+      movement: this.selectedAction === 'allocate' ? 'Allocate cash' : 'Recover cash',
+      approvals: 'Approvals',
+      reconciliation: 'Reconciliation',
+      records: 'Drawer records'
+    };
+    return this.activeView === 'home' ? 'Chief Teller home' : titles[this.activeView];
+  }
+
+  get workflowDescription(): string {
+    const descriptions: Record<ChiefTellerWorkspaceView, string> = {
+      drawers: 'Review the current cash position for a cashier drawer.',
+      movement:
+        this.selectedAction === 'allocate' ? 'Issue cash to a cashier drawer.' : 'Recover cash from a cashier drawer.',
+      approvals: 'Review and decide requests that require Chief Teller authority.',
+      reconciliation: 'Review the cash count and approve the end-of-shift handover.',
+      records: 'Review cash movements recorded for the selected cashier.'
+    };
+    return this.activeView === 'home'
+      ? 'Control cashier drawers and approve daily cash operations.'
+      : descriptions[this.activeView];
+  }
+
   currencyCodeFor(source: unknown): string {
     return resolveTellerCurrencyCode([
       source,
@@ -142,10 +167,11 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
         view === 'reconciliation' ||
         view === 'records'
       ) {
+        this.activeView = view;
         this.workspaceNavigation.setChiefTellerView(view);
       }
     });
-    this.workspaceNavigation.chiefTellerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+    this.workspaceNavigation.chiefTellerView$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
       this.setView(view);
       this.changeDetectorRef.markForCheck();
     });
@@ -157,6 +183,21 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     this.activeView = view;
     if (view === 'approvals') this.loadApprovals();
     if (view === 'reconciliation') this.loadSelectedShift();
+  }
+
+  showHome(): void {
+    this.activeView = 'home';
+    this.pendingMovement = null;
+    this.message = '';
+  }
+
+  openMovement(action: DrawerAction): void {
+    if (this.submitting) return;
+    this.selectedAction = action;
+    this.setView('movement');
+    this.pendingMovement = null;
+    this.lastReference = null;
+    this.movementForm.reset();
   }
 
   loadTellers(): void {
@@ -240,11 +281,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
 
   chooseMovement(action: DrawerAction): void {
     if (this.submitting) return;
-    this.selectedAction = action;
-    this.activeView = 'movement';
-    this.pendingMovement = null;
-    this.lastReference = null;
-    this.movementForm.reset();
+    this.openMovement(action);
   }
 
   prepareMovement(): void {

@@ -5,6 +5,133 @@
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
+:host:has(.home-view) {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.staff-workspace.chief-teller-page {
+  max-width: 1500px;
+  padding: 8px 24px 24px;
+}
+
+.chief-teller-home {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.chief-home-card {
+  border: 0;
+  border-radius: 24px;
+  background: var(--md-sys-color-surface, #fff);
+  box-shadow: 0 16px 40px rgb(31 55 100 / 10%);
+}
+
+.chief-home-card mat-card-content {
+  padding: 24px;
+}
+
+.chief-home-card h1 {
+  margin: 0;
+  color: var(--md-sys-color-on-surface, #111827);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.chief-home-card > mat-card-content > p {
+  margin: 8px 0 24px;
+  color: var(--md-sys-color-on-surface-variant, #68758c);
+  font-size: 14px;
+}
+
+.chief-home-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.chief-home-actions button {
+  display: flex;
+  min-height: 96px;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  color: var(--md-sys-color-on-surface, #111827);
+  background: var(--md-sys-color-surface, #fff);
+  box-shadow:
+    0 8px 24px rgb(15 23 42 / 8%),
+    0 1px 2px rgb(15 23 42 / 8%);
+  text-align: left;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.chief-home-actions button:hover,
+.chief-home-actions button:focus-visible {
+  color: #fff;
+  background: var(--md-sys-color-primary, #2b55a2);
+  box-shadow: 0 12px 32px rgb(36 77 154 / 22%);
+  transform: translateY(-2px);
+}
+
+.chief-home-actions button span,
+.chief-home-actions button strong,
+.chief-home-actions button small {
+  display: block;
+}
+
+.chief-home-actions button small {
+  margin-top: 4px;
+  color: var(--md-sys-color-on-surface-variant, #68758c);
+  white-space: normal;
+}
+
+.chief-home-actions button:hover small,
+.chief-home-actions button:focus-visible small {
+  color: rgb(255 255 255 / 80%);
+}
+
+.chief-action-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  fill: currentcolor;
+}
+
+.chief-workflow-header {
+  display: flex;
+  max-width: 1280px;
+  align-items: center;
+  gap: 16px;
+  margin: 0 auto 16px;
+  padding: 8px 0;
+}
+
+.chief-workflow-header h1,
+.chief-workflow-header p {
+  margin: 0;
+}
+
+.chief-workflow-header h1 {
+  color: var(--md-sys-color-on-surface, #17213a);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.chief-workflow-header p {
+  margin-top: 4px;
+  color: var(--md-sys-color-on-surface-variant, #68758c);
+}
+
+.chief-workflow-header button {
+  color: var(--md-sys-color-on-surface, #17213a);
+}
+
 .staff-workspace {
   padding: 30px 34px 48px;
 }
@@ -43,6 +170,56 @@
   align-items: center;
   margin-bottom: 22px;
   padding: 20px 24px;
+}
+
+.chief-teller-page > .drawer-selector,
+.chief-teller-page > .panel,
+.chief-teller-page > .summary-grid,
+.chief-teller-page > .workspace-grid,
+.chief-teller-page > .section-title {
+  max-width: 1280px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.chief-teller-page > .drawer-selector {
+  margin-bottom: 16px;
+  padding: 16px 24px;
+  border: 0;
+  background: var(--md-sys-color-surface, #fff);
+  box-shadow: 0 8px 24px rgb(31 55 100 / 8%);
+}
+
+.chief-teller-page > .drawer-selector .form-grid {
+  gap: 16px;
+}
+
+.selected-drawer-line {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.selected-drawer-line > mat-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--md-sys-color-primary, #2b55a2);
+  font-size: 24px;
+}
+
+.selected-drawer-line span,
+.selected-drawer-line small,
+.selected-drawer-line strong {
+  display: block;
+}
+
+.selected-drawer-line small {
+  color: var(--md-sys-color-on-surface-variant, #68758c);
 }
 
 .selector-heading {
@@ -196,6 +373,10 @@
 }
 
 @media (max-width: 850px) {
+  .chief-home-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .drawer-selector {
     grid-template-columns: 1fr;
   }
@@ -208,7 +389,7 @@
 
 @media (max-width: 680px) {
   .staff-workspace {
-    padding: 18px 14px 32px;
+    padding: 16px;
   }
 
   .workspace-tabs {
@@ -216,6 +397,18 @@
   }
 
   .drawer-selector {
-    padding: 18px;
+    padding: 16px;
+  }
+
+  .chief-home-card mat-card-content {
+    padding: 24px;
+  }
+
+  .chief-home-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .chief-workflow-header {
+    align-items: flex-start;
   }
 }
