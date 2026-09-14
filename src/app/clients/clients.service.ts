@@ -12,9 +12,10 @@ import { HttpClient, HttpParams, HttpBackend, HttpHeaders, HttpContext } from '@
 
 /** rxjs Imports */
 import { Observable, forkJoin, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, shareReplay, switchMap } from 'rxjs/operators';
 
 import { environment } from 'environments/environment';
+import { AuthenticationService } from 'app/core/authentication/authentication.service';
 import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.interceptor';
 
 /**
@@ -26,6 +27,8 @@ import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.intercept
 export class ClientsService {
   private http = inject(HttpClient);
   private httpBackend = inject(HttpBackend);
+  private authenticationService = inject(AuthenticationService);
+  private cashierClientTemplateCache: { key: string; request: Observable<any> } | null = null;
 
   /** Separate HttpClient that bypasses interceptors (for external API calls) */
   private externalHttp = new HttpClient(this.httpBackend);
@@ -100,6 +103,32 @@ export class ClientsService {
 
   getClientTemplate(): Observable<any> {
     return this.http.get('/clients/template');
+  }
+
+  getCashierClientTemplate(): Observable<any> {
+    const credentials = this.authenticationService.getCredentials();
+    const cacheKey = `${credentials?.username ?? ''}:${credentials?.officeId ?? ''}`;
+    if (this.cashierClientTemplateCache?.key === cacheKey) return this.cashierClientTemplateCache.request;
+
+    const request = this.http.get('/clients/template').pipe(
+      shareReplay({ bufferSize: 1, refCount: false }),
+      catchError((error: unknown) => {
+        this.cashierClientTemplateCache = null;
+        return throwError(() => error);
+      })
+    );
+    this.cashierClientTemplateCache = { key: cacheKey, request };
+    return request;
+  }
+
+  getCashierAddressFieldConfiguration(): Observable<any> {
+    return this.getCashierClientTemplate().pipe(
+      switchMap((template: any) => {
+        if (template?.isAddressEnabled) return this.getAddressFieldConfiguration();
+        console.info('[CashierOnboardingPerformance]', { event: 'address-configuration.skipped' });
+        return of([]);
+      })
+    );
   }
 
   getClientWithOfficeTemplate(officeId: number): Observable<any> {

@@ -261,6 +261,7 @@ export class CashierWorkspaceComponent implements OnInit {
     this.loadDrawer();
     this.loadApprovedLoanQueue();
     this.loadKnownReversals();
+    this.preloadMemberOnboarding();
   }
 
   @HostListener('wheel', ['$event'])
@@ -1611,6 +1612,28 @@ export class CashierWorkspaceComponent implements OnInit {
       this.reversalRequests = requests.filter((request): request is TellerReversal => request !== null);
       this.changeDetectorRef.markForCheck();
     });
+  }
+
+  private preloadMemberOnboarding(): void {
+    const startedAt = performance.now();
+    console.info('[CashierOnboardingPerformance]', { event: 'template-prefetch.start' });
+    this.clientsService
+      .getCashierClientTemplate()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (template: any) =>
+          console.info('[CashierOnboardingPerformance]', {
+            event: 'template-prefetch.complete',
+            durationMs: Math.round(performance.now() - startedAt),
+            addressEnabled: !!template?.isAddressEnabled
+          }),
+        error: (error: unknown) =>
+          console.warn('[CashierOnboardingPerformance]', {
+            event: 'template-prefetch.failed',
+            durationMs: Math.round(performance.now() - startedAt),
+            status: typeof error === 'object' && error !== null && 'status' in error ? error.status : null
+          })
+      });
   }
 
   private rememberReversal(reversal: TellerReversal): void {

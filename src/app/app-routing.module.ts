@@ -8,7 +8,7 @@
 
 /** Angular Imports */
 import { inject, NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { Router, Routes, RouterModule } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 
 // Not Found Component
@@ -22,6 +22,9 @@ import { Route } from './core/route/route.service';
 const CASHIER_ONBOARDING_PERFORMANCE_MARK = 'mifosx.cashier-onboarding.navigation-start';
 
 function logCashierOnboardingNavigationStart(): boolean {
+  const isCashierOnboarding =
+    inject(Router).getCurrentNavigation()?.extractedUrl.queryParamMap.get('workspace') === 'cashier';
+  if (!isCashierOnboarding) return false;
   performance.clearMarks(CASHIER_ONBOARDING_PERFORMANCE_MARK);
   performance.mark(CASHIER_ONBOARDING_PERFORMANCE_MARK);
   console.info('[CashierOnboardingPerformance]', {
@@ -105,13 +108,13 @@ const routes: Routes = [
         clientAddressFieldConfig: () =>
           timedCashierOnboardingRequest(
             'address-field-configuration',
-            () => inject(ClientsService).getAddressFieldConfiguration(),
+            () => inject(ClientsService).getCashierAddressFieldConfiguration(),
             (response: any) => ({ fields: Array.isArray(response) ? response.length : 0 })
           ),
         clientTemplate: () =>
           timedCashierOnboardingRequest(
             'client-template',
-            () => inject(ClientsService).getClientTemplate(),
+            () => inject(ClientsService).getCashierClientTemplate(),
             (response: any) => ({
               offices: response?.officeOptions?.length ?? 0,
               staff: response?.staffOptions?.length ?? 0,
