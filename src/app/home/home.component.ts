@@ -86,6 +86,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
   /** Shows the focused workspace to dedicated Vault Officer users. */
   isVaultOfficerWorkspace = false;
   isComplianceOfficerWorkspace = false;
+  /** Shows the focused workspace to Branch Managers. */
+  isBranchManagerWorkspace = false;
   /** Activity Form. */
   activityForm: any;
   /** Search Text. */
@@ -116,6 +118,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
     this.username = credentials.username;
     this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.tenant = this.tenantIdentifier();
+    this.isBranchManagerWorkspace = this.hasRole(credentials.roles, 'branch manager');
     this.isChiefTellerWorkspace = this.shouldShowFocusedWorkspace(credentials.roles, 'chief teller');
     this.isVaultOfficerWorkspace =
       !this.isChiefTellerWorkspace && this.shouldShowFocusedWorkspace(credentials.roles, 'vault officer');
@@ -126,6 +129,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       !this.isChiefTellerWorkspace &&
       !this.isCashierWorkspace &&
       this.shouldShowFocusedWorkspace(credentials.roles, 'loan officer');
+    if (this.isBranchManagerWorkspace) {
+      this.router.navigate(['/staff-workspaces/manager'], { queryParams: { view: 'home' }, replaceUrl: true });
+      return;
+    }
     if (this.isChiefTellerWorkspace) {
       this.router.navigate(['/staff-workspaces/chief-teller'], { replaceUrl: true });
       return;
@@ -150,8 +157,7 @@ export class HomeComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Keeps managers and administrators on the full home screen when they also
-   * carry the Loan Officer role. Dedicated loan officers get the simpler view.
+   * Keeps elevated multi-role users out of focused staff workspaces.
    */
   private shouldShowFocusedWorkspace(roles: any, workspaceRole: string): boolean {
     if (!Array.isArray(roles)) {
@@ -176,6 +182,14 @@ export class HomeComponent implements OnInit, AfterViewInit {
     }
 
     return roleNames.includes(workspaceRole) && !roleNames.some((role: string) => elevatedRoles.includes(role));
+  }
+
+  private hasRole(roles: any, expectedRole: string): boolean {
+    if (!Array.isArray(roles)) return false;
+    return roles.some((role: any) => {
+      const name = typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '';
+      return String(name).trim().toLowerCase() === expectedRole;
+    });
   }
 
   /**
@@ -222,7 +236,8 @@ export class HomeComponent implements OnInit, AfterViewInit {
       this.isLoanOfficerWorkspace ||
       this.isCashierWorkspace ||
       this.isChiefTellerWorkspace ||
-      this.isComplianceOfficerWorkspace
+      this.isComplianceOfficerWorkspace ||
+      this.isBranchManagerWorkspace
     ) {
       return;
     }

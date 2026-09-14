@@ -1,0 +1,152 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+.expense-workspace {
+  display: grid;
+  max-width: 1280px;
+  margin: 0 auto;
+  gap: 16px;
+  padding: 24px;
+}
+
+.expense-heading mat-card-content,
+.expense-summary,
+.approval-row,
+.payment-list button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.expense-heading h1 {
+  margin: 4px 0;
+}
+
+.expense-heading p,
+.approval-row span,
+.payment-list small {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.eyebrow {
+  color: #465267;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--md-sys-color-on-tertiary-container);
+  background: var(--md-sys-color-tertiary-container);
+}
+
+.message.error {
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+}
+
+.section-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.section-navigation .active {
+  color: #fff;
+  background: #17213a;
+}
+
+.expense-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.controls {
+  display: grid;
+  gap: 8px;
+}
+
+.calculated-total {
+  display: grid;
+  align-content: center;
+  min-height: 56px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background: var(--md-sys-color-surface-container);
+}
+
+.expense-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.approval-note {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.approval-list,
+.payment-list,
+.payment-form {
+  display: grid;
+  gap: 16px;
+}
+
+.approval-row {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.approval-row > div:first-child,
+.payment-list button span {
+  display: grid;
+  text-align: left;
+}
+
+.payment-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.7fr);
+  gap: 16px;
+}
+
+.payment-list button {
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 16px;
+}
+
+.payment-list button.selected {
+  background: #f0f1f3;
+}
+
+@media (max-width: 900px) {
+  .expense-form,
+  .payment-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .wide {
+    grid-column: auto;
+  }
+
+  .approval-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

@@ -16,7 +16,8 @@
     workspaceRole === 'cashier' ||
     workspaceRole === 'loan-officer' ||
     workspaceRole === 'chief-teller' ||
-    workspaceRole === 'vault-officer'
+    workspaceRole === 'vault-officer' ||
+    workspaceRole === 'manager'
   ) {
     <div class="cashier-side-panel">
       <div class="cashier-sidebar-header">
@@ -46,7 +47,9 @@
                   ? 'Chief Teller portal'
                   : workspaceRole === 'vault-officer'
                     ? 'Vault Officer portal'
-                    : 'Loan Officer portal'
+                    : workspaceRole === 'manager'
+                      ? 'Branch Manager portal'
+                      : 'Loan Officer portal'
             }}</small>
           </div>
         </div>
@@ -60,7 +63,9 @@
               ? 'Chief Teller navigation'
               : workspaceRole === 'vault-officer'
                 ? 'Vault Officer navigation'
-                : 'Loan Officer navigation'
+                : workspaceRole === 'manager'
+                  ? 'Branch Manager navigation'
+                  : 'Loan Officer navigation'
         "
       >
         @for (link of workspaceLinks; track link.view) {
@@ -88,9 +93,11 @@
                     ? 'Chief Teller'
                     : workspaceRole === 'vault-officer'
                       ? 'Vault Officer'
-                      : workspaceRole === 'compliance-officer'
-                        ? 'Compliance Officer'
-                        : 'Loan Officer'
+                      : workspaceRole === 'manager'
+                        ? 'Branch Manager'
+                        : workspaceRole === 'compliance-officer'
+                          ? 'Compliance Officer'
+                          : 'Loan Officer'
               }}
               · {{ officeName }}</small
             ></span
@@ -285,6 +292,17 @@
                 <fa-icon icon="sync" size="sm"></fa-icon>
               </mat-icon>
               <a matLine #frequentPostings>{{ 'labels.menus.Frequent Postings' | translate }}</a>
+            </mat-list-item>
+            <mat-list-item
+              [routerLink]="['/staff-workspaces/expenses']"
+              [matTooltipPosition]="tooltipPosition"
+              [matTooltip]="'Expense management' | translate"
+              routerLinkActive="active-menu"
+              [routerLinkActiveOptions]="{ exact: false }"
+              *mifosxHasPermission="'READ_PEWOSAEXPENSE'"
+            >
+              <mat-icon matListIcon>receipt_long</mat-icon>
+              <a matLine>{{ 'Expense management' | translate }}</a>
             </mat-list-item>
             <mat-list-item
               [routerLink]="['/accounting/journal-entries/create']"

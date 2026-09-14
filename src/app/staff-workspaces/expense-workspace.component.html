@@ -1,0 +1,319 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<section class="expense-workspace">
+  <mat-card appearance="outlined" class="expense-heading">
+    <mat-card-content>
+      <div>
+        <span class="eyebrow">{{ 'Expenses' | translate }}</span>
+        <h1>{{ (paymentOnly ? 'Authorized expense payments' : 'Expense management') | translate }}</h1>
+        <p>
+          {{
+            (paymentOnly
+              ? 'Pay only approved expenses from an active cash drawer.'
+              : 'Request, approve and track operational expenses with accounting controls.'
+            ) | translate
+          }}
+        </p>
+      </div>
+      <button mat-stroked-button type="button" [disabled]="loading" (click)="refresh()">
+        {{ 'Refresh' | translate }}
+      </button>
+    </mat-card-content>
+  </mat-card>
+
+  @if (message) {
+    <div class="message" [class.error]="messageType === 'error'">{{ message | translate }}</div>
+  }
+
+  @if (!paymentOnly) {
+    <nav class="section-navigation" [attr.aria-label]="'Expense sections' | translate">
+      @if (canCreate) {
+        <button mat-button type="button" [class.active]="activeSection === 'request'" (click)="setSection('request')">
+          {{ 'New request' | translate }}
+        </button>
+      }
+      <button mat-button type="button" [class.active]="activeSection === 'requests'" (click)="setSection('requests')">
+        {{ 'Requests' | translate }}
+      </button>
+      @if (canApprove) {
+        <button
+          mat-button
+          type="button"
+          [class.active]="activeSection === 'approvals'"
+          (click)="setSection('approvals')"
+        >
+          {{ 'Approvals' | translate }}
+        </button>
+      }
+      @if (canPay) {
+        <button mat-button type="button" [class.active]="activeSection === 'payments'" (click)="setSection('payments')">
+          {{ 'Payments' | translate }}
+        </button>
+      }
+    </nav>
+  }
+
+  @if (!paymentOnly && activeSection === 'request') {
+    <mat-card appearance="outlined">
+      <mat-card-header>
+        <mat-card-title>{{ 'New expense request' | translate }}</mat-card-title>
+        <mat-card-subtitle>{{ 'The request remains a draft until you submit it.' | translate }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="expenseForm" class="expense-form">
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Department' | translate }}</mat-label>
+            <input matInput formControlName="department" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Vendor or payee' | translate }}</mat-label>
+            <input matInput formControlName="vendorName" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Invoice number' | translate }}</mat-label>
+            <input matInput formControlName="invoiceNumber" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Budget line' | translate }}</mat-label>
+            <input matInput formControlName="budgetLine" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="wide">
+            <mat-label>{{ 'Description' | translate }}</mat-label>
+            <textarea matInput rows="3" formControlName="description"></textarea>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Currency' | translate }}</mat-label>
+            <input matInput maxlength="3" formControlName="currencyCode" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Expense GL account' | translate }}</mat-label>
+            <mat-select formControlName="expenseGlAccountId">
+              @for (account of expenseAccounts; track account.id) {
+                <mat-option [value]="account.id">{{ account.glCode }} · {{ account.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Cash payment GL account' | translate }}</mat-label>
+            <mat-select formControlName="paymentGlAccountId">
+              @for (account of assetAccounts; track account.id) {
+                <mat-option [value]="account.id">{{ account.glCode }} · {{ account.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Net amount' | translate }}</mat-label>
+            <input matInput type="number" min="0" formControlName="netAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'VAT amount' | translate }}</mat-label>
+            <input matInput type="number" min="0" formControlName="vatAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'VAT input GL account' | translate }}</mat-label>
+            <mat-select formControlName="vatGlAccountId">
+              <mat-option [value]="null">{{ 'None' | translate }}</mat-option>
+              @for (account of assetAccounts; track account.id) {
+                <mat-option [value]="account.id">{{ account.glCode }} · {{ account.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Withholding amount' | translate }}</mat-label>
+            <input matInput type="number" min="0" formControlName="withholdingAmount" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>{{ 'Withholding GL account' | translate }}</mat-label>
+            <mat-select formControlName="withholdingGlAccountId">
+              <mat-option [value]="null">{{ 'None' | translate }}</mat-option>
+              @for (account of liabilityAccounts; track account.id) {
+                <mat-option [value]="account.id">{{ account.glCode }} · {{ account.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <div class="calculated-total">
+            <span>{{ 'Payable amount' | translate }}</span>
+            <strong>{{ expenseForm.controls['currencyCode'].value }} {{ payableAmount | number }}</strong>
+          </div>
+          <div class="controls wide">
+            <mat-checkbox formControlName="supportingDocumentsConfirmed">
+              {{ 'Supporting documents have been checked' | translate }}
+            </mat-checkbox>
+            <mat-checkbox formControlName="budgetConfirmed">
+              {{ 'Budget availability has been confirmed' | translate }}
+            </mat-checkbox>
+          </div>
+        </form>
+      </mat-card-content>
+      <mat-card-actions align="end">
+        <button mat-raised-button color="primary" type="button" [disabled]="submitting" (click)="createExpense()">
+          {{ 'Save draft' | translate }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  }
+
+  @if (!paymentOnly && activeSection === 'requests') {
+    <div class="expense-grid">
+      @for (expense of expenses; track expense.reference) {
+        <mat-card appearance="outlined">
+          <mat-card-header>
+            <mat-card-title>{{ expense.vendorName }}</mat-card-title>
+            <mat-card-subtitle>{{ expense.reference }} · {{ expense.status | translate }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <p>{{ expense.description }}</p>
+            <div class="expense-summary">
+              <span>{{ expense.department }}</span>
+              <strong>{{ expense.currencyCode }} {{ expense.payableAmount | number }}</strong>
+            </div>
+          </mat-card-content>
+          @if (expense.status === 'DRAFT' && expense.requesterId) {
+            <mat-card-actions align="end">
+              <button
+                mat-raised-button
+                color="primary"
+                type="button"
+                [disabled]="submitting"
+                (click)="submitExpense(expense)"
+              >
+                {{ 'Submit for approval' | translate }}
+              </button>
+            </mat-card-actions>
+          }
+        </mat-card>
+      } @empty {
+        <mat-card appearance="outlined"
+          ><mat-card-content>{{ 'No expense requests found.' | translate }}</mat-card-content></mat-card
+        >
+      }
+    </div>
+  }
+
+  @if (!paymentOnly && activeSection === 'approvals') {
+    <mat-card appearance="outlined">
+      <mat-card-header
+        ><mat-card-title>{{ 'Pending expense approvals' | translate }}</mat-card-title></mat-card-header
+      >
+      <mat-card-content>
+        <form [formGroup]="approvalForm">
+          <mat-form-field appearance="outline" class="approval-note">
+            <mat-label>{{ 'Decision note' | translate }}</mat-label>
+            <textarea matInput formControlName="note"></textarea>
+          </mat-form-field>
+        </form>
+        <div class="approval-list">
+          @for (approval of approvals; track approval.id) {
+            <div class="approval-row">
+              <div>
+                <strong>{{ approval.vendorName || approval.expenseReference }}</strong>
+                <span>{{ approval.description }} · {{ approval.requiredRole }}</span>
+              </div>
+              <strong>{{ approval.currencyCode }} {{ approval.payableAmount | number }}</strong>
+              <div>
+                <button mat-button type="button" [disabled]="submitting" (click)="decide(approval, 'REJECT')">
+                  {{ 'Reject' | translate }}
+                </button>
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="button"
+                  [disabled]="submitting"
+                  (click)="decide(approval, 'APPROVE')"
+                >
+                  {{ 'Approve' | translate }}
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <p>{{ 'No expense approvals are waiting for your role.' | translate }}</p>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if ((paymentOnly || activeSection === 'payments') && canPay) {
+    <div class="payment-layout">
+      <mat-card appearance="outlined">
+        <mat-card-header
+          ><mat-card-title>{{ 'Authorized expenses' | translate }}</mat-card-title></mat-card-header
+        >
+        <mat-card-content class="payment-list">
+          @for (expense of expenses; track expense.reference) {
+            @if (expense.status === 'AUTHORIZED') {
+              <button
+                mat-button
+                type="button"
+                [class.selected]="selectedExpense?.id === expense.id"
+                (click)="selectForPayment(expense)"
+              >
+                <span
+                  ><strong>{{ expense.vendorName }}</strong
+                  ><small>{{ expense.reference }} · {{ expense.description }}</small></span
+                >
+                <strong>{{ expense.currencyCode }} {{ expense.payableAmount | number }}</strong>
+              </button>
+            }
+          } @empty {
+            <p>{{ 'No authorized expenses are waiting for payment.' | translate }}</p>
+          }
+        </mat-card-content>
+      </mat-card>
+      <mat-card appearance="outlined">
+        <mat-card-header
+          ><mat-card-title>{{ 'Cash payment controls' | translate }}</mat-card-title></mat-card-header
+        >
+        <mat-card-content>
+          @if (selectedExpense) {
+            <p>
+              <strong>{{ selectedExpense.vendorName }}</strong> · {{ selectedExpense.reference }}
+            </p>
+            <form [formGroup]="paymentForm" class="payment-form">
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'Cash payment type' | translate }}</mat-label>
+                <mat-select formControlName="paymentTypeId">
+                  @for (type of paymentTypes; track type.id) {
+                    <mat-option [value]="type.id">{{ type.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>{{ 'Counted cash amount' | translate }}</mat-label>
+                <input matInput type="number" min="0" formControlName="countedAmount" />
+              </mat-form-field>
+              <mat-checkbox formControlName="payeeAcknowledged">
+                {{ 'Payee identity and receipt acknowledgement confirmed' | translate }}
+              </mat-checkbox>
+            </form>
+          } @else {
+            <p>{{ 'Select an authorized expense to continue.' | translate }}</p>
+          }
+        </mat-card-content>
+        <mat-card-actions align="end">
+          <button
+            mat-raised-button
+            color="primary"
+            type="button"
+            [disabled]="!selectedExpense || submitting"
+            (click)="payExpense()"
+          >
+            {{ 'Pay and post expense' | translate }}
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  }
+
+  @if (paymentOnly && !canPay) {
+    <mat-card appearance="outlined">
+      <mat-card-content>{{ 'You do not have permission to pay expenses.' | translate }}</mat-card-content>
+    </mat-card>
+  }
+</section>

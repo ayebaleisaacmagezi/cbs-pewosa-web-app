@@ -52,6 +52,7 @@ import {
   CashierWorkspaceView,
   ChiefTellerWorkspaceView,
   LoanOfficerWorkspaceView,
+  ManagerWorkspaceView,
   VaultWorkspaceView,
   WorkspaceNavigationService
 } from '../workspace-navigation.service';
@@ -64,6 +65,9 @@ const WORKSPACE_ICON_PATHS: Record<string, string> = {
     'M7 7h11l-4-4 1.4-1.4L21.8 8l-6.4 6.4L14 13l4-4H7V7zm10 10H6l4 4-1.4 1.4L2.2 16l6.4-6.4L10 11l-4 4h11v2z',
   drawer:
     'M21 7V6c0-1.1-.9-2-2-2H5a3 3 0 0 0 0 6h14v2h-3a3 3 0 0 0 0 6h3v2H5a3 3 0 0 1-3-3V7.5A3.5 3.5 0 0 1 5 4h14c1.1 0 2 .9 2 2v1zm-5 7a1 1 0 1 0 0 2h5v-2h-5z',
+  expenses: 'M20 6h-3V4H7v2H4v15h16V6zm-5 0H9V5h6v1zm1 11H8v-2h8v2zm0-4H8v-2h8v2z',
+  operations: 'M12 2 2 7v2h20V7L12 2zm-7 9v8H3v2h18v-2h-2v-8h-2v8h-4v-8h-2v8H7v-8H5z',
+  reports: 'M4 3h16v18H4V3zm3 14h2v-5H7v5zm4 0h2V7h-2v10zm4 0h2V9h-2v8z',
   reversals: 'M7.5 7H16a5 5 0 0 1 0 10h-4v-2h4a3 3 0 0 0 0-6H7.5l3 3L9 13.5 3.5 8 9 2.5 10.5 4l-3 3z',
   drawers: 'M4 10h16v9h2v2H2v-2h2v-9zm2 2v7h3v-7H6zm5 0v7h2v-7h-2zm4 0v7h3v-7h-3zM12 2l10 5v2H2V7l10-5z',
   movement: 'M7 7h9l-3-3 1.4-1.4L19.8 8l-5.4 5.4L13 12l3-3H7V7zm10 10H8l3 3-1.4 1.4L4.2 16l5.4-5.4L11 12l-3 3h9v2z',
@@ -135,7 +139,14 @@ export class SidenavComponent implements OnInit, AfterViewInit {
   /** Whether remittance feature is enabled */
   mifosRemittanceEnabled = remittanceConfig.isRemittanceEnabled;
   /** Focused operational workspace for dedicated staff roles. */
-  workspaceRole: 'cashier' | 'chief-teller' | 'loan-officer' | 'vault-officer' | 'compliance-officer' | null = null;
+  workspaceRole:
+    | 'cashier'
+    | 'chief-teller'
+    | 'loan-officer'
+    | 'vault-officer'
+    | 'compliance-officer'
+    | 'manager'
+    | null = null;
 
   toggleWorkspaceSidebar(): void {
     this.collapse.emit(!this.sidenavCollapsed);
@@ -173,7 +184,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     this.username = credentials.username;
     this.staffDisplayName = credentials.staffDisplayName || credentials.username;
     this.officeName = credentials.officeName;
-    this.setWorkspaceNavigation(credentials.roles);
+    this.setWorkspaceNavigation(credentials.roles, credentials.permissions || []);
     if (this.workspaceRole === 'cashier') {
       const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
       if (this.isCashierView(requestedView)) this.workspaceNavigation.setCashierView(requestedView);
@@ -202,11 +213,18 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       });
     } else if (this.workspaceRole === 'compliance-officer') {
       this.activeWorkspaceView = 'cases';
+    } else if (this.workspaceRole === 'manager') {
+      const requestedView = this.router.parseUrl(this.router.url).queryParams['view'];
+      if (this.isManagerView(requestedView)) this.workspaceNavigation.setManagerView(requestedView);
+      this.workspaceNavigation.managerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
+        this.activeWorkspaceView = view;
+        this.changeDetectorRef.markForCheck();
+      });
     }
     this.setMappedAcitivites();
   }
 
-  private setWorkspaceNavigation(roles: any): void {
+  private setWorkspaceNavigation(roles: any, permissions: string[]): void {
     if (!Array.isArray(roles)) return;
     const roleNames = roles.map((role: any) =>
       String(typeof role === 'string' ? role : role?.name || role?.displayName || role?.roleName || '')
@@ -221,6 +239,17 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       'accountant',
       'it officer'
     ];
+    if (roleNames.includes('branch manager')) {
+      this.workspaceRole = 'manager';
+      this.workspaceLinks = [
+        { label: 'Manager overview', view: 'home' },
+        { label: 'Approvals', view: 'approvals' },
+        { label: 'Expenses', view: 'expenses' },
+        { label: 'Branch operations', view: 'operations' },
+        { label: 'Reports', view: 'reports' }
+      ];
+      return;
+    }
     if (roleNames.includes('chief teller')) {
       this.workspaceRole = 'chief-teller';
       this.workspaceLinks = [
@@ -253,6 +282,9 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: "Today's transactions", view: 'records' },
         { label: 'Receipts', view: 'receipts' }
       ];
+      if (permissions.includes('ALL_FUNCTIONS') || permissions.includes('PAY_PEWOSAEXPENSE')) {
+        this.workspaceLinks.splice(2, 0, { label: 'Expense payments', view: 'expenses' });
+      }
     } else if (roleNames.includes('loan officer')) {
       this.workspaceRole = 'loan-officer';
       this.workspaceLinks = [
@@ -278,6 +310,8 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     } else if (this.workspaceRole === 'compliance-officer' && view === 'cases') {
       void this.router.navigate(['/staff-workspaces/compliance-officer']);
       return;
+    } else if (this.workspaceRole === 'manager' && this.isManagerView(view)) {
+      this.workspaceNavigation.setManagerView(view);
     } else {
       return;
     }
@@ -306,6 +340,7 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       view === 'home' ||
       view === 'transactions' ||
       view === 'drawer' ||
+      view === 'expenses' ||
       view === 'reversals' ||
       view === 'records' ||
       view === 'receipts'
@@ -330,9 +365,16 @@ export class SidenavComponent implements OnInit, AfterViewInit {
     return view === 'requests';
   }
 
+  private isManagerView(view: string | undefined): view is ManagerWorkspaceView {
+    return (
+      view === 'home' || view === 'approvals' || view === 'expenses' || view === 'operations' || view === 'reports'
+    );
+  }
+
   get workspaceHomeView(): string {
     if (this.workspaceRole === 'chief-teller') return 'drawers';
     if (this.workspaceRole === 'vault-officer') return 'requests';
+    if (this.workspaceRole === 'manager') return 'home';
     return 'home';
   }
 

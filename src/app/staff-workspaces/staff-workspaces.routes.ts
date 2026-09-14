@@ -32,6 +32,18 @@ export const STAFF_WORKSPACE_ROUTES: Routes = [
       data: { title: 'Cashier workspace', workspaceRole: 'cashier' }
     },
     {
+      path: 'expenses',
+      loadComponent: () => import('./expense-workspace.component').then((m) => m.ExpenseWorkspaceComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Expense management', permission: 'READ_PEWOSAEXPENSE' }
+    },
+    {
+      path: 'manager',
+      loadComponent: () => import('./manager-workspace.component').then((m) => m.ManagerWorkspaceComponent),
+      canActivate: [staffWorkspaceGuard],
+      data: { title: 'Branch Manager portal', workspaceRole: 'branch manager' }
+    },
+    {
       path: 'chief-teller',
       loadComponent: () => import('./chief-teller-workspace.component').then((m) => m.ChiefTellerWorkspaceComponent),
       canActivate: [staffWorkspaceGuard],

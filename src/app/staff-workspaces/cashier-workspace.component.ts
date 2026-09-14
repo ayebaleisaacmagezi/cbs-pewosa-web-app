@@ -25,6 +25,7 @@ import { SharesService } from 'app/shares/shares.service';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import { CashierWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
 import { MemberSearchComponent } from './member-search/member-search.component';
+import { ExpenseWorkspaceComponent } from './expense-workspace.component';
 import {
   CashierMemberContext,
   CashierTransactionDraft,
@@ -61,7 +62,8 @@ function cashCountMatchesAmount(control: AbstractControl): ValidationErrors | nu
     ...STANDALONE_SHARED_IMPORTS,
     MatIconButton,
     MatIcon,
-    MemberSearchComponent
+    MemberSearchComponent,
+    ExpenseWorkspaceComponent
   ],
   templateUrl: './cashier-workspace.component.html',
   styleUrls: ['./cashier-workspace.component.scss']
@@ -302,7 +304,8 @@ export class CashierWorkspaceComponent implements OnInit {
       LOAN_REPAYMENT: 'Loan repayment',
       LOAN_DISBURSEMENT: 'Loan disbursement',
       SHARE_PURCHASE: 'Share purchase',
-      CLIENT_CHARGE: 'Fee payment'
+      CLIENT_CHARGE: 'Fee payment',
+      EXPENSE_PAYMENT: 'Expense payment'
     };
     return labels[operationType];
   }

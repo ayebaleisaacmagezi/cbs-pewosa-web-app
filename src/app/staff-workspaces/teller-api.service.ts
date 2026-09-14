@@ -15,6 +15,10 @@ import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.intercept
 import {
   TellerApiError,
   TellerApiViolation,
+  CreatePewosaExpenseRequest,
+  PayPewosaExpenseRequest,
+  PewosaExpense,
+  PewosaExpenseApproval,
   TellerApproval,
   TellerApprovalDecision,
   TellerCashMovement,
@@ -50,6 +54,55 @@ export class TellerApiService {
         .pipe(timeout(this.requestTimeoutMs))
   };
   private readonly basePath = '/pewosa/teller';
+
+  createExpense(request: CreatePewosaExpenseRequest): Observable<PewosaExpense> {
+    return this.http
+      .post<PewosaExpense>(`${this.basePath}/expenses`, request)
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  submitExpense(reference: string): Observable<PewosaExpense> {
+    return this.http
+      .post<PewosaExpense>(`${this.basePath}/expenses/${encodeURIComponent(reference)}/submit`, {})
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  getExpense(reference: string): Observable<PewosaExpense> {
+    return this.http
+      .get<PewosaExpense>(`${this.basePath}/expenses/${encodeURIComponent(reference)}`)
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  getExpenses(filters: { status?: string; mine?: boolean } = {}): Observable<PewosaExpense[]> {
+    let params = new HttpParams();
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.mine !== undefined) params = params.set('mine', String(filters.mine));
+    return this.http
+      .get<PewosaExpense[]>(`${this.basePath}/expenses`, { params })
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  getExpenseApprovals(): Observable<PewosaExpenseApproval[]> {
+    return this.http
+      .get<PewosaExpenseApproval[]>(`${this.basePath}/expense-approvals`)
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  decideExpenseApproval(
+    approvalId: number,
+    decision: 'APPROVE' | 'REJECT',
+    note?: string
+  ): Observable<PewosaExpenseApproval> {
+    return this.http
+      .post<PewosaExpenseApproval>(`${this.basePath}/expense-approvals/${approvalId}/decision`, { decision, note })
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
+  payExpense(reference: string, request: PayPewosaExpenseRequest): Observable<PewosaExpense> {
+    return this.http
+      .post<PewosaExpense>(`${this.basePath}/expenses/${encodeURIComponent(reference)}/payment`, request)
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
 
   preflight(request: TellerPreflightRequest): Observable<TellerPreflightResponse> {
     return this.http

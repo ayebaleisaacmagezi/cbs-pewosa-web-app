@@ -899,6 +899,10 @@
     </section>
   }
 
+  @if (activeView === 'expenses') {
+    <mifosx-expense-workspace [paymentOnly]="true" />
+  }
+
   @if (activeView === 'reversals') {
     <section class="reversal-page">
       <mat-card appearance="outlined" class="reversal-intro">

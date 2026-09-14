@@ -20,7 +20,94 @@ export type TellerOperationType =
   | 'LOAN_REPAYMENT'
   | 'LOAN_DISBURSEMENT'
   | 'SHARE_PURCHASE'
-  | 'CLIENT_CHARGE';
+  | 'CLIENT_CHARGE'
+  | 'EXPENSE_PAYMENT';
+
+export type PewosaExpenseStatus = 'DRAFT' | 'SUBMITTED' | 'AUTHORIZED' | 'REJECTED' | 'PAID';
+
+export interface PewosaExpenseApproval {
+  id: number;
+  expenseId: number;
+  expenseReference?: string;
+  requiredRole: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedBy?: number;
+  requestedOnUtc?: string;
+  decidedBy?: number;
+  decidedOnUtc?: string;
+  decisionNote?: string;
+  description?: string;
+  vendorName?: string;
+  payableAmount?: number;
+  currencyCode?: string;
+}
+
+export interface PewosaExpenseHistory {
+  id: number;
+  fromStatus?: PewosaExpenseStatus;
+  toStatus: PewosaExpenseStatus;
+  note?: string;
+  changedBy: number;
+  changedOnUtc: string;
+}
+
+export interface PewosaExpense {
+  id: number;
+  reference: string;
+  officeId: number;
+  requesterId: number;
+  department: string;
+  description: string;
+  vendorName: string;
+  invoiceNumber?: string;
+  budgetLine: string;
+  currencyCode: string;
+  expenseGlAccountId: number;
+  vatGlAccountId?: number;
+  withholdingGlAccountId?: number;
+  paymentGlAccountId?: number;
+  netAmount: number;
+  vatAmount: number;
+  withholdingAmount: number;
+  payableAmount: number;
+  supportingDocumentsConfirmed: boolean;
+  budgetConfirmed: boolean;
+  status: PewosaExpenseStatus;
+  paymentTypeId?: number;
+  cashierId?: number;
+  journalTransactionId?: string;
+  cashierTransactionId?: number;
+  paidBy?: number;
+  paidOnUtc?: string;
+  approvals?: PewosaExpenseApproval[];
+  history?: PewosaExpenseHistory[];
+}
+
+export interface CreatePewosaExpenseRequest {
+  department: string;
+  description: string;
+  vendorName: string;
+  invoiceNumber?: string;
+  budgetLine: string;
+  currencyCode: string;
+  expenseGlAccountId: number;
+  vatGlAccountId?: number;
+  withholdingGlAccountId?: number;
+  paymentGlAccountId: number;
+  netAmount: number;
+  vatAmount: number;
+  withholdingAmount: number;
+  supportingDocumentsConfirmed: boolean;
+  budgetConfirmed: boolean;
+}
+
+export interface PayPewosaExpenseRequest {
+  cashierId: number;
+  paymentTypeId: number;
+  tellerReference: string;
+  countedAmount: number;
+  payeeAcknowledged: boolean;
+}
 
 export type TellerPreflightDecision =
   | 'ALLOWED'

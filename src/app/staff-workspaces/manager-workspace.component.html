@@ -1,0 +1,225 @@
+<!--
+  Copyright since 2025 Mifos Initiative
+
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<main class="manager-page">
+  @if (activeView === 'home') {
+    <section class="manager-stack">
+      <mat-card appearance="outlined" class="manager-welcome">
+        <mat-card-content>
+          <div>
+            <span class="eyebrow">{{ 'Branch management' | translate }}</span>
+            <h1>{{ 'Welcome back' | translate }}, {{ credentials.staffDisplayName || credentials.username }}</h1>
+            <p>{{ credentials.officeName }} | {{ 'Review approvals and supervise branch operations.' | translate }}</p>
+          </div>
+          <a mat-flat-button color="primary" routerLink="/dashboard">
+            <mat-icon>dashboard</mat-icon>
+            {{ 'Open dashboard' | translate }}
+          </a>
+        </mat-card-content>
+      </mat-card>
+
+      <section class="manager-section" aria-labelledby="manager-actions-title">
+        <header>
+          <div>
+            <h2 id="manager-actions-title">{{ 'What needs your attention?' | translate }}</h2>
+            <p>{{ 'Open a queue or branch function.' | translate }}</p>
+          </div>
+        </header>
+        <div class="manager-actions">
+          <button type="button" class="action-card" (click)="openView('approvals')">
+            <span class="action-icon"><mat-icon>approval</mat-icon></span>
+            <span
+              ><strong>{{ 'Approvals' | translate }}</strong
+              ><small>{{ 'Review loans and expense requests.' | translate }}</small></span
+            >
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <button type="button" class="action-card" (click)="openView('expenses')">
+            <span class="action-icon"><mat-icon>receipt_long</mat-icon></span>
+            <span
+              ><strong>{{ 'Expenses' | translate }}</strong
+              ><small>{{ 'Create, review and track branch expenses.' | translate }}</small></span
+            >
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <button type="button" class="action-card" (click)="openView('operations')">
+            <span class="action-icon"><mat-icon>account_balance</mat-icon></span>
+            <span
+              ><strong>{{ 'Branch operations' | translate }}</strong
+              ><small>{{ 'Open members, tellers and accounting.' | translate }}</small></span
+            >
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+          <button type="button" class="action-card" (click)="openView('reports')">
+            <span class="action-icon"><mat-icon>bar_chart</mat-icon></span>
+            <span
+              ><strong>{{ 'Reports' | translate }}</strong
+              ><small>{{ 'Review branch performance and financial reports.' | translate }}</small></span
+            >
+            <mat-icon>arrow_forward</mat-icon>
+          </button>
+        </div>
+      </section>
+
+      <mat-card appearance="outlined" class="control-card">
+        <mat-card-header>
+          <mat-card-title>{{ 'Manager controls' | translate }}</mat-card-title>
+          <mat-card-subtitle>{{ 'Important separation of duties' | translate }}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="control-list">
+            <div>
+              <mat-icon>fact_check</mat-icon
+              ><span
+                ><strong>{{ 'Review' | translate }}</strong
+                ><small>{{ 'Verify documents, limits and member information.' | translate }}</small></span
+              >
+            </div>
+            <div>
+              <mat-icon>verified_user</mat-icon
+              ><span
+                ><strong>{{ 'Authorize' | translate }}</strong
+                ><small>{{ 'Approve only requests within your assigned authority.' | translate }}</small></span
+              >
+            </div>
+            <div>
+              <mat-icon>visibility</mat-icon
+              ><span
+                ><strong>{{ 'Supervise' | translate }}</strong
+                ><small>{{ 'Monitor branch activity without operating a cashier drawer.' | translate }}</small></span
+              >
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </section>
+  }
+
+  @if (activeView === 'approvals') {
+    <section class="manager-stack">
+      <header class="page-heading">
+        <span class="eyebrow">{{ 'Manager queue' | translate }}</span>
+        <h1>{{ 'Approvals' | translate }}</h1>
+        <p>{{ 'Keep loan and expense authorization separate from preparation and payment.' | translate }}</p>
+      </header>
+      <div class="manager-actions compact">
+        <a
+          class="action-card"
+          routerLink="/staff-workspaces/loan-approval-queue"
+          *mifosxHasPermission="'READ_PEWOSALOANAPPROVAL'"
+        >
+          <span class="action-icon"><mat-icon>request_quote</mat-icon></span>
+          <span
+            ><strong>{{ 'Loan approval queue' | translate }}</strong
+            ><small>{{ 'Review submitted loan applications.' | translate }}</small></span
+          >
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+        <button
+          type="button"
+          class="action-card"
+          (click)="openView('expenses')"
+          *mifosxHasPermission="'APPROVE_PEWOSAEXPENSE'"
+        >
+          <span class="action-icon"><mat-icon>receipt_long</mat-icon></span>
+          <span
+            ><strong>{{ 'Expense approvals' | translate }}</strong
+            ><small>{{ 'Approve or reject submitted branch expenses.' | translate }}</small></span
+          >
+          <mat-icon>arrow_forward</mat-icon>
+        </button>
+        <a class="action-card" routerLink="/checker-inbox-and-tasks/checker-inbox">
+          <span class="action-icon"><mat-icon>rule</mat-icon></span>
+          <span
+            ><strong>{{ 'Checker inbox' | translate }}</strong
+            ><small>{{ 'Review other maker-checker tasks.' | translate }}</small></span
+          >
+          <mat-icon>arrow_forward</mat-icon>
+        </a>
+      </div>
+      <mifosx-expense-workspace *mifosxHasPermission="'APPROVE_PEWOSAEXPENSE'" initialSection="approvals" />
+    </section>
+  }
+
+  @if (activeView === 'expenses') {
+    <mifosx-expense-workspace />
+  }
+
+  @if (activeView === 'operations') {
+    <section class="manager-stack">
+      <header class="page-heading">
+        <span class="eyebrow">{{ 'Branch supervision' | translate }}</span>
+        <h1>{{ 'Branch operations' | translate }}</h1>
+        <p>{{ 'Use the existing Mifos functions from one focused manager view.' | translate }}</p>
+      </header>
+      <div class="manager-actions">
+        <a class="action-card" routerLink="/clients" *mifosxHasPermission="'READ_CLIENT'"
+          ><span class="action-icon"><mat-icon>groups</mat-icon></span
+          ><span
+            ><strong>{{ 'Members' | translate }}</strong
+            ><small>{{ 'View member profiles and accounts.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+        <a class="action-card" routerLink="/organization/tellers" *mifosxHasPermission="'READ_TELLER'"
+          ><span class="action-icon"><mat-icon>point_of_sale</mat-icon></span
+          ><span
+            ><strong>{{ 'Tellers and cashiers' | translate }}</strong
+            ><small>{{ 'Review assignments and drawer activity.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+        <a class="action-card" routerLink="/accounting" *mifosxHasPermission="'READ_GLACCOUNT'"
+          ><span class="action-icon"><mat-icon>account_balance</mat-icon></span
+          ><span
+            ><strong>{{ 'Accounting' | translate }}</strong
+            ><small>{{ 'Open journals and the chart of accounts.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+        <a class="action-card" routerLink="/dashboard"
+          ><span class="action-icon"><mat-icon>monitoring</mat-icon></span
+          ><span
+            ><strong>{{ 'Portfolio dashboard' | translate }}</strong
+            ><small>{{ 'Monitor loans, savings and branch performance.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+      </div>
+    </section>
+  }
+
+  @if (activeView === 'reports') {
+    <section class="manager-stack">
+      <header class="page-heading">
+        <span class="eyebrow">{{ 'Branch information' | translate }}</span>
+        <h1>{{ 'Reports' | translate }}</h1>
+        <p>{{ 'Open existing Mifos reports and accounting records.' | translate }}</p>
+      </header>
+      <div class="manager-actions compact">
+        <a class="action-card" routerLink="/reports"
+          ><span class="action-icon"><mat-icon>assessment</mat-icon></span
+          ><span
+            ><strong>{{ 'All reports' | translate }}</strong
+            ><small>{{ 'Run operational and financial reports.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+        <a class="action-card" routerLink="/accounting/journal-entries" *mifosxHasPermission="'READ_JOURNALENTRY'"
+          ><span class="action-icon"><mat-icon>menu_book</mat-icon></span
+          ><span
+            ><strong>{{ 'Journal entries' | translate }}</strong
+            ><small>{{ 'Review accounting postings and references.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+        <a class="action-card" routerLink="/dashboard"
+          ><span class="action-icon"><mat-icon>dashboard</mat-icon></span
+          ><span
+            ><strong>{{ 'Dashboard' | translate }}</strong
+            ><small>{{ 'View branch indicators and trends.' | translate }}</small></span
+          ><mat-icon>arrow_forward</mat-icon></a
+        >
+      </div>
+    </section>
+  }
+</main>

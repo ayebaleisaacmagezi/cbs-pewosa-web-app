@@ -9,10 +9,18 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
-export type CashierWorkspaceView = 'home' | 'transactions' | 'drawer' | 'reversals' | 'records' | 'receipts';
+export type CashierWorkspaceView =
+  | 'home'
+  | 'transactions'
+  | 'drawer'
+  | 'expenses'
+  | 'reversals'
+  | 'records'
+  | 'receipts';
 export type LoanOfficerWorkspaceView = 'home' | 'new-loan' | 'members' | 'groups' | 'applications';
 export type ChiefTellerWorkspaceView = 'drawers' | 'movement' | 'approvals' | 'reconciliation' | 'records';
 export type VaultWorkspaceView = 'requests';
+export type ManagerWorkspaceView = 'home' | 'approvals' | 'expenses' | 'operations' | 'reports';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceNavigationService {
@@ -20,11 +28,13 @@ export class WorkspaceNavigationService {
   private loanOfficerViewSubject = new BehaviorSubject<LoanOfficerWorkspaceView>('home');
   private chiefTellerViewSubject = new BehaviorSubject<ChiefTellerWorkspaceView>('drawers');
   private vaultViewSubject = new BehaviorSubject<VaultWorkspaceView>('requests');
+  private managerViewSubject = new BehaviorSubject<ManagerWorkspaceView>('home');
 
   readonly cashierView$ = this.cashierViewSubject.asObservable();
   readonly loanOfficerView$ = this.loanOfficerViewSubject.asObservable();
   readonly chiefTellerView$ = this.chiefTellerViewSubject.asObservable();
   readonly vaultView$ = this.vaultViewSubject.asObservable();
+  readonly managerView$ = this.managerViewSubject.asObservable();
 
   setCashierView(view: CashierWorkspaceView): void {
     if (this.cashierViewSubject.value !== view) this.cashierViewSubject.next(view);
@@ -40,5 +50,9 @@ export class WorkspaceNavigationService {
 
   setVaultView(view: VaultWorkspaceView): void {
     if (this.vaultViewSubject.value !== view) this.vaultViewSubject.next(view);
+  }
+
+  setManagerView(view: ManagerWorkspaceView): void {
+    if (this.managerViewSubject.value !== view) this.managerViewSubject.next(view);
   }
 }

@@ -1,0 +1,176 @@
+/**
+ * Copyright since 2025 Mifos Initiative
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  color: #17213a;
+  background: #f4f5f7;
+}
+
+.manager-page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.manager-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.manager-welcome,
+.control-card {
+  border: 1px solid #dfe3e8;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(23 33 58 / 8%);
+}
+
+.manager-welcome mat-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 28px;
+}
+
+h2 {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+p,
+small {
+  color: #68758c;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #465267;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.manager-section > header,
+.page-heading {
+  margin-bottom: 16px;
+}
+
+.manager-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.manager-actions.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.action-card {
+  display: grid;
+  min-height: 128px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid #dfe3e8;
+  border-radius: 16px;
+  color: #17213a;
+  background: #fff;
+  box-shadow: 0 4px 16px rgb(23 33 58 / 6%);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.action-card:hover,
+.action-card:focus-visible {
+  border-color: #aeb6c2;
+  box-shadow: 0 8px 24px rgb(23 33 58 / 12%);
+}
+
+.action-card > span:not(.action-icon) {
+  display: grid;
+  gap: 8px;
+}
+
+.action-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: #17213a;
+}
+
+.control-card mat-card-header,
+.control-card mat-card-content {
+  padding: 24px;
+}
+
+.control-card mat-card-content {
+  padding-top: 16px;
+}
+
+.control-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.control-list > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+}
+
+.control-list span {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .manager-actions,
+  .manager-actions.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .manager-page {
+    padding: 16px;
+  }
+
+  .manager-actions,
+  .manager-actions.compact,
+  .control-list {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-welcome mat-card-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
