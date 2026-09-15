@@ -245,6 +245,14 @@ export class TellerApiService {
       .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
   }
 
+  getReversals(status?: string, mine = true): Observable<TellerReversal[]> {
+    let params = new HttpParams().set('mine', String(mine));
+    if (status) params = params.set('status', status);
+    return this.http
+      .get<TellerReversal[]>(`${this.basePath}/reversals`, { params })
+      .pipe(catchError((error: unknown) => throwError(() => this.mapError(error))));
+  }
+
   updateReversal(
     reference: string,
     action: 'APPROVE' | 'REJECT' | 'COMPLETE',

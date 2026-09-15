@@ -16,6 +16,7 @@ import { catchError, finalize, forkJoin, map, of, switchMap, timeout } from 'rxj
 
 import { ClientsService } from 'app/clients/clients.service';
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
+import { ErrorHandlerService } from 'app/core/error-handler/error-handler.service';
 import { Dates } from 'app/core/utils/dates';
 import { OrganizationService } from 'app/organization/organization.service';
 import { LoansService } from 'app/loans/loans.service';
@@ -82,6 +83,7 @@ export class CashierWorkspaceComponent implements OnInit {
   ];
 
   private authenticationService = inject(AuthenticationService);
+  private notificationService = inject(ErrorHandlerService);
   private clientsService = inject(ClientsService);
   private loansService = inject(LoansService);
   private savingsService = inject(SavingsService);
@@ -306,6 +308,10 @@ export class CashierWorkspaceComponent implements OnInit {
       transaction.status === 'POSTED' &&
       !this.reversalRequests.some((request) => request.originalReference === transaction.reference)
     );
+  }
+
+  postedTransactionsForReversal(): TellerShiftTransaction[] {
+    return this.shiftTransactions.filter((transaction) => transaction.status === 'POSTED');
   }
 
   transactionTypeLabel(operationType: TellerOperationType): string {
@@ -1611,16 +1617,15 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   private loadKnownReversals(): void {
-    const references = this.storedReversalReferences();
-    if (!references.length) {
-      this.reversalRequests = [];
-      return;
-    }
-    forkJoin(
-      references.map((reference) => this.tellerApi.getReversal(reference).pipe(catchError(() => of(null))))
-    ).subscribe((requests) => {
-      this.reversalRequests = requests.filter((request): request is TellerReversal => request !== null);
-      this.changeDetectorRef.markForCheck();
+    this.tellerApi.getReversals(undefined, true).subscribe({
+      next: (requests) => {
+        this.reversalRequests = requests;
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.reversalRequests = [];
+        this.showMessage('Reversal requests could not be loaded. Try again or contact an administrator.', 'error');
+      }
     });
   }
 
@@ -1651,31 +1656,6 @@ export class CashierWorkspaceComponent implements OnInit {
       reversal,
       ...this.reversalRequests.filter((request) => request.reference !== reversal.reference)
     ];
-    this.storeReversalReferences(this.reversalRequests.map((request) => request.reference));
-  }
-
-  private storedReversalReferences(): string[] {
-    try {
-      const stored = globalThis.sessionStorage?.getItem(this.reversalStorageKey());
-      const references = stored ? (JSON.parse(stored) as unknown) : [];
-      return Array.isArray(references)
-        ? references.filter((reference): reference is string => typeof reference === 'string')
-        : [];
-    } catch {
-      return [];
-    }
-  }
-
-  private storeReversalReferences(references: string[]): void {
-    try {
-      globalThis.sessionStorage?.setItem(this.reversalStorageKey(), JSON.stringify(references.slice(0, 20)));
-    } catch {
-      // Reversal tracking remains available in memory when browser storage is unavailable.
-    }
-  }
-
-  private reversalStorageKey(): string {
-    return `mifosx.cashier.reversals.${this.credentials?.username || 'cashier'}`;
   }
 
   private loadAwaitingCashReceipt(): void {
@@ -1729,6 +1709,13 @@ export class CashierWorkspaceComponent implements OnInit {
   private showMessage(message: string, type: 'error' | 'success' | 'warning'): void {
     this.message = message;
     this.messageType = type;
+    if (type === 'error') {
+      this.notificationService.showErrorMessage(message);
+    } else if (type === 'warning') {
+      this.notificationService.showWarning(message);
+    } else {
+      this.notificationService.showSuccess(message);
+    }
     this.changeDetectorRef.markForCheck();
     if (this.activeView === 'transactions') {
       this.logTransactionEvent(

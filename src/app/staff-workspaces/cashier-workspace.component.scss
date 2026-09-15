@@ -837,6 +837,32 @@ th {
   gap: 16px;
 }
 
+.reversal-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.reversal-page-header h2 {
+  margin: 4px 0 0;
+  font-size: 24px;
+}
+
+.reversal-page-header p {
+  margin: 8px 0 0;
+  color: var(--md-sys-color-on-surface-variant, #68758c);
+}
+
+.reversal-transactions-card {
+  overflow: hidden;
+}
+
+.reversal-action-cell {
+  text-align: right;
+  white-space: nowrap;
+}
+
 .reversal-intro,
 .reversal-request-card,
 .reversal-history-card,
@@ -977,6 +1003,25 @@ th {
   width: 32px;
   height: 32px;
   font-size: 32px;
+}
+
+.reversal-history-card.compact mat-card-header {
+  padding: 16px 16px 0;
+}
+
+.reversal-history-card.compact mat-card-content {
+  padding: 8px 16px 16px;
+}
+
+.reversal-history-card.compact .reversal-empty-state {
+  min-height: 72px;
+  grid-template-columns: auto 1fr;
+  justify-content: start;
+  text-align: left;
+}
+
+.reversal-history-card.compact .reversal-empty-state mat-icon {
+  grid-row: 1 / span 2;
 }
 
 .reversal-evidence {

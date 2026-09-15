@@ -6,20 +6,11 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<main class="staff-workspace">
-  <header class="workspace-hero">
-    <div>
-      <span class="eyebrow">Loan Officer portal</span>
-      <h1>Welcome, {{ credentials?.staffDisplayName || credentials?.username }}</h1>
-    </div>
-    <div class="hero-stat">
-      <span>Assigned applications</span><strong>{{ applications.length }}</strong
-      ><small>{{ credentials?.officeName }}</small>
-    </div>
-  </header>
-
+<main class="staff-workspace" [class.focused-flow]="activeView === 'new-loan'">
   <nav class="workspace-tabs" aria-label="Loan Officer sections">
-    <button mat-button [class.active]="activeView === 'home'" (click)="setView('home')">Overview</button>
+    <button mat-button [class.active]="activeView === 'home'" (click)="setView('home')">
+      {{ 'Home' | translate }}
+    </button>
     <button mat-button [class.active]="activeView === 'new-loan'" (click)="setView('new-loan')">
       {{ 'Start loan application' | translate }}
     </button>
@@ -33,18 +24,7 @@
         {{ 'Loan servicing' | translate }}
       </a>
     }
-    @if (hasApprovalPermission) {
-      <a mat-button routerLink="/staff-workspaces/loan-approval-queue">
-        {{ 'Loan approval queue' | translate }}
-      </a>
-    }
   </nav>
-
-  @if (message) {
-    <div class="notice" [class.error]="messageType === 'error'" [class.success]="messageType === 'success'">
-      {{ message }}
-    </div>
-  }
 
   @if (loading) {
     <div class="notice loading-notice"><fa-icon icon="sync"></fa-icon> Loading information from Fineract…</div>
@@ -58,46 +38,44 @@
     <div class="action-grid">
       <button class="action-tile" (click)="setView('new-loan')">
         <span class="action-icon" aria-hidden="true"><fa-icon icon="file-alt"></fa-icon></span>
-        <strong>{{ 'Start loan application' | translate }}</strong
-        ><small>{{ 'Choose a member and begin a new application' | translate }}.</small></button
+        <span class="action-copy">
+          <strong>{{ 'Start loan application' | translate }}</strong>
+          <small>{{ 'Choose a member and begin a new application' | translate }}.</small>
+        </span></button
       ><button class="action-tile" (click)="setView('groups')">
         <span class="action-icon" aria-hidden="true"><fa-icon icon="users"></fa-icon></span>
-        <strong>Create a group</strong><small>Attach existing members from your office.</small></button
+        <span class="action-copy"
+          ><strong>Create a group</strong><small>Attach existing members from your office.</small></span
+        ></button
       ><button class="action-tile" (click)="setView('members')">
         <span class="action-icon" aria-hidden="true"><fa-icon icon="user-circle"></fa-icon></span>
-        <strong>Check member products</strong><small>Review savings, shares, loans and fees.</small></button
+        <span class="action-copy"
+          ><strong>Check member products</strong><small>Review savings, shares, loans and fees.</small></span
+        ></button
       ><button class="action-tile" (click)="setView('applications')">
         <span class="action-icon" aria-hidden="true"><fa-icon icon="list"></fa-icon></span>
-        <strong>View loan applications</strong><small>Follow applications assigned to you.</small>
+        <span class="action-copy">
+          <strong>View loan applications</strong><small>Follow applications assigned to you.</small>
+        </span>
       </button>
       @if (hasServicingPermission) {
         <a class="action-tile" routerLink="/staff-workspaces/loan-servicing">
           <span class="action-icon" aria-hidden="true"><fa-icon icon="list"></fa-icon></span>
-          <strong>{{ 'Loan servicing queues' | translate }}</strong>
-          <small>{{ 'Monitor portfolio, due-soon and overdue loans' | translate }}.</small>
-        </a>
-      }
-      @if (hasApprovalPermission) {
-        <a class="action-tile" routerLink="/staff-workspaces/loan-approval-queue">
-          <span class="action-icon" aria-hidden="true"><fa-icon icon="clipboard-check"></fa-icon></span>
-          <strong>{{ 'Loan approval queue' | translate }}</strong>
-          <small>{{ 'Review and decide pending loan applications' | translate }}.</small>
+          <span class="action-copy">
+            <strong>{{ 'Loan servicing queues' | translate }}</strong>
+            <small>{{ 'Monitor portfolio, due-soon and overdue loans' | translate }}.</small>
+          </span>
         </a>
       }
     </div>
   }
 
   @if (activeView === 'new-loan') {
-    <section class="section-title">
-      <h2>{{ 'Start loan application' | translate }}</h2>
-      <p>{{ 'Find the member who is applying for the loan' | translate }}.</p>
-    </section>
     <section class="workspace-grid loan-start-grid">
-      <div class="panel">
-        <div class="loan-step-heading">
-          <span class="loan-step-number">1</span>
+      <div class="panel loan-search-panel" [class.hidden]="selectedLoanApplicant">
+        <div class="loan-panel-heading">
           <div>
-            <h3>{{ 'Choose the borrower' | translate }}</h3>
+            <h2>{{ 'Start loan application' | translate }}</h2>
             <p>{{ 'Search by member name, phone or account number' | translate }}.</p>
           </div>
         </div>
@@ -106,6 +84,19 @@
           (queryChanged)="clearLoanApplicant()"
           (memberSelected)="selectLoanApplicant($event)"
         />
+      </div>
+      <div class="panel loan-continue-panel" [class.hidden]="!selectedLoanApplicant">
+        <div class="loan-stage-navigation">
+          <button mat-button type="button" (click)="clearLoanApplicant()">
+            {{ 'Back' | translate }}
+          </button>
+        </div>
+        <div class="loan-panel-heading">
+          <div>
+            <h2>{{ 'Start loan application' | translate }}</h2>
+            <p>{{ 'Choose the product and amount so Fineract can evaluate the configured rules' | translate }}.</p>
+          </div>
+        </div>
         @if (selectedLoanApplicant) {
           <div class="selected-loan-applicant">
             <span class="loan-applicant-avatar">{{ selectedLoanApplicant.displayName?.charAt(0) }}</span>
@@ -118,39 +109,25 @@
             </div>
             <fa-icon icon="check-circle" aria-hidden="true"></fa-icon>
           </div>
-        }
-      </div>
-      <div class="panel loan-continue-panel">
-        <div class="loan-step-heading">
-          <span class="loan-step-number">2</span>
-          <div>
-            <h3>{{ 'Check pre-qualification' | translate }}</h3>
-            <p>{{ 'Choose the product and amount so Fineract can evaluate the configured rules' | translate }}.</p>
-          </div>
-        </div>
-        @if (selectedLoanApplicant) {
           <form [formGroup]="eligibilityForm" class="eligibility-form">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>{{ 'labels.inputs.Loan product' | translate }}</mat-label>
+            <mat-form-field appearance="outline">
+              <mat-label>{{ 'labels.inputs.Loan Product' | translate }}</mat-label>
               <mat-select formControlName="loanProductId">
                 @for (product of loanProducts; track product.id) {
                   <mat-option [value]="product.id">{{ product.name }}</mat-option>
                 }
               </mat-select>
             </mat-form-field>
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline">
               <mat-label>{{ 'Requested amount' | translate }}</mat-label>
-              <input matInput type="number" min="1" formControlName="requestedAmount" />
+              <input
+                matInput
+                type="number"
+                min="1"
+                formControlName="requestedAmount"
+                (wheel)="disableAmountWheelChange($event)"
+              />
             </mat-form-field>
-            <button
-              mat-stroked-button
-              color="primary"
-              type="button"
-              [disabled]="checkingEligibility"
-              (click)="checkEligibility()"
-            >
-              {{ (checkingEligibility ? 'Checking eligibility' : 'Check eligibility') | translate }}
-            </button>
           </form>
         } @else {
           <div class="empty-state">{{ 'Choose a member to continue' | translate }}.</div>
@@ -194,10 +171,11 @@
           <button
             mat-raised-button
             color="primary"
-            [disabled]="!eligibilityResult?.eligible"
-            (click)="startLoan(selectedLoanApplicant?.id)"
+            type="button"
+            [disabled]="eligibilityForm.invalid || checkingEligibility"
+            (click)="checkEligibility(true)"
           >
-            {{ 'Continue to loan details' | translate }}
+            {{ (checkingEligibility ? 'Checking eligibility' : 'Start loan application') | translate }}
           </button>
         </div>
       </div>
@@ -208,16 +186,14 @@
     <div class="workspace-grid">
       <section class="panel">
         <div class="section-title">
-          <h2>Find member</h2>
-          <p>Search within {{ credentials?.officeName }}.</p>
+          <h2>{{ 'Find a member' | translate }}</h2>
+          <p>{{ 'Search within' | translate }} {{ credentials?.officeName }}.</p>
         </div>
-        <mat-form-field class="full-width"
-          ><mat-label>Name, phone or account number</mat-label
-          ><input matInput [formControl]="memberSearchControl" (keyup.enter)="searchMembers()"
-        /></mat-form-field>
-        <div class="button-row">
-          <button mat-raised-button color="primary" (click)="searchMembers()">Search</button>
-        </div>
+        <mifosx-member-search
+          [officeId]="credentials.officeId"
+          (queryChanged)="selectedClient = null; accounts = null; charges = []"
+          (memberSelected)="openMember($event)"
+        />
         <div class="search-results">
           @for (client of clients; track client.id) {
             <div class="member-row">

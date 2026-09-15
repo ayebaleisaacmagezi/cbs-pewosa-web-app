@@ -279,13 +279,13 @@ export class SidenavComponent implements OnInit, AfterViewInit {
         { label: 'Cashier home', view: 'home' },
         { label: 'Teller drawer', view: 'drawer' },
         { label: 'Transaction reversals', view: 'reversals' },
-        { label: "Today's transactions", view: 'records' },
+        { label: 'Transactions', view: 'records' },
         { label: 'Receipts', view: 'receipts' }
       ];
     } else if (roleNames.includes('loan officer')) {
       this.workspaceRole = 'loan-officer';
       this.workspaceLinks = [
-        { label: 'Overview', view: 'home' },
+        { label: 'Home', view: 'home' },
         { label: 'Start loan application', view: 'new-loan' },
         { label: 'Members', view: 'members' },
         { label: 'Groups', view: 'groups' },

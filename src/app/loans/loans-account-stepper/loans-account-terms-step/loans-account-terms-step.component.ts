@@ -124,6 +124,10 @@ export class LoansAccountTermsStepComponent extends LoanProductBaseComponent imp
   @Input() collateralOptions: any;
   // @Input loanPrincipal: Loan Principle
   @Input() loanPrincipal: any;
+  /** Displays configured product terms without allowing application-level overrides. */
+  @Input() readOnlyProductTerms = false;
+  /** Proposed disbursement date selected or calculated in the details step. */
+  @Input() expectedDisbursementDate: Date | null = null;
 
   /** Minimum date allowed. */
   minDate = new Date(2000, 0, 1);

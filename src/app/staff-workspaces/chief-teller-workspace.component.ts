@@ -11,7 +11,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { MatIcon } from '@angular/material/icon';
-import { finalize, of, skip, switchMap } from 'rxjs';
+import { MatDivider } from '@angular/material/divider';
+import { finalize, forkJoin, of, skip, switchMap, tap } from 'rxjs';
 
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
 import { ChiefTellerWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
@@ -22,6 +23,7 @@ import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import {
   TellerApproval,
   TellerDrawerSummary,
+  TellerOperationType,
   TellerReversal,
   TellerShift,
   TellerShiftReport,
@@ -37,7 +39,8 @@ type DrawerAction = 'allocate' | 'settle';
   standalone: true,
   imports: [
     ...STANDALONE_SHARED_IMPORTS,
-    MatIcon
+    MatIcon,
+    MatDivider
   ],
   templateUrl: './chief-teller-workspace.component.html',
   styleUrls: [
@@ -72,11 +75,11 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   messageType: 'error' | 'success' | '' = '';
   lastReference: string | null = null;
   approvals: TellerApproval[] = [];
+  reversalRequests: TellerReversal[] = [];
   reversal: TellerReversal | null = null;
   selectedShift: TellerShift | null = null;
   shiftReports: TellerShiftReport | null = null;
   approvalNoteControl = this.formBuilder.control('');
-  reversalReferenceControl = this.formBuilder.control('', Validators.required);
   reversalDecisionNoteControl = this.formBuilder.control('');
   private cashiersRequestId = 0;
   private summaryRequestId = 0;
@@ -155,6 +158,20 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     ]);
   }
 
+  transactionTypeLabel(operationType?: TellerOperationType): string {
+    if (!operationType) return 'Transaction';
+    const labels: Record<TellerOperationType, string> = {
+      SAVINGS_DEPOSIT: 'Savings deposit',
+      SAVINGS_WITHDRAWAL: 'Savings withdrawal',
+      LOAN_REPAYMENT: 'Loan repayment',
+      LOAN_DISBURSEMENT: 'Loan disbursement',
+      SHARE_PURCHASE: 'Share purchase',
+      CLIENT_CHARGE: 'Fee payment',
+      EXPENSE_PAYMENT: 'Expense payment'
+    };
+    return labels[operationType];
+  }
+
   ngOnInit(): void {
     this.movementForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.pendingMovement = null;
@@ -170,6 +187,10 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       ) {
         this.activeView = view;
         this.workspaceNavigation.setChiefTellerView(view);
+        if (view === 'approvals') {
+          this.loadApprovals();
+          this.loadReversals();
+        }
       }
     });
     this.workspaceNavigation.chiefTellerView$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
@@ -182,7 +203,10 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   setView(view: ChiefTellerWorkspaceView): void {
     this.workspaceNavigation.setChiefTellerView(view);
     this.activeView = view;
-    if (view === 'approvals') this.loadApprovals();
+    if (view === 'approvals') {
+      this.loadApprovals();
+      this.loadReversals();
+    }
     if (view === 'reconciliation') this.loadSelectedShift();
   }
 
@@ -404,20 +428,28 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       });
   }
 
-  findReversal(): void {
-    const reference = this.reversalReferenceControl.value?.trim();
-    if (!reference || this.submitting) return;
-    this.submitting = true;
-    this.tellerApi
-      .getReversal(reference)
-      .pipe(finalize(() => (this.submitting = false)))
-      .subscribe({
-        next: (reversal) => {
-          this.reversal = reversal;
-          this.changeDetectorRef.markForCheck();
-        },
-        error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
-      });
+  loadReversals(): void {
+    forkJoin({
+      pending: this.tellerApi.getReversals('PENDING_APPROVAL', false),
+      approved: this.tellerApi.getReversals('APPROVED', false)
+    }).subscribe({
+      next: ({ pending, approved }) => {
+        this.reversalRequests = [
+          ...pending,
+          ...approved
+        ];
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.reversalRequests = [];
+        this.showMessage('Reversal requests could not be loaded. Try again or contact an administrator.', 'error');
+      }
+    });
+  }
+
+  selectReversal(reversal: TellerReversal): void {
+    this.reversal = reversal;
+    this.reversalDecisionNoteControl.setValue('');
   }
 
   decideReversal(decision: 'APPROVE' | 'REJECT'): void {
@@ -432,15 +464,17 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     const decisionRequest =
       this.reversal.status === 'APPROVED'
         ? this.tellerApi.updateReversal(this.reversal.reference, 'COMPLETE', { note })
-        : this.tellerApi
-            .updateReversal(this.reversal.reference, decision, { note })
-            .pipe(
-              switchMap((reversal) =>
-                decision === 'APPROVE'
-                  ? this.tellerApi.updateReversal(reversal.reference, 'COMPLETE', { note })
-                  : of(reversal)
-              )
-            );
+        : this.tellerApi.updateReversal(this.reversal.reference, decision, { note }).pipe(
+            tap((reversal) => {
+              this.reversal = reversal;
+              this.changeDetectorRef.markForCheck();
+            }),
+            switchMap((reversal) =>
+              decision === 'APPROVE'
+                ? this.tellerApi.updateReversal(reversal.reference, 'COMPLETE', { note })
+                : of(reversal)
+            )
+          );
     decisionRequest.pipe(finalize(() => (this.submitting = false))).subscribe({
       next: (reversal) => {
         this.reversal = reversal;
@@ -449,6 +483,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
           decision === 'APPROVE' ? 'The reversal was approved and completed.' : 'The reversal was rejected.',
           'success'
         );
+        this.loadReversals();
         this.refreshSummary();
       },
       error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')

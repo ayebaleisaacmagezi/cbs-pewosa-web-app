@@ -104,6 +104,7 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
 
   loanId: any = null;
   hideExternalId = false;
+  isLoanOfficerFlow = false;
 
   loanProductSelected = false;
   /** Currency data. */
@@ -132,7 +133,8 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
           .trim()
           .toLowerCase() === 'loan officer'
     );
-    this.hideExternalId = isLoanOfficer || this.route.snapshot.queryParamMap?.get('workspace') === 'loan-officer';
+    this.isLoanOfficerFlow = isLoanOfficer || this.route.snapshot.queryParamMap?.get('workspace') === 'loan-officer';
+    this.hideExternalId = this.isLoanOfficerFlow;
     this.createLoansAccountDetailsForm();
   }
 
@@ -151,9 +153,12 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
         submittedOnDate:
           this.loansAccountTemplate.timeline.submittedOnDate &&
           new Date(this.loansAccountTemplate.timeline.submittedOnDate),
-        expectedDisbursementDate:
-          this.loansAccountTemplate.timeline.expectedDisbursementDate &&
-          new Date(this.loansAccountTemplate.timeline.expectedDisbursementDate),
+        expectedDisbursementDate: this.isLoanOfficerFlow
+          ? this.proposedDisbursementDate(
+              this.loansAccountTemplate.timeline.submittedOnDate || this.settingsService.businessDate
+            )
+          : this.loansAccountTemplate.timeline.expectedDisbursementDate &&
+            new Date(this.loansAccountTemplate.timeline.expectedDisbursementDate),
         externalId: this.loansAccountTemplate.externalId
       });
       if (this.loansAccountTemplate.loanProductId) {
@@ -191,6 +196,16 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
     this.filterFormCtrl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.searchItem();
     });
+    if (this.isLoanOfficerFlow) {
+      this.loansAccountDetailsForm.controls.submittedOnDate.valueChanges
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((submittedOnDate) => {
+          this.loansAccountDetailsForm.controls.expectedDisbursementDate.setValue(
+            this.proposedDisbursementDate(submittedOnDate),
+            { emitEvent: false }
+          );
+        });
+    }
     this.productData.next(this.productList.slice());
   }
 
@@ -225,11 +240,26 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
         Validators.required
       ],
       expectedDisbursementDate: [
-        '',
+        this.isLoanOfficerFlow ? this.proposedDisbursementDate(this.settingsService.businessDate) : '',
         Validators.required
       ],
       externalId: ['']
     });
+  }
+
+  /** Returns the proposed disbursement date, three weeks after submission. */
+  private proposedDisbursementDate(submittedOnDate: Date | string | null): Date | null {
+    if (!submittedOnDate) {
+      return null;
+    }
+
+    const proposedDate = new Date(submittedOnDate instanceof Date ? submittedOnDate.getTime() : submittedOnDate);
+    if (Number.isNaN(proposedDate.getTime())) {
+      return null;
+    }
+
+    proposedDate.setDate(proposedDate.getDate() + 21);
+    return proposedDate;
   }
 
   /**
@@ -282,11 +312,6 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
             this.fundOptions = response.fundOptions;
             this.accountLinkingOptions = response.accountLinkingOptions;
             this.loanProductSelected = true;
-            if (response.createStandingInstructionAtDisbursement) {
-              this.loansAccountDetailsForm
-                .get('createStandingInstructionAtDisbursement')
-                .patchValue(response.createStandingInstructionAtDisbursement);
-            }
             this.cdr.markForCheck();
           });
       } else if (this.loanProductService.isWorkingCapital) {
@@ -316,8 +341,7 @@ export class LoansAccountDetailsStepComponent extends LoanProductBaseComponent i
     const loanOnlyControls: Record<string, UntypedFormControl> = {
       loanOfficerId: new UntypedFormControl(''),
       loanPurposeId: new UntypedFormControl(''),
-      linkAccountId: new UntypedFormControl(''),
-      createStandingInstructionAtDisbursement: new UntypedFormControl('')
+      linkAccountId: new UntypedFormControl('')
     };
 
     if (this.loanProductService.isLoanProduct) {

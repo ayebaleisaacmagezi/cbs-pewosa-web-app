@@ -31,9 +31,13 @@
  * Error notification snackbar styling
  * - Red background for errors
  * - White text for contrast
- * - Displayed at top-center for 5 seconds
+ * - Displayed at bottom-end for 5 seconds
  */
 .error-snackbar {
+  --mdc-snackbar-container-color: #b3261e;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+
   background-color: #f44336 !important;
   color: white !important;
 
@@ -52,9 +56,13 @@
  * Success notification snackbar styling
  * - Green background for success messages
  * - White text for contrast
- * - Displayed at bottom-center for 3 seconds
+ * - Displayed at bottom-end for 4 seconds
  */
 .success-snackbar {
+  --mdc-snackbar-container-color: #2e7d32;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+
   background-color: #4caf50 !important;
   color: white !important;
 
@@ -73,9 +81,13 @@
  * Info notification snackbar styling
  * - Blue background for informational messages
  * - White text for contrast
- * - Displayed at bottom-center for 4 seconds
+ * - Displayed at bottom-end for 4 seconds
  */
 .info-snackbar {
+  --mdc-snackbar-container-color: #244d9a;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+
   background-color: #2196f3 !important;
   color: white !important;
 
@@ -87,5 +99,36 @@
 
   .mat-mdc-button {
     color: white !important;
+  }
+}
+
+/**
+ * Warning notification snackbar styling
+ * - Amber background for non-blocking warnings
+ * - Displayed at bottom-end for 4 seconds
+ */
+.warning-snackbar {
+  --mdc-snackbar-container-color: #8a4b08;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+
+  background-color: #8a4b08 !important;
+  color: white !important;
+
+  .mat-mdc-snack-bar-label,
+  .mdc-snackbar__label,
+  .mat-simple-snackbar-action,
+  .mat-mdc-button {
+    color: white !important;
+  }
+}
+
+@media (width >= 600px) {
+  .mat-mdc-snack-bar-container.error-snackbar,
+  .mat-mdc-snack-bar-container.success-snackbar,
+  .mat-mdc-snack-bar-container.info-snackbar,
+  .mat-mdc-snack-bar-container.warning-snackbar {
+    min-width: 320px;
+    max-width: 480px;
   }
 }

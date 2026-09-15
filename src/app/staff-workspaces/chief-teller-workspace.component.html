@@ -180,21 +180,89 @@
       </p>
     </section>
     <section class="panel records-list">
-      <mat-form-field class="full-width" appearance="outline">
-        <mat-label>{{ 'Reversal request reference' | translate }}</mat-label>
-        <input matInput [formControl]="reversalReferenceControl" />
-      </mat-form-field>
-      <button mat-stroked-button type="button" [disabled]="submitting" (click)="findReversal()">
-        {{ 'Load reversal request' | translate }}
-      </button>
+      <div class="reversal-queue-header">
+        <div>
+          <strong>{{ 'Reversal requests requiring action' | translate }}</strong>
+          <small>{{ 'Select a request to review its original transaction.' | translate }}</small>
+        </div>
+        <button
+          mat-icon-button
+          type="button"
+          [disabled]="submitting"
+          [attr.aria-label]="'Refresh reversal requests' | translate"
+          (click)="loadReversals()"
+        >
+          <mat-icon>refresh</mat-icon>
+        </button>
+      </div>
+      @if (reversalRequests.length) {
+        <div class="reversal-queue">
+          @for (request of reversalRequests; track request.reference) {
+            <button
+              mat-stroked-button
+              type="button"
+              class="reversal-queue-item"
+              [class.selected]="reversal?.reference === request.reference"
+              (click)="selectReversal(request)"
+            >
+              <span class="reversal-queue-item-content">
+                <span>
+                  <strong>{{ request.memberName || ('Member not available' | translate) }}</strong>
+                  <small>{{ request.memberAccountNo || request.originalReference }}</small>
+                </span>
+                <span>{{ transactionTypeLabel(request.operationType) | translate }}</span>
+                <strong>{{ request.currencyCode }} {{ request.amount || 0 | number }}</strong>
+                <span class="reversal-status">{{ request.status }}</span>
+                <mat-icon>chevron_right</mat-icon>
+              </span>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">{{ 'No reversal requests require action.' | translate }}</div>
+      }
       @if (reversal) {
-        <div class="record-row">
+        <mat-divider />
+        <div class="reversal-review">
+          <h3>{{ 'Review original transaction' | translate }}</h3>
+          <div class="reversal-evidence-grid">
+            <div>
+              <span>{{ 'Member' | translate }}</span>
+              <strong>{{ reversal.memberName || ('Not available' | translate) }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Account' | translate }}</span>
+              <strong>{{ reversal.memberAccountNo || reversal.accountId }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Transaction' | translate }}</span>
+              <strong>{{ transactionTypeLabel(reversal.operationType) | translate }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Amount' | translate }}</span>
+              <strong>{{ reversal.currencyCode }} {{ reversal.amount || 0 | number }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Original reference' | translate }}</span>
+              <strong>{{ reversal.originalReference }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Cashier' | translate }}</span>
+              <strong>{{ reversal.cashierUsername || reversal.requesterUsername }}</strong>
+            </div>
+            <div>
+              <span>{{ 'Transaction time' | translate }}</span>
+              <strong>{{ reversal.transactionCreatedOnUtc | date: 'medium' }}</strong>
+            </div>
+          </div>
+          <div class="reversal-reason">
+            <span>{{ 'Reason for reversal' | translate }}</span>
+            <strong>{{ reversal.reason }}</strong>
+          </div>
           <div>
             <strong>{{ reversal.reference }}</strong>
-            <small>{{ 'Original transaction' | translate }}: {{ reversal.originalReference }}</small>
-            <small>{{ reversal.reason }}</small>
+            <small>{{ 'Reversal request reference' | translate }}</small>
           </div>
-          <strong>{{ reversal.status }}</strong>
         </div>
         @if (reversal.status === 'PENDING_APPROVAL' || reversal.status === 'APPROVED') {
           <mat-form-field class="full-width" appearance="outline">

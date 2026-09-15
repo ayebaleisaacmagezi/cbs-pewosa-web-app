@@ -8,26 +8,23 @@
 
 :host {
   display: block;
-  min-height: calc(100vh - 68px);
+  height: calc(100dvh - 96px);
+  min-height: 0;
+  overflow: hidden;
   background: #f4f7fc;
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
 .staff-workspace {
+  box-sizing: border-box;
+  height: 100%;
   padding: 30px 34px 48px;
+  overflow-y: auto;
 }
 
-.workspace-hero {
-  border-radius: 20px;
-  background:
-    radial-gradient(circle at 88% 15%, rgb(255 255 255 / 14%) 0 90px, transparent 91px),
-    linear-gradient(120deg, #17366f, #2854a1);
-}
-
-.workspace-hero h1 {
-  font-size: clamp(24px, 2.4vw, 34px);
-  font-weight: 750;
-  line-height: 1.2;
+.staff-workspace.focused-flow {
+  padding-bottom: 24px;
+  overflow: hidden;
 }
 
 .workspace-tabs {
@@ -49,77 +46,142 @@
   font-weight: 650;
 }
 
+.action-grid {
+  grid-template-columns: repeat(3, minmax(0, calc((100% - 24px) / 3)));
+  gap: 12px;
+}
+
 .action-tile {
-  min-height: 150px;
-  padding: 24px;
-  box-shadow: 0 8px 24px rgb(28 49 87 / 6%);
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #111827;
+  background: #fff;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 6%),
+    0 6px 18px rgb(15 23 42 / 7%);
   text-decoration: none;
-  color: inherit;
+  transition:
+    transform 160ms ease,
+    background-color 120ms ease,
+    box-shadow 160ms ease;
+}
+
+.action-tile:hover,
+.action-tile.selected {
+  border-color: transparent;
+  color: #111827;
+  background: #fff;
+  box-shadow:
+    0 2px 4px rgb(15 23 42 / 7%),
+    0 10px 24px rgb(15 23 42 / 11%);
+  transform: translateY(-1px);
+}
+
+.action-tile:active {
+  background: #e9edf3;
+  box-shadow: inset 0 1px 3px rgb(15 23 42 / 14%);
+  transform: translateY(0);
+}
+
+.action-tile:focus-visible {
+  outline: 3px solid rgb(36 77 154 / 22%);
+  outline-offset: 2px;
+}
+
+.action-copy {
+  display: block;
+  min-width: 0;
 }
 
 .action-tile strong {
-  margin-top: 16px;
-  font-size: 18px;
-  font-weight: 750;
+  display: block;
+  margin: 0 0 4px;
+  color: #111827;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .action-tile small {
-  font-size: 14px;
-  line-height: 1.55;
+  display: block;
+  margin: 0;
+  color: var(--md-sys-color-on-surface-variant, #68758c);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .action-icon {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   place-items: center;
-  border-radius: 12px;
-  color: #2854a1;
-  background: #e9f0fd;
+  border: 0;
+  border-radius: 0;
+  color: #1f2937;
+  background: transparent;
 }
 
 .action-icon fa-icon {
-  font-size: 20px;
+  font-size: 28px;
+  line-height: 32px;
 }
 
 .loan-start-grid {
-  align-items: start;
+  display: block;
+  width: min(100%, 960px);
+  margin: 0 auto;
 }
 
-.loan-step-heading {
+.loan-start-grid > .panel.hidden {
+  display: none;
+}
+
+.loan-panel-heading {
   display: flex;
   gap: 16px;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
-.loan-step-heading h3,
-.loan-step-heading p {
+.loan-panel-heading h2,
+.loan-panel-heading h3,
+.loan-panel-heading p {
   margin: 0;
 }
 
-.loan-step-heading p {
+.loan-panel-heading h2 {
+  font-size: 24px;
+  font-weight: 750;
+}
+
+.loan-panel-heading p {
   margin-top: 8px;
   color: #64748b;
 }
 
-.loan-step-number {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 40px;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: #2854a1;
-  font-weight: 700;
+.loan-stage-navigation {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: -8px;
+}
+
+.member-panel {
+  border: 0;
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgb(31 55 100 / 8%);
 }
 
 .selected-loan-applicant {
   display: flex;
   gap: 16px;
   align-items: center;
-  margin-top: 24px;
+  margin-bottom: 0;
   padding: 16px;
   border: 1px solid #b8c9e8;
   border-radius: 16px;
@@ -155,7 +217,7 @@
 
 .loan-continue-panel {
   display: grid;
-  gap: 24px;
+  gap: 16px;
 }
 
 .loan-ready-state {
@@ -179,6 +241,10 @@
 .eligibility-rules {
   display: grid;
   gap: 16px;
+}
+
+.eligibility-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .eligibility-result {
@@ -256,11 +322,27 @@
 }
 
 @media (width <= 680px) {
+  :host {
+    height: auto;
+    min-height: calc(100dvh - 96px);
+    overflow: visible;
+  }
+
   .staff-workspace {
+    height: auto;
     padding: 18px 14px 32px;
+    overflow: visible;
   }
 
   .workspace-tabs {
     position: static;
+  }
+
+  .staff-workspace.focused-flow {
+    overflow: visible;
+  }
+
+  .eligibility-form {
+    grid-template-columns: 1fr;
   }
 }

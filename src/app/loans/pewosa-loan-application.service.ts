@@ -6,9 +6,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { SUPPRESS_HTTP_ERROR_ALERT } from 'app/core/http/error-handler.interceptor';
 
 import {
   LoanApprovalCase,
@@ -32,7 +34,8 @@ export class PewosaLoanApplicationService {
   private readonly basePath = '/pewosa/loan-applications';
 
   evaluatePrequalification(request: LoanPrequalificationRequest): Observable<LoanPrequalificationResult> {
-    return this.http.post<LoanPrequalificationResult>(`${this.basePath}/prequalifications`, request);
+    const context = new HttpContext().set(SUPPRESS_HTTP_ERROR_ALERT, true);
+    return this.http.post<LoanPrequalificationResult>(`${this.basePath}/prequalifications`, request, { context });
   }
 
   getPrequalification(reference: string): Observable<LoanPrequalificationResult> {

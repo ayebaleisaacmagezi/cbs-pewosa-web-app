@@ -30,3 +30,56 @@ mat-divider {
 .margin-t {
   margin-top: 1em;
 }
+
+.product-terms-summary {
+  overflow: hidden;
+  border: 1px solid #dbe3f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(31 55 100 / 8%);
+}
+
+.product-terms-heading {
+  padding: 16px 24px;
+  border-bottom: 1px solid #dbe3f0;
+  background: #f6f8fd;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.product-terms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.product-term {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  background: #fff;
+
+  span {
+    color: #68758c;
+    font-size: 13px;
+  }
+
+  strong {
+    color: #17213a;
+    font-size: 16px;
+    font-weight: 600;
+  }
+}
+
+@media (width <= 768px) {
+  .product-terms-grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+}

@@ -1,16 +1,4 @@
 <main class="cashier-page" [class.home-view]="activeView === 'home'">
-  @if (message) {
-    <div
-      class="cashier-alert"
-      [class.error]="messageType === 'error'"
-      [class.success]="messageType === 'success'"
-      [class.warning]="messageType === 'warning'"
-    >
-      <span>{{ message }}</span
-      ><button type="button" aria-label="Close message" (click)="message = ''"><mat-icon>close</mat-icon></button>
-    </div>
-  }
-
   @if (activeView === 'home') {
     <section class="cashier-home view-stack">
       <section class="section-card">
@@ -916,19 +904,67 @@
 
   @if (activeView === 'reversals') {
     <section class="reversal-page">
-      <mat-card appearance="outlined" class="reversal-intro">
-        <mat-card-content>
+      <header class="reversal-page-header">
+        <div>
+          <span class="step">{{ 'Controlled correction' | translate }}</span>
+          <h2>{{ 'Transaction reversals' | translate }}</h2>
+          <p>{{ 'Select a posted transaction and explain the correction.' | translate }}</p>
+        </div>
+      </header>
+
+      <section class="table-card reversal-transactions-card">
+        <header>
           <div>
-            <span class="step">{{ 'Controlled correction' | translate }}</span>
-            <h2>{{ 'Transaction reversals' | translate }}</h2>
-            <p>{{ 'Choose a posted transaction from Today’s transactions to request its reversal.' | translate }}</p>
+            <h2>{{ 'Posted transactions' | translate }}</h2>
+            <p>{{ 'Choose the exact transaction that needs correction.' | translate }}</p>
           </div>
-          <button mat-stroked-button type="button" (click)="showTodayTransactions()">
-            <mat-icon>receipt_long</mat-icon>
-            {{ 'View today’s transactions' | translate }}
-          </button>
-        </mat-card-content>
-      </mat-card>
+        </header>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>{{ 'Reference' | translate }}</th>
+                <th>{{ 'Transaction' | translate }}</th>
+                <th>{{ 'Amount' | translate }}</th>
+                <th>{{ 'Status' | translate }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (transaction of postedTransactionsForReversal(); track transaction.reference) {
+                <tr>
+                  <td>
+                    <strong>{{ transaction.reference }}</strong>
+                  </td>
+                  <td>{{ transactionTypeLabel(transaction.operationType) | translate }}</td>
+                  <td>
+                    <strong>{{ transaction.currencyCode }} {{ transaction.amount | number }}</strong>
+                  </td>
+                  <td>
+                    <span class="posted-pill">{{ statusLabel(transaction.status) | translate }}</span>
+                  </td>
+                  <td class="reversal-action-cell">
+                    @if (canRequestReversal(transaction)) {
+                      <button mat-stroked-button type="button" (click)="requestReversalFor(transaction)">
+                        <mat-icon>undo</mat-icon>
+                        {{ 'Request reversal' | translate }}
+                      </button>
+                    } @else if (transaction.status === 'REVERSED') {
+                      <span>{{ 'Reversed' | translate }}</span>
+                    } @else if (transaction.status === 'POSTED') {
+                      <span>{{ 'Reversal requested' | translate }}</span>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty-row">{{ 'No posted transactions are available.' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       @if (selectedReversalTransaction) {
         <mat-card appearance="outlined" class="reversal-request-card">
@@ -982,7 +1018,7 @@
         </mat-card>
       }
 
-      <mat-card appearance="outlined" class="reversal-history-card">
+      <mat-card appearance="outlined" class="reversal-history-card compact">
         <mat-card-header>
           <mat-card-title>{{ 'Your reversal requests' | translate }}</mat-card-title>
           <span class="card-spacer"></span>
@@ -1014,8 +1050,8 @@
           } @else {
             <div class="reversal-empty-state">
               <mat-icon>undo</mat-icon>
-              <strong>{{ 'No reversal requests in this session' | translate }}</strong>
-              <span>{{ 'Use Today’s transactions to select the posting that needs correction.' | translate }}</span>
+              <strong>{{ 'No reversal requests' | translate }}</strong>
+              <span>{{ 'Requests you submit will appear here.' | translate }}</span>
             </div>
           }
         </mat-card-content>
@@ -1072,7 +1108,7 @@
       <header>
         <div>
           <span class="step">{{ 'Today' | translate }}</span>
-          <h2>{{ 'Today’s transactions' | translate }}</h2>
+          <h2>{{ 'Transactions' | translate }}</h2>
           <p>{{ 'Select a posted transaction when a correction is required.' | translate }}</p>
         </div>
       </header>

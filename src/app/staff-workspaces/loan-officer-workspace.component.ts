@@ -6,7 +6,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, DestroyRef, ElementRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +15,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 
 import { ClientsService } from 'app/clients/clients.service';
 import { AuthenticationService } from 'app/core/authentication/authentication.service';
+import { ErrorHandlerService } from 'app/core/error-handler/error-handler.service';
 import { LoanOfficerWorkspaceView, WorkspaceNavigationService } from 'app/core/shell/workspace-navigation.service';
 import { Dates } from 'app/core/utils/dates';
 import { GroupsService } from 'app/groups/groups.service';
@@ -41,8 +42,9 @@ import { resolveTellerCurrencyCode } from './teller-api.models';
     './loan-officer-workspace.component.scss'
   ]
 })
-export class LoanOfficerWorkspaceComponent implements OnInit {
+export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
   private authenticationService = inject(AuthenticationService);
+  private notificationService = inject(ErrorHandlerService);
   private clientsService = inject(ClientsService);
   private groupsService = inject(GroupsService);
   private loansService = inject(LoansService);
@@ -56,6 +58,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   private workspaceNavigation = inject(WorkspaceNavigationService);
   private changeDetectorRef = inject(ChangeDetectorRef);
   private destroyRef = inject(DestroyRef);
+  private elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
 
   credentials = this.authenticationService.getCredentials();
   activeView: LoanOfficerWorkspaceView = 'home';
@@ -87,19 +90,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
       permissions.includes('ALL_FUNCTIONS') ||
       permissions.includes('ALL_FUNCTIONS_READ') ||
       permissions.includes('READ_PEWOSALOANSERVICING')
-    );
-  }
-
-  get hasApprovalPermission(): boolean {
-    const permissions = this.credentials?.permissions || [];
-    return (
-      permissions.includes('ALL_FUNCTIONS') ||
-      permissions.includes('ALL_FUNCTIONS_READ') ||
-      permissions.includes('READ_PEWOSALOANAPPROVAL') ||
-      permissions.includes('APPROVE_PEWOSALOANAPPROVAL') ||
-      permissions.includes('APPROVE_PEWOSALOANBRANCHMANAGER') ||
-      permissions.includes('APPROVE_PEWOSALOANCREDITCOMMITTEE') ||
-      permissions.includes('APPROVE_PEWOSALOANBOARD')
     );
   }
 
@@ -156,10 +146,49 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
     this.loadLoanProducts();
   }
 
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      const actionCard = this.elementRef.nativeElement.querySelector<HTMLElement>('.action-tile');
+      const actionGrid = this.elementRef.nativeElement.querySelector<HTMLElement>('.action-grid');
+      const styles = actionCard ? globalThis.getComputedStyle(actionCard) : null;
+      const gridStyles = actionGrid ? globalThis.getComputedStyle(actionGrid) : null;
+
+      console.info(
+        '[LoanOfficerWorkspaceRender]',
+        JSON.stringify({
+          component: 'staff-workspaces/loan-officer-workspace',
+          marker: 'cashier-action-cards-v2',
+          route: this.router.url,
+          activeView: this.activeView,
+          actionGrid: gridStyles
+            ? {
+                height: gridStyles.height,
+                gridAutoRows: gridStyles.gridAutoRows,
+                alignItems: gridStyles.alignItems,
+                alignContent: gridStyles.alignContent
+              }
+            : null,
+          firstActionCard: styles
+            ? {
+                display: styles.display,
+                minHeight: styles.minHeight,
+                height: styles.height,
+                padding: styles.padding,
+                gridTemplateColumns: styles.gridTemplateColumns,
+                boxShadow: styles.boxShadow
+              }
+            : null
+        })
+      );
+    });
+  }
+
   setView(view: LoanOfficerWorkspaceView): void {
+    const enteringNewLoan = view === 'new-loan' && this.activeView !== 'new-loan';
     this.workspaceNavigation.setLoanOfficerView(view);
     this.activeView = view;
     this.message = '';
+    if (enteringNewLoan) this.clearLoanApplicant();
     if (view === 'applications') this.loadApplications();
     if (view === 'groups') this.loadGroups();
   }
@@ -320,14 +349,15 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
     this.selectedLoanApplicant = null;
     this.eligibilityResult = null;
     this.eligibilityForm.reset();
+    this.message = '';
   }
 
   beginLoanForMember(client: any): void {
-    this.selectLoanApplicant(client);
     this.setView('new-loan');
+    this.selectLoanApplicant(client);
   }
 
-  checkEligibility(): void {
+  checkEligibility(continueOnSuccess = false): void {
     if (!this.selectedLoanApplicant || this.eligibilityForm.invalid || this.checkingEligibility) {
       this.eligibilityForm.markAllAsTouched();
       this.showMessage('Choose a member, loan product, and valid requested amount.', 'error');
@@ -343,20 +373,29 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
         loanProductId: values.loanProductId as number,
         requestedAmount: values.requestedAmount as number
       })
-      .pipe(finalize(() => (this.checkingEligibility = false)))
+      .pipe(
+        finalize(() => {
+          this.checkingEligibility = false;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
       .subscribe({
         next: (result) => {
           this.eligibilityResult = result;
-          if (!result.eligible)
+          if (result.eligible && continueOnSuccess) {
+            this.startLoan(this.selectedLoanApplicant.id);
+          } else if (!result.eligible) {
             this.showMessage('This member does not currently meet the selected product rules.', 'error');
+          }
           this.changeDetectorRef.markForCheck();
         },
-        error: () =>
-          this.showMessage(
-            'Pre-qualification could not be completed. Confirm that this product has an active loan policy.',
-            'error'
-          )
+        error: () => this.showMessage('Something went wrong. Please try again.', 'error')
       });
+  }
+
+  /** Prevents the mouse wheel from changing the requested amount. */
+  disableAmountWheelChange(event: WheelEvent): void {
+    (event.target as HTMLInputElement).blur();
   }
 
   openApplication(application: any): void {
@@ -396,5 +435,11 @@ export class LoanOfficerWorkspaceComponent implements OnInit {
   private showMessage(message: string, type: 'error' | 'success'): void {
     this.message = message;
     this.messageType = type;
+    if (type === 'error') {
+      this.notificationService.showErrorMessage(message);
+    } else {
+      this.notificationService.showSuccess(message);
+    }
+    this.changeDetectorRef.markForCheck();
   }
 }

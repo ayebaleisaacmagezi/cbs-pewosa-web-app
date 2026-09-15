@@ -104,6 +104,7 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
 
   loanProductsBasicDetails: LoanProductBasicDetails[] | null = null;
   productType: string | null = null;
+  isLoanOfficerFlow = false;
 
   /**
    * Sets loans account create form.
@@ -115,6 +116,7 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
    */
   constructor() {
     super();
+    this.isLoanOfficerFlow = this.route.snapshot.queryParamMap.get('workspace') === 'loan-officer';
     this.loanProductsBasicDetails = [];
     this.route.data
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -189,6 +191,11 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   /** Get Loans Account Details Form Data */
   get loansAccountDetailsForm() {
     return this.loansAccountDetailsStep?.loansAccountDetailsForm;
+  }
+
+  /** Gets the proposed disbursement date from the account details step. */
+  get loanExpectedDisbursementDate() {
+    return this.loansAccountDetailsStep?.loansAccountDetailsForm.get('expectedDisbursementDate')?.value ?? null;
   }
 
   /** Get Loans Account Terms Form Data */
@@ -276,15 +283,17 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
         })
       )
       .subscribe((response: any) => {
+        const destination = this.isLoanOfficerFlow ? 'loan-documents' : 'general';
         this.router.navigate(
           [
             '../',
             response.resourceId,
-            'general'
+            destination
           ],
           {
             queryParams: {
-              productType: this.loanProductService.productType.value
+              productType: this.loanProductService.productType.value,
+              ...(this.isLoanOfficerFlow ? { workspace: 'loan-officer' } : {})
             },
             relativeTo: this.route
           }

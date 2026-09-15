@@ -351,7 +351,31 @@ export interface TellerReversal {
   originalReference: string;
   reason: string;
   status: string;
+  operationType?: TellerOperationType;
+  accountId?: number;
+  clientId?: number;
+  cashierId?: number;
+  amount?: number;
+  currencyCode?: string;
+  originalStatus?: string;
+  productEntityType?: string;
+  productTransactionId?: number;
+  cashierTransactionId?: number;
+  memberName?: string;
+  memberAccountNo?: string;
+  cashierUsername?: string;
+  requesterUsername?: string;
+  deciderUsername?: string;
+  transactionCreatedOnUtc?: string;
+  requestedOnUtc?: string;
+  approvedBy?: number;
+  approvedOnUtc?: string;
+  decisionNote?: string;
+  decidedBy?: number;
+  decidedOnUtc?: string;
   reversalProductTransactionId?: number;
+  reversalCashierTransactionId?: number;
+  completedOnUtc?: string;
   audit?: TellerAuditData;
 }
 

@@ -141,16 +141,14 @@ export class ErrorHandlerService {
    * @param errorMessage The error message object to display
    */
   private showError(errorMessage: ErrorMessage): void {
-    const snackBarRef = this.snackBar.open(
-      `${errorMessage.title}: ${errorMessage.message}`,
-      errorMessage.action || this.translateService.instant('labels.buttons.Close'),
-      {
-        duration: 10000,
-        horizontalPosition: 'center',
-        verticalPosition: 'top',
-        panelClass: ['error-snackbar']
-      }
-    );
+    const action = errorMessage.actionType ? errorMessage.action || '' : '';
+    const snackBarRef = this.snackBar.open(`${errorMessage.title}: ${errorMessage.message}`, action, {
+      duration: action ? undefined : 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom',
+      panelClass: ['error-snackbar'],
+      politeness: 'polite'
+    });
 
     if (errorMessage.actionType === 'login') {
       snackBarRef.onAction().subscribe(() => {
@@ -160,30 +158,60 @@ export class ErrorHandlerService {
   }
 
   /**
+   * Show an error toast. It dismisses after five seconds unless an explicit
+   * action is supplied.
+   */
+  showErrorMessage(message: string, action = ''): void {
+    this.snackBar.open(message, action, {
+      duration: action ? undefined : 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom',
+      panelClass: ['error-snackbar'],
+      politeness: 'polite'
+    });
+  }
+
+  /**
    * Show success message to user via snackbar
    * @param message The success message to display
-   * @param action Optional action button text (defaults to 'OK')
+   * @param action Optional action button text
    */
-  showSuccess(message: string, action: string = 'OK'): void {
+  showSuccess(message: string, action = ''): void {
     this.snackBar.open(message, action, {
-      duration: 3000,
-      horizontalPosition: 'center',
+      duration: action ? undefined : 4000,
+      horizontalPosition: 'end',
       verticalPosition: 'bottom',
-      panelClass: ['success-snackbar']
+      panelClass: ['success-snackbar'],
+      politeness: 'polite'
     });
   }
 
   /**
    * Show info message to user via snackbar
    * @param message The info message to display
-   * @param action Optional action button text (defaults to 'OK')
+   * @param action Optional action button text
    */
-  showInfo(message: string, action: string = 'OK'): void {
+  showInfo(message: string, action = ''): void {
     this.snackBar.open(message, action, {
-      duration: 4000,
-      horizontalPosition: 'center',
+      duration: action ? undefined : 4000,
+      horizontalPosition: 'end',
       verticalPosition: 'bottom',
-      panelClass: ['info-snackbar']
+      panelClass: ['info-snackbar'],
+      politeness: 'polite'
+    });
+  }
+
+  /**
+   * Show a non-blocking warning message.
+   * Warnings without an action dismiss after four seconds.
+   */
+  showWarning(message: string, action = ''): void {
+    this.snackBar.open(message, action, {
+      duration: action ? undefined : 4000,
+      horizontalPosition: 'end',
+      verticalPosition: 'bottom',
+      panelClass: ['warning-snackbar'],
+      politeness: 'polite'
     });
   }
 }

@@ -50,7 +50,9 @@
 
       @if (productId) {
         <mat-step [stepControl]="loansAccountTermsForm">
-          <ng-template matStepLabel>{{ 'labels.inputs.TERMS' | translate }}</ng-template>
+          <ng-template matStepLabel>
+            {{ (isLoanOfficerFlow ? 'labels.heading.Loan Details' : 'labels.inputs.TERMS') | translate }}
+          </ng-template>
 
           <mifosx-loans-account-terms-step
             #loanAccountTerms
@@ -59,6 +61,8 @@
             [collateralOptions]="collateralOptions"
             [loansAccountFormValid]="loansAccountFormValid"
             [loanPrincipal]="loanPrincipal"
+            [readOnlyProductTerms]="isLoanOfficerFlow"
+            [expectedDisbursementDate]="loanExpectedDisbursementDate"
           >
           </mifosx-loans-account-terms-step>
         </mat-step>

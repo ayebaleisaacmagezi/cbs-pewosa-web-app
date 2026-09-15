@@ -9,41 +9,43 @@
 @if (documentChecklist?.requirements?.length) {
   <mat-card class="workflow-checklist">
     <mat-card-header>
-      <mat-card-title>{{ 'Required loan documents' | translate }}</mat-card-title>
+      <mat-card-title>{{ 'Document Collection' | translate }}</mat-card-title>
       <mat-card-subtitle
-        >{{ 'Upload files below then link each file to its policy requirement' | translate }}.</mat-card-subtitle
+        >{{ 'Upload the documents required for this loan application' | translate }}.</mat-card-subtitle
       >
     </mat-card-header>
     <mat-card-content>
-      @if (workflowMessage) {
-        <div class="workflow-message">{{ workflowMessage }}</div>
+      @if (workflowMessageKey) {
+        <div class="workflow-message">{{ workflowMessageKey | translate }}</div>
       }
-      <div class="requirement-list">
-        @for (requirement of documentChecklist.requirements; track requirement.requirementCode) {
+      @if (activeRequirement; as requirement) {
+        <div class="requirement-progress">
+          {{ 'Document' | translate }} {{ activeRequirementIndex + 1 }} {{ 'of' | translate }}
+          {{ documentChecklist.requirements.length }}
+        </div>
+        <div class="requirement-list">
           <div class="requirement-row">
             <div class="requirement-copy">
-              <strong>{{ requirement.requirementCode }}</strong>
-              <span>{{ 'Required before' | translate }}: {{ requirement.requiredBefore }}</span>
+              <strong>{{ requirementLabelKey(requirement.requirementCode) | translate }}</strong>
+              <span>
+                {{ requirement.required ? ('Required' | translate) : ('Optional' | translate) }} -
+                {{ 'Before' | translate }} {{ requirement.requiredBefore.toLowerCase() | translate }}
+              </span>
             </div>
-            <span class="requirement-status" [class.verified]="requirement.status === 'VERIFIED'">{{
-              requirement.status
-            }}</span>
-            <mat-form-field appearance="outline">
-              <mat-label>{{ 'Attached loan document' | translate }}</mat-label>
-              <mat-select [(value)]="selectedDocumentByRequirement[requirement.requirementCode]">
-                @for (document of entityDocuments || []; track document.id) {
-                  <mat-option [value]="document.id">{{ document.fileName || document.name }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <button
-              mat-stroked-button
-              color="primary"
-              (click)="linkRequirement(requirement.requirementCode)"
-              *mifosxHasPermission="'UPDATE_PEWOSALOANDOCUMENT'"
-            >
-              {{ 'Link' | translate }}
-            </button>
+            <span class="requirement-status" [class.verified]="requirement.status === 'VERIFIED'">
+              {{ requirementStatusKey(requirement.status) | translate }}
+            </span>
+            <div class="requirement-upload" *mifosxHasPermission="'UPDATE_PEWOSALOANDOCUMENT'">
+              <mifosx-file-upload
+                flex="68%"
+                [acceptFilter]="acceptedFileTypes(requirement)"
+                (change)="uploadRequirementDocument(requirement, $event)"
+              ></mifosx-file-upload>
+              @if (uploadingRequirementCode === requirement.requirementCode) {
+                <mat-spinner diameter="24"></mat-spinner>
+                <span>{{ 'Uploading' | translate }}...</span>
+              }
+            </div>
             @if (requirement.status === 'UPLOADED') {
               <button
                 mat-raised-button
@@ -67,17 +69,37 @@
               </button>
             }
           </div>
+        </div>
+        @if (isLoanOfficerFlow) {
+          <mat-card-actions class="workflow-actions">
+            <button mat-button [disabled]="activeRequirementIndex === 0" (click)="previousRequirement()">
+              {{ 'Previous' | translate }}
+            </button>
+            @if (requirement.required && !canContinueFromActiveRequirement) {
+              <span>{{ 'Upload this required document to continue' | translate }}.</span>
+            }
+            <button
+              mat-raised-button
+              color="primary"
+              [disabled]="!canContinueFromActiveRequirement"
+              (click)="nextRequirement()"
+            >
+              {{ (isLastRequirement ? 'Continue to guarantors' : 'Next document') | translate }}
+            </button>
+          </mat-card-actions>
         }
-      </div>
+      }
     </mat-card-content>
   </mat-card>
 }
 
-<mifosx-entity-documents-tab
-  [entityType]="entityType"
-  [entityId]="entityId"
-  [entityDocuments]="entityDocuments"
-  [callbackUpload]="uploadDocument"
-  [callbackDelete]="deleteDocument"
->
-</mifosx-entity-documents-tab>
+@if (!isLoanOfficerFlow) {
+  <mifosx-entity-documents-tab
+    [entityType]="entityType"
+    [entityId]="entityId"
+    [entityDocuments]="entityDocuments"
+    [callbackUpload]="uploadDocument"
+    [callbackDelete]="deleteDocument"
+  >
+  </mifosx-entity-documents-tab>
+}
