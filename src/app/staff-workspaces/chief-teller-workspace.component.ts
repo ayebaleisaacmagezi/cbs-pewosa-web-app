@@ -117,11 +117,14 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   }
 
   get currencyCode(): string {
-    return resolveTellerCurrencyCode([
-      this.cashierSummary,
-      this.selectedCashier,
-      this.selectedTeller
-    ]);
+    return resolveTellerCurrencyCode(
+      [
+        this.cashierSummary,
+        this.selectedCashier,
+        this.selectedTeller
+      ],
+      'UGX'
+    );
   }
 
   get workflowTitle(): string {
@@ -331,7 +334,8 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       action: this.selectedAction,
       amount,
       cashier: this.selectedCashier.staffName || this.selectedCashier.cashierName,
-      note: this.movementForm.value.txnNote
+      note: this.movementForm.value.txnNote,
+      currencyCode: this.currencyCode
     };
     this.message = '';
   }
@@ -345,7 +349,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
       txnDate: this.dates.formatDate(this.settingsService.businessDate, dateFormat),
       txnAmount: movement.amount,
       txnNote: movement.note,
-      currencyCode: this.currencyCode,
+      currencyCode: movement.currencyCode,
       dateFormat,
       locale: this.settingsService.language.code
     };
@@ -354,34 +358,41 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
         ? this.organizationService.allocateCash(movement.tellerId, movement.cashierId, payload)
         : this.organizationService.settleCash(movement.tellerId, movement.cashierId, payload);
 
-    request$.pipe(finalize(() => (this.submitting = false))).subscribe({
-      next: (response: any) => {
-        const reference = extractTellerTransactionReference(response);
-        if (!reference) {
+    request$
+      .pipe(
+        finalize(() => {
+          this.submitting = false;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (response: any) => {
+          const reference = extractTellerTransactionReference(response);
+          if (!reference) {
+            this.showMessage(
+              'The server did not return a drawer-movement reference. Verify the movement before retrying.',
+              'error'
+            );
+            return;
+          }
+          this.lastReference = reference;
+          this.pendingMovement = null;
+          this.movementForm.reset();
           this.showMessage(
-            'The server did not return a drawer-movement reference. Verify the movement before retrying.',
-            'error'
+            movement.action === 'allocate'
+              ? 'Cash was allocated to the cashier.'
+              : 'Cash was recovered from the cashier.',
+            'success'
           );
-          return;
-        }
-        this.lastReference = reference;
-        this.pendingMovement = null;
-        this.movementForm.reset();
-        this.showMessage(
-          movement.action === 'allocate'
-            ? 'Cash was allocated to the cashier.'
-            : 'Cash was recovered from the cashier.',
-          'success'
-        );
-        this.refreshSummary();
-      },
-      error: (error: unknown) =>
-        this.showMessage(
-          this.tellerApi?.mapError(error).message ||
-            'The drawer movement was not recorded. Review the amount and try again once.',
-          'error'
-        )
-    });
+          this.refreshSummary();
+        },
+        error: (error: unknown) =>
+          this.showMessage(
+            this.tellerApi?.mapError(error).message ||
+              'The drawer movement was not recorded. Review the amount and try again once.',
+            'error'
+          )
+      });
   }
 
   cancelMovement(): void {
