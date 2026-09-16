@@ -67,6 +67,101 @@
           </mifosx-loans-account-terms-step>
         </mat-step>
 
+        @if (isLoanOfficerFlow && loanProductService.isLoanProduct) {
+          <mat-step>
+            <ng-template matStepLabel>{{ 'Loan security' | translate }}</ng-template>
+
+            <div class="loan-security">
+              <section class="security-section">
+                <div class="security-heading">
+                  <div>
+                    <h3>{{ 'Guarantors' | translate }}</h3>
+                    <p>{{ 'Search and select every member guaranteeing this loan' | translate }}.</p>
+                  </div>
+                </div>
+
+                @if (loanOfficeId) {
+                  <mifosx-member-search [officeId]="loanOfficeId" (memberSelected)="addGuarantor($event)" />
+                }
+
+                <div class="security-records">
+                  @for (guarantor of draftGuarantors; track guarantor.id) {
+                    <div class="security-record">
+                      <div>
+                        <strong>{{ guarantor.displayName }}</strong>
+                        <small>{{ guarantor.accountNo }} · {{ guarantor.mobileNo || guarantor.officeName }}</small>
+                      </div>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        [attr.aria-label]="'Remove guarantor' | translate"
+                        (click)="removeGuarantor(guarantor.id)"
+                      >
+                        <fa-icon icon="trash" aria-hidden="true"></fa-icon>
+                      </button>
+                    </div>
+                  } @empty {
+                    <p class="security-empty">{{ 'No guarantor selected' | translate }}.</p>
+                  }
+                </div>
+              </section>
+
+              <section class="security-section">
+                <div class="security-heading">
+                  <div>
+                    <h3>{{ 'Collateral' | translate }}</h3>
+                    <p>{{ 'Add the security offered for this loan' | translate }}.</p>
+                  </div>
+                  <button
+                    mat-raised-button
+                    type="button"
+                    color="primary"
+                    [disabled]="!collateralOptions?.length || draftCollaterals.length >= collateralOptions.length"
+                    (click)="addCollateral()"
+                  >
+                    <fa-icon icon="plus" class="m-r-8" aria-hidden="true"></fa-icon>
+                    {{ 'labels.heading.Add Loan Collateral' | translate }}
+                  </button>
+                </div>
+
+                <div class="security-records">
+                  @for (collateral of draftCollaterals; track collateral.type.collateralId) {
+                    <div class="security-record">
+                      <div>
+                        <strong>{{ collateral.type.name }}</strong>
+                        <small>{{ 'labels.inputs.Quantity' | translate }}: {{ collateral.value }}</small>
+                      </div>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        color="warn"
+                        [attr.aria-label]="'Remove collateral' | translate"
+                        (click)="removeCollateral(collateral.type.collateralId)"
+                      >
+                        <fa-icon icon="trash" aria-hidden="true"></fa-icon>
+                      </button>
+                    </div>
+                  } @empty {
+                    <p class="security-empty">{{ 'No collateral selected' | translate }}.</p>
+                  }
+                </div>
+              </section>
+            </div>
+
+            <div class="layout-row align-center gap-2percent margin-t responsive-column stepper-buttons">
+              <button mat-raised-button matStepperPrevious>
+                <fa-icon icon="arrow-left" class="m-r-8" aria-hidden="true"></fa-icon>
+                {{ 'labels.buttons.Previous' | translate }}
+              </button>
+              <button mat-raised-button color="primary" matStepperNext>
+                {{ 'labels.buttons.Next' | translate }}
+                <fa-icon icon="arrow-right" class="m-l-8" aria-hidden="true"></fa-icon>
+              </button>
+            </div>
+          </mat-step>
+        }
+
         @if (loanProductService.isLoanProduct) {
           <mat-step>
             <ng-template matStepLabel>{{ 'labels.inputs.CHARGES' | translate }}</ng-template>

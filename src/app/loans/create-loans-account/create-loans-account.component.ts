@@ -20,7 +20,8 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, concatMap, from, map, Observable, of, switchMap, toArray } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 /** Custom Services */
 import { LoansService } from '../loans.service';
@@ -41,6 +42,8 @@ import { LoanProductBasicDetails } from '../models/loan-product.model';
 import { LoanProductBaseComponent } from 'app/products/loan-products/common/loan-product-base.component';
 import { Dates } from 'app/core/utils/dates';
 import { PewosaLoanApplicationService } from '../pewosa-loan-application.service';
+import { MemberSearchComponent } from 'app/staff-workspaces/member-search/member-search.component';
+import { LoansAccountAddCollateralDialogComponent } from '../custom-dialog/loans-account-add-collateral-dialog/loans-account-add-collateral-dialog.component';
 
 /**
  * Create loans account
@@ -61,7 +64,8 @@ import { PewosaLoanApplicationService } from '../pewosa-loan-application.service
     LoansAccountChargesStepComponent,
     LoansAccountScheduleStepComponent,
     LoansAccountDatatableStepComponent,
-    LoansAccountPreviewStepComponent
+    LoansAccountPreviewStepComponent,
+    MemberSearchComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -74,6 +78,7 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   private cdr = inject(ChangeDetectorRef);
   private dateUtils = inject(Dates);
   private pewosaLoanApplicationService = inject(PewosaLoanApplicationService);
+  private dialog = inject(MatDialog);
 
   /** Imports all the step component */
   @ViewChild(LoansAccountDetailsStepComponent, { static: false })
@@ -105,6 +110,9 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   loanProductsBasicDetails: LoanProductBasicDetails[] | null = null;
   productType: string | null = null;
   isLoanOfficerFlow = false;
+  draftGuarantors: any[] = [];
+  draftCollaterals: any[] = [];
+  submitting = false;
 
   /**
    * Sets loans account create form.
@@ -227,7 +235,9 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
         ...this.loansAccountDetailsStep.loansAccountDetails,
         ...this.loansAccountTermsStep?.loansAccountTerms,
         ...this.loansAccountChargesStep?.loansAccountCharges,
-        ...this.loansAccountTermsStep?.loanCollateral,
+        ...(this.isLoanOfficerFlow
+          ? { collateral: this.draftCollaterals }
+          : this.loansAccountTermsStep?.loanCollateral),
         ...this.loansAccountTermsStep?.disbursementData
       };
     } else if (this.loanProductService.isWorkingCapital) {
@@ -241,6 +251,7 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   }
 
   submit(): void {
+    if (this.submitting) return;
     if (this.loanProductService.isLoanProduct) {
       this.submitLoanProduct();
     } else if (this.loanProductService.isWorkingCapital) {
@@ -267,9 +278,11 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
       payload['datatables'] = datatables;
     }
 
+    this.submitting = true;
     this.loansService
       .createLoansAccount(this.loanProductService.loanAccountPath, payload)
       .pipe(
+        switchMap((response: any) => this.attachDraftGuarantors(response)),
         switchMap((response: any) => {
           const eligibilityReference = this.route.snapshot.queryParamMap.get('eligibilityReference');
           return eligibilityReference
@@ -282,23 +295,106 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
             : of(response);
         })
       )
-      .subscribe((response: any) => {
-        const destination = this.isLoanOfficerFlow ? 'loan-documents' : 'general';
-        this.router.navigate(
-          [
-            '../',
-            response.resourceId,
-            destination
-          ],
-          {
-            queryParams: {
-              productType: this.loanProductService.productType.value,
-              ...(this.isLoanOfficerFlow ? { workspace: 'loan-officer' } : {})
-            },
-            relativeTo: this.route
-          }
-        );
+      .subscribe({
+        next: (response: any) => {
+          const destination = this.isLoanOfficerFlow ? 'loan-documents' : 'general';
+          this.router.navigate(
+            [
+              '../',
+              response.resourceId,
+              destination
+            ],
+            {
+              queryParams: {
+                productType: this.loanProductService.productType.value,
+                ...(this.isLoanOfficerFlow ? { workspace: 'loan-officer' } : {})
+              },
+              relativeTo: this.route
+            }
+          );
+        },
+        error: () => {
+          this.submitting = false;
+          this.cdr.markForCheck();
+        }
       });
+  }
+
+  get loanOfficeId(): number | null {
+    return this.loansAccountProductTemplate?.client?.officeId ?? this.loansAccountTemplate?.client?.officeId ?? null;
+  }
+
+  addGuarantor(member: any): void {
+    const borrowerId = this.loansAccountTemplate?.clientId ?? this.loansAccountProductTemplate?.client?.id;
+    if (
+      !member?.id ||
+      member.id === borrowerId ||
+      this.draftGuarantors.some((guarantor) => guarantor.id === member.id)
+    ) {
+      return;
+    }
+    this.draftGuarantors = [
+      ...this.draftGuarantors,
+      member
+    ];
+    this.cdr.markForCheck();
+  }
+
+  removeGuarantor(memberId: number): void {
+    this.draftGuarantors = this.draftGuarantors.filter((guarantor) => guarantor.id !== memberId);
+  }
+
+  addCollateral(): void {
+    const selectedIds = new Set(this.draftCollaterals.map((collateral) => collateral.type.collateralId));
+    const availableOptions = (this.collateralOptions ?? []).filter(
+      (collateral: any) => !selectedIds.has(collateral.collateralId)
+    );
+    const dialogRef = this.dialog.open(LoansAccountAddCollateralDialogComponent, {
+      data: { collateralOptions: availableOptions }
+    });
+    dialogRef
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response: any) => {
+        if (!response?.data?.value) return;
+        this.draftCollaterals = [
+          ...this.draftCollaterals,
+          {
+            type: response.data.value.collateral,
+            value: response.data.value.quantity
+          }
+        ];
+        this.cdr.markForCheck();
+      });
+  }
+
+  removeCollateral(collateralId: number): void {
+    this.draftCollaterals = this.draftCollaterals.filter((collateral) => collateral.type.collateralId !== collateralId);
+  }
+
+  private attachDraftGuarantors(response: any): Observable<any> {
+    if (!this.isLoanOfficerFlow || this.draftGuarantors.length === 0) return of(response);
+
+    const loanId = String(response.resourceId);
+    return this.loansService.getGuarantorTemplate(loanId).pipe(
+      switchMap((template: any) => {
+        const guarantorTypeId = template?.guarantorTypeOptions?.[0]?.id;
+        if (!guarantorTypeId) throw new Error('No guarantor type is configured for this loan.');
+
+        return from(this.draftGuarantors).pipe(
+          concatMap((guarantor) =>
+            this.loansService.createNewGuarantor(loanId, {
+              entityId: guarantor.id,
+              guarantorTypeId,
+              locale: this.settingsService.language.code,
+              dateFormat: this.settingsService.dateFormat
+            })
+          ),
+          toArray(),
+          map(() => response)
+        );
+      })
+    );
   }
 
   submitWorkingCapitalProduct() {

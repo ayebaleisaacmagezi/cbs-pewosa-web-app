@@ -201,12 +201,11 @@ export class LoanDocumentsTabComponent implements OnInit {
     );
   }
 
-  continueToGuarantors(): void {
+  finishDocumentCollection(): void {
     if (!this.requiredDocumentsComplete) return;
     this.router.navigate(
       [
-        '../actions',
-        'Create Guarantor'
+        '../general'
       ],
       {
         relativeTo: this.route,
@@ -225,7 +224,7 @@ export class LoanDocumentsTabComponent implements OnInit {
   nextRequirement(): void {
     if (!this.canContinueFromActiveRequirement) return;
     if (this.isLastRequirement) {
-      this.continueToGuarantors();
+      this.finishDocumentCollection();
       return;
     }
     this.activeRequirementIndex += 1;

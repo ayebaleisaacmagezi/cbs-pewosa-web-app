@@ -76,6 +76,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
   selectedGroupMembers: any[] = [];
   loading = false;
   submitting = false;
+  openingLoanApplication = false;
   message = '';
   messageType: 'error' | 'success' | '' = '';
   private memberRequestId = 0;
@@ -140,6 +141,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
     });
     this.eligibilityForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.eligibilityResult = null;
+      this.openingLoanApplication = false;
     });
     this.loadApplications();
     this.loadGroups();
@@ -319,8 +321,13 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
 
   startLoan(clientId?: any): void {
     const id = clientId || this.selectedClient?.id;
-    if (id && this.eligibilityResult?.eligible)
-      this.router.navigate(
+    if (!id || !this.eligibilityResult?.eligible || this.openingLoanApplication) return;
+
+    this.openingLoanApplication = true;
+    this.message = '';
+    this.changeDetectorRef.markForCheck();
+    void this.router
+      .navigate(
         [
           '/clients',
           id,
@@ -335,12 +342,25 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
             eligibilityReference: this.eligibilityResult.reference
           }
         }
-      );
+      )
+      .then((opened) => {
+        if (!opened) {
+          this.openingLoanApplication = false;
+          this.showMessage('The loan application did not open. Select Continue to try again.', 'error');
+          this.changeDetectorRef.markForCheck();
+        }
+      })
+      .catch(() => {
+        this.openingLoanApplication = false;
+        this.showMessage('The loan application did not open. Select Continue to try again.', 'error');
+        this.changeDetectorRef.markForCheck();
+      });
   }
 
   selectLoanApplicant(client: any): void {
     this.selectedLoanApplicant = client;
     this.eligibilityResult = null;
+    this.openingLoanApplication = false;
     this.eligibilityForm.reset();
     this.message = '';
   }
@@ -348,6 +368,7 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
   clearLoanApplicant(): void {
     this.selectedLoanApplicant = null;
     this.eligibilityResult = null;
+    this.openingLoanApplication = false;
     this.eligibilityForm.reset();
     this.message = '';
   }

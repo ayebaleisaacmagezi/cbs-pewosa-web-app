@@ -5,3 +5,62 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
+
+.loan-security {
+  display: grid;
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.security-section {
+  padding: 16px;
+  border: 1px solid var(--border-color, #dbe3f0);
+  border-radius: 8px;
+}
+
+.security-heading,
+.security-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.security-heading {
+  margin-bottom: 16px;
+}
+
+.security-heading h3,
+.security-heading p,
+.security-empty {
+  margin: 0;
+}
+
+.security-heading p,
+.security-record small,
+.security-empty {
+  color: var(--secondary-text-color, #68758c);
+}
+
+.security-records {
+  margin-top: 16px;
+}
+
+.security-record {
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color, #dbe3f0);
+}
+
+.security-record:last-child {
+  border-bottom: 0;
+}
+
+.security-record strong,
+.security-record small {
+  display: block;
+}
+
+.security-empty {
+  padding: 16px 0;
+}

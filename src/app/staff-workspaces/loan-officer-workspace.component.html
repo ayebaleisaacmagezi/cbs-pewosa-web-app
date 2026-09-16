@@ -146,7 +146,12 @@
               ></fa-icon>
               <div>
                 <strong>{{
-                  (eligibilityResult.eligible ? 'Eligible to continue' : 'Not eligible') | translate
+                  (openingLoanApplication
+                    ? 'Opening loan application'
+                    : eligibilityResult.eligible
+                      ? 'Eligible to continue'
+                      : 'Not eligible'
+                  ) | translate
                 }}</strong>
                 <small
                   >{{ eligibilityResult.currencyCode }} {{ eligibilityResult.requestedAmount | number }} ·
@@ -165,6 +170,11 @@
             <small class="eligibility-reference"
               >{{ 'Reference' | translate }}: {{ eligibilityResult.reference }}</small
             >
+            @if (openingLoanApplication) {
+              <p class="application-opening-feedback" role="status" aria-live="polite">
+                {{ 'Please wait while the application form opens' | translate }}…
+              </p>
+            }
           </div>
         }
         <div class="button-row">
@@ -172,10 +182,19 @@
             mat-raised-button
             color="primary"
             type="button"
-            [disabled]="eligibilityForm.invalid || checkingEligibility"
-            (click)="checkEligibility(true)"
+            [disabled]="eligibilityForm.invalid || checkingEligibility || openingLoanApplication"
+            (click)="eligibilityResult?.eligible ? startLoan(selectedLoanApplicant?.id) : checkEligibility(true)"
           >
-            {{ (checkingEligibility ? 'Checking eligibility' : 'Start loan application') | translate }}
+            {{
+              (checkingEligibility
+                ? 'Checking eligibility'
+                : openingLoanApplication
+                  ? 'Opening loan application'
+                  : eligibilityResult?.eligible
+                    ? 'Continue'
+                    : 'Start loan application'
+              ) | translate
+            }}
           </button>
         </div>
       </div>
