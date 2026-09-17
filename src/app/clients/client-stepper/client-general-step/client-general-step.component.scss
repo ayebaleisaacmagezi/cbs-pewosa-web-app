@@ -150,6 +150,10 @@ mat-checkbox {
   background: var(--md-sys-color-surface, #fff);
 }
 
+.next-of-kin-section {
+  margin-top: 16px;
+}
+
 .section-heading {
   display: flex;
   align-items: end;
@@ -181,7 +185,7 @@ mat-checkbox {
 
 .cashier-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, calc(50% - 8px)));
   gap: 8px 16px;
 
   mat-form-field {
@@ -191,6 +195,16 @@ mat-checkbox {
 
   .full-width {
     grid-column: 1 / -1;
+  }
+}
+
+.phone-field-group {
+  display: grid;
+  grid-template-columns: 120px minmax(0, calc(100% - 128px));
+  gap: 8px;
+
+  mat-form-field {
+    min-width: 0;
   }
 }
 
@@ -238,11 +252,15 @@ mat-checkbox {
   }
 
   .cashier-form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 100%;
 
     .full-width {
       grid-column: auto;
     }
+  }
+
+  .phone-field-group {
+    grid-template-columns: 104px minmax(0, calc(100% - 112px));
   }
 }
 

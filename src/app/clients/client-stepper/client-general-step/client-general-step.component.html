@@ -67,6 +67,11 @@
         <mat-form-field appearance="outline">
           <mat-label>{{ 'National ID' | translate }}</mat-label>
           <input matInput required formControlName="externalId" />
+          @if (!externalNationalIdService.isLoading && externalNationalIdService.statusMessageKey) {
+            <mat-hint>
+              {{ 'labels.inputs.' + externalNationalIdService.statusMessageKey | translate }}
+            </mat-hint>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -112,6 +117,63 @@
         <button mat-stroked-button type="button" (click)="photoInput.click()">
           {{ 'Choose photo' | translate }}
         </button>
+      </div>
+    </section>
+
+    <section class="cashier-form-section next-of-kin-section">
+      <div class="section-heading">
+        <div>
+          <span>{{ 'KYC contact' | translate }}</span>
+          <h2>{{ 'Next of kin' | translate }}</h2>
+        </div>
+        <p>{{ 'Provide a trusted contact for the member.' | translate }}</p>
+      </div>
+
+      <div class="cashier-form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Next of kin first name' | translate }}</mat-label>
+          <input matInput required formControlName="nextOfKinFirstName" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Next of kin last name' | translate }}</mat-label>
+          <input matInput required formControlName="nextOfKinLastName" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>{{ 'Relationship' | translate }}</mat-label>
+          <mat-select required formControlName="nextOfKinRelationshipId">
+            @for (
+              relationship of clientTemplate.familyMemberOptions?.relationshipIdOptions || [];
+              track relationship.id
+            ) {
+              <mat-option [value]="relationship.id">{{ relationship.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>{{ 'Next of kin address' | translate }}</mat-label>
+          <textarea matInput required rows="2" formControlName="nextOfKinAddress"></textarea>
+        </mat-form-field>
+
+        <div class="phone-field-group">
+          <mat-form-field appearance="outline" class="country-code-field">
+            <mat-label>{{ 'Code' | translate }}</mat-label>
+            <mat-select formControlName="nextOfKinMobileCountryCode">
+              @for (countryCode of mobileCountryCodes; track countryCode) {
+                <mat-option [value]="countryCode">{{ countryCode }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="phone-number-field">
+            <mat-label>{{ 'Next of kin phone number' | translate }}</mat-label>
+            <input matInput required type="tel" inputmode="numeric" formControlName="nextOfKinMobileNumber" />
+            @if (createClientForm.controls.nextOfKinMobileNumber.hasError('invalidMobileNumber')) {
+              <mat-error>{{ 'error.Mobile number not valid' | translate }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
       </div>
     </section>
   </form>

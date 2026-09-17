@@ -130,8 +130,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
       if (view && [
           'home',
           'new-loan',
-          'members',
-          'groups',
           'applications'
         ].includes(view)) this.workspaceNavigation.setLoanOfficerView(view);
     });
@@ -144,7 +142,6 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
       this.openingLoanApplication = false;
     });
     this.loadApplications();
-    this.loadGroups();
     this.loadLoanProducts();
   }
 

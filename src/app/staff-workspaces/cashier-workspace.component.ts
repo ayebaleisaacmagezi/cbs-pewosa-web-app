@@ -132,6 +132,7 @@ export class CashierWorkspaceComponent implements OnInit {
   shiftTransactions: TellerShiftTransaction[] = [];
   reversalRequests: TellerReversal[] = [];
   private memberDetailsRequestId = 0;
+  private drawerSummaryRequestId = 0;
   private queuedLoanId: number | null = null;
   transactionForm = this.formBuilder.group({
     savingsAccountId: [
@@ -273,8 +274,16 @@ export class CashierWorkspaceComponent implements OnInit {
     if (input?.type === 'number') input.blur();
   }
 
+  @HostListener('window:focus')
+  refreshDrawerWhenWindowRegainsFocus(): void {
+    if (this.tellerId && this.cashierId && !this.submitting) this.refreshDrawerSummary();
+  }
+
   setView(view: CashierWorkspaceView): void {
     this.activeView = view;
+    if ((view === 'home' || view === 'drawer' || view === 'transactions') && this.tellerId && this.cashierId) {
+      this.refreshDrawerSummary();
+    }
     if ((view === 'records' || view === 'reversals') && this.shift?.reference) {
       this.loadShiftTransactions(this.shift.reference);
     }
@@ -454,6 +463,10 @@ export class CashierWorkspaceComponent implements OnInit {
     return Number(this.drawer?.netCash || 0);
   }
 
+  get expectedDrawerCash(): number {
+    return this.availableCash;
+  }
+
   showDrawerPanel(panel: 'request' | 'reconcile'): void {
     this.drawerPanel = this.drawerPanel === panel ? null : panel;
   }
@@ -529,7 +542,7 @@ export class CashierWorkspaceComponent implements OnInit {
       .subscribe({
         next: () => {
           this.awaitingCashReceipt = null;
-          this.showMessage('Cash receipt was acknowledged and the drawer was updated.', 'success');
+          this.showMessage('The cash allocation was approved and added to your drawer.', 'success');
           this.refreshDrawerSummary();
         },
         error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
@@ -594,6 +607,7 @@ export class CashierWorkspaceComponent implements OnInit {
           if (shift.status === 'OPEN') {
             this.showMessage('The teller shift is open.', 'success');
           }
+          this.refreshDrawerSummary();
           this.changeDetectorRef.markForCheck();
         },
         error: (error: unknown) => this.showMessage(this.tellerApi.mapError(error).message, 'error')
@@ -1575,19 +1589,23 @@ export class CashierWorkspaceComponent implements OnInit {
   }
 
   private refreshDrawerSummary(): void {
-    this.drawerReady = false;
-    this.drawer = null;
+    const requestId = ++this.drawerSummaryRequestId;
+    if (!this.drawer) this.drawerReady = false;
     if (!this.tellerId || !this.cashierId) return;
     this.organizationService
       .getCashierSummaryAndTransactions(this.tellerId, this.cashierId, this.currencyCode)
       .subscribe({
         next: (response: TellerDrawerSummary) => {
+          if (requestId !== this.drawerSummaryRequestId) return;
           this.drawer = response;
           this.drawerReady = true;
           this.loadActiveShift();
           this.loadAwaitingCashReceipt();
         },
-        error: () => this.showMessage('Your drawer summary could not be refreshed.', 'error')
+        error: () => {
+          if (requestId !== this.drawerSummaryRequestId) return;
+          this.showMessage('Your drawer summary could not be refreshed.', 'error');
+        }
       });
   }
 
@@ -1606,7 +1624,9 @@ export class CashierWorkspaceComponent implements OnInit {
   private loadShiftTransactions(reference: string): void {
     this.tellerApi.getShiftReports(reference).subscribe({
       next: (report) => {
-        this.shiftTransactions = report.transactions || [];
+        this.shiftTransactions = (report.transactions || []).filter(
+          (transaction) => transaction.status === 'POSTED' || transaction.status === 'REVERSED'
+        );
         this.changeDetectorRef.markForCheck();
       },
       error: () => {
@@ -1660,10 +1680,13 @@ export class CashierWorkspaceComponent implements OnInit {
 
   private loadAwaitingCashReceipt(): void {
     if (!this.cashierId) return;
-    this.tellerApi.getCashMovements('COMPLETED', true).subscribe({
+    this.tellerApi.getCashMovements('PENDING_CASHIER_APPROVAL', true).subscribe({
       next: (movements) => {
         this.awaitingCashReceipt =
-          movements.find((movement) => Number(movement.cashierId) === Number(this.cashierId)) || null;
+          movements.find(
+            (movement) =>
+              movement.movementType === 'VAULT_TO_TELLER' && Number(movement.cashierId) === Number(this.cashierId)
+          ) || null;
       },
       error: () => (this.awaitingCashReceipt = null)
     });

@@ -166,6 +166,30 @@ export class ClientGeneralStepComponent implements OnInit {
     if (!this.createClientForm.contains('savingsProductId')) {
       this.createClientForm.addControl('savingsProductId', new FormControl('', Validators.required));
     }
+    this.createClientForm.addControl(
+      'nextOfKinFirstName',
+      new FormControl('', [
+        Validators.required,
+        Validators.pattern('(^[A-z]).*')
+      ])
+    );
+    this.createClientForm.addControl(
+      'nextOfKinLastName',
+      new FormControl('', [
+        Validators.required,
+        Validators.pattern('(^[A-z]).*')
+      ])
+    );
+    this.createClientForm.addControl('nextOfKinRelationshipId', new FormControl('', Validators.required));
+    this.createClientForm.addControl('nextOfKinAddress', new FormControl('', Validators.required));
+    this.createClientForm.addControl('nextOfKinMobileCountryCode', new FormControl('+256', Validators.required));
+    this.createClientForm.addControl(
+      'nextOfKinMobileNumber',
+      new FormControl('', [
+        Validators.required,
+        (control: AbstractControl) => this.validateMobileNumber(control, 'nextOfKinMobileCountryCode')
+      ])
+    );
     const voluntarySavingsProduct = this.savingProductOptions?.find(
       (product: any) => /voluntary/i.test(product.name ?? '') && !/group/i.test(product.name ?? '')
     );
@@ -353,8 +377,11 @@ export class ClientGeneralStepComponent implements OnInit {
     return legalFormId === LegalFormId.PERSON ? values[0] : values[1];
   }
 
-  validateMobileNumber(control: AbstractControl): ValidationErrors | null {
-    const countryCode = this.createClientForm?.get('mobileCountryCode')?.value || '+256';
+  validateMobileNumber(
+    control: AbstractControl,
+    countryCodeControlName = 'mobileCountryCode'
+  ): ValidationErrors | null {
+    const countryCode = this.createClientForm?.get(countryCodeControlName)?.value || '+256';
     const enteredDigits = String(control.value || '').replace(/\D/g, '');
     const localDigits = this.localMobileDigits(control.value, countryCode);
     if (!enteredDigits) {
@@ -385,6 +412,12 @@ export class ClientGeneralStepComponent implements OnInit {
     }
     delete generalDetails.mobileCountryCode;
     delete generalDetails.memberAccountType;
+    delete generalDetails.nextOfKinFirstName;
+    delete generalDetails.nextOfKinLastName;
+    delete generalDetails.nextOfKinRelationshipId;
+    delete generalDetails.nextOfKinAddress;
+    delete generalDetails.nextOfKinMobileCountryCode;
+    delete generalDetails.nextOfKinMobileNumber;
     const dateFormat = this.settingsService.dateFormat;
     const locale = this.settingsService.language.code;
     for (const key in generalDetails) {
@@ -414,6 +447,23 @@ export class ClientGeneralStepComponent implements OnInit {
       };
     }
     return generalDetails;
+  }
+
+  get cashierNextOfKin(): any | null {
+    if (!this.cashierMode) return null;
+    const value = this.createClientForm.getRawValue();
+    const countryCode = value.nextOfKinMobileCountryCode || '+256';
+    return {
+      firstName: value.nextOfKinFirstName,
+      lastName: value.nextOfKinLastName,
+      relationshipId: Number(value.nextOfKinRelationshipId),
+      address: value.nextOfKinAddress?.trim(),
+      mobileNumber:
+        this.countryCodeDigits(countryCode) + this.localMobileDigits(value.nextOfKinMobileNumber, countryCode),
+      isDependent: false,
+      dateFormat: this.settingsService.dateFormat,
+      locale: this.settingsService.language.code
+    };
   }
 
   private countryCodeDigits(countryCode: unknown): string {

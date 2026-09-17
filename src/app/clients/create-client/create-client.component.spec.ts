@@ -357,6 +357,30 @@ describe('CreateClientComponent - Integration Tests', () => {
       );
     });
 
+    it('should include the cashier next of kin as a Fineract family member', () => {
+      Object.defineProperty(component, 'isCashierWorkspace', { value: true });
+      component.clientTemplate.isAddressEnabled = false;
+      Object.defineProperty(component.clientGeneralStep, 'cashierNextOfKin', {
+        get: jest.fn(() => ({
+          firstName: 'Grace',
+          lastName: 'Doe',
+          relationshipId: 4,
+          address: 'Muganzirwaza, Kampala',
+          mobileNumber: '256700000000'
+        })),
+        configurable: true
+      });
+
+      expect(component.client.familyMembers).toEqual([
+        expect.objectContaining({
+          firstName: 'Grace',
+          relationshipId: 4,
+          address: 'Muganzirwaza, Kampala',
+          mobileNumber: '256700000000'
+        })
+      ]);
+    });
+
     it('should navigate to client detail page after successful creation', () => {
       const mockActivatedRoute = TestBed.inject(ActivatedRoute);
 

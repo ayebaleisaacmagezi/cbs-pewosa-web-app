@@ -687,7 +687,8 @@
       </article>
       @if (awaitingCashReceipt) {
         <article class="section-card">
-          <h2>{{ 'Confirm cash received from vault' | translate }}</h2>
+          <h2>{{ 'Approve cash allocation' | translate }}</h2>
+          <p>{{ 'Count the cash from the Chief Teller before approving it.' | translate }}</p>
           <p>
             {{ awaitingCashReceipt.reference }} · {{ awaitingCashReceipt.currencyCode }}
             {{ awaitingCashReceipt.amount | number }}
@@ -704,7 +705,7 @@
             [disabled]="submitting"
             (click)="acknowledgeCashReceipt()"
           >
-            {{ 'I counted and received this cash' | translate }}
+            {{ 'Approve and add to drawer' | translate }}
           </button>
         </article>
       }
@@ -792,7 +793,7 @@
             <div class="summary-totals">
               <div>
                 <span>{{ 'Expected cash' | translate }}</span
-                ><b>{{ shift.currencyCode }} {{ shift.expectedCash || availableCash | number }}</b>
+                ><b>{{ shift.currencyCode }} {{ expectedDrawerCash | number }}</b>
               </div>
               <div>
                 <span>{{ 'Physical cash' | translate }}</span
@@ -1270,7 +1271,7 @@
             <dl class="till-sheet-totals">
               <div>
                 <dt>{{ 'Expected cash' | translate }}</dt>
-                <dd>{{ currencyCode }} {{ shift?.expectedCash || availableCash | number }}</dd>
+                <dd>{{ currencyCode }} {{ expectedDrawerCash | number }}</dd>
               </div>
               <div>
                 <dt>{{ 'Physical cash counted' | translate }}</dt>

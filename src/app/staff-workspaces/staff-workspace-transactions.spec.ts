@@ -72,6 +72,45 @@ describe('Staff workspace transaction regressions', () => {
     expect(chief.cashierSummary.netCash).toBe(20);
   });
 
+  it('uses the live Fineract drawer balance instead of a stale shift snapshot', () => {
+    const cashier = instance(CashierWorkspaceComponent, {
+      drawer: { netCash: 20000 },
+      shift: { expectedCash: 5000 }
+    });
+
+    expect(cashier.availableCash).toBe(20000);
+    expect(cashier.expectedDrawerCash).toBe(20000);
+  });
+
+  it('ignores an older cashier drawer refresh that completes late', () => {
+    const first = new Subject<any>();
+    const second = new Subject<any>();
+    const cashier = instance(CashierWorkspaceComponent, {
+      tellerId: 1,
+      cashierId: 2,
+      drawerSummaryRequestId: 0,
+      drawer: { netCash: 500 },
+      drawerReady: true,
+      transactionForm: new FormBuilder().group({}),
+      accounts: null,
+      receipt: null,
+      organizationService: {
+        getCashierSummaryAndTransactions: jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second)
+      },
+      loadActiveShift: jest.fn(),
+      loadAwaitingCashReceipt: jest.fn(),
+      showMessage: jest.fn()
+    });
+
+    cashier.refreshDrawerSummary();
+    cashier.refreshDrawerSummary();
+    second.next({ netCash: 20000 });
+    first.next({ netCash: 500 });
+
+    expect(cashier.drawer.netCash).toBe(20000);
+    expect(cashier.drawerReady).toBe(true);
+  });
+
   it('ignores cashiers returned for a previously selected teller', () => {
     const first = new Subject<any>();
     const chief = instance(ChiefTellerWorkspaceComponent, {

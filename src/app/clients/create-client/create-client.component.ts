@@ -147,9 +147,11 @@ export class CreateClientComponent {
    */
   get client() {
     if (this.isCashierWorkspace) {
-      return this.clientTemplate.isAddressEnabled
-        ? { ...this.clientGeneralStep.clientGeneralDetails, ...this.clientAddressStep.address }
-        : this.clientGeneralStep.clientGeneralDetails;
+      const member = {
+        ...this.clientGeneralStep.clientGeneralDetails,
+        familyMembers: [this.clientGeneralStep.cashierNextOfKin]
+      };
+      return this.clientTemplate.isAddressEnabled ? { ...member, ...this.clientAddressStep.address } : member;
     }
     if (this.clientTemplate.isAddressEnabled) {
       return {

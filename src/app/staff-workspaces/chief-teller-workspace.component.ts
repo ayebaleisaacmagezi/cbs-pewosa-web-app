@@ -355,7 +355,19 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     };
     const request$ =
       movement.action === 'allocate'
-        ? this.organizationService.allocateCash(movement.tellerId, movement.cashierId, payload)
+        ? this.tellerApi.createCashMovement({
+            movementType: 'VAULT_TO_TELLER',
+            cashierId: Number(movement.cashierId),
+            amount: movement.amount,
+            currencyCode: movement.currencyCode,
+            denominations: [
+              {
+                denomination: movement.amount,
+                quantity: 1
+              }
+            ],
+            note: movement.note
+          })
         : this.organizationService.settleCash(movement.tellerId, movement.cashierId, payload);
 
     request$
@@ -380,7 +392,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
           this.movementForm.reset();
           this.showMessage(
             movement.action === 'allocate'
-              ? 'Cash was allocated to the cashier.'
+              ? 'The cash allocation was sent to the cashier for approval.'
               : 'Cash was recovered from the cashier.',
             'success'
           );

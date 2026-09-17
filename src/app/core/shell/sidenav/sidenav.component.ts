@@ -287,8 +287,6 @@ export class SidenavComponent implements OnInit, AfterViewInit {
       this.workspaceLinks = [
         { label: 'Home', view: 'home' },
         { label: 'Start loan application', view: 'new-loan' },
-        { label: 'Members', view: 'members' },
-        { label: 'Groups', view: 'groups' },
         { label: 'Loan applications', view: 'applications' }
       ];
     }

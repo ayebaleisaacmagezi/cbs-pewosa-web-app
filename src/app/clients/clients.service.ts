@@ -496,6 +496,11 @@ export class ClientsService {
     return this.http.get(`/clients/${clientId}/collaterals/template`);
   }
 
+  /** Retrieves the global collateral catalogue available for loan applications. */
+  getCollateralProducts() {
+    return this.http.get('/collateral-management');
+  }
+
   searchByText(
     text: string,
     page: number,
