@@ -27,19 +27,24 @@
       </mat-form-field>
 
       <mat-form-field>
-        <mat-label>{{ 'labels.inputs.Quantity' | translate }}</mat-label>
-        <input type="number" [max]="maxQuantity" [min]="0" matInput formControlName="quantity" required />
+        <mat-label>{{ 'Assessed value' | translate }} (UGX)</mat-label>
+        <input type="number" [min]="1" matInput formControlName="quantity" required />
         @if (addCollateralForm.controls.quantity.hasError('required')) {
           <mat-error>
             {{ 'labels.inputs.Quantity' | translate }} {{ 'labels.commons.is' | translate }}
             <strong>{{ 'labels.commons.required' | translate }}</strong>
           </mat-error>
         }
-        @if (addCollateralForm.controls.quantity.hasError('max')) {
-          <mat-error>
-            {{ 'labels.inputs.Quantity can not be more than' | translate }} <strong>{{ maxQuantity }}</strong>
-          </mat-error>
-        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>{{ 'Collateral description' | translate }}</mat-label>
+        <textarea matInput formControlName="description" required></textarea>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>{{ 'Ownership or registration reference' | translate }}</mat-label>
+        <input matInput formControlName="referenceNumber" />
       </mat-form-field>
 
       <mat-form-field>

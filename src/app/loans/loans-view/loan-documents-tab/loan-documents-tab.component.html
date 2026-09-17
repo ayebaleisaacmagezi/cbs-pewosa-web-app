@@ -93,6 +93,43 @@
   </mat-card>
 }
 
+@if (isLoanOfficerFlow && collateralRecords.length) {
+  <mat-card class="workflow-checklist">
+    <mat-card-header>
+      <mat-card-title>{{ 'Collateral evidence' | translate }}</mat-card-title>
+      <mat-card-subtitle>{{ 'Upload evidence for each asset offered as security' | translate }}.</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      @for (collateral of collateralRecords; track collateral.id) {
+        <section class="requirement-row">
+          <div class="requirement-copy">
+            <strong>{{ collateral.description }}</strong>
+            <span>{{ 'Assessed value' | translate }}: UGX {{ collateral.assessedValue | number }}</span>
+            @if (collateral.referenceNumber) {
+              <span>{{ 'Reference' | translate }}: {{ collateral.referenceNumber }}</span>
+            }
+          </div>
+          <div class="requirement-upload" *mifosxHasPermission="'UPDATE_PEWOSALOANDOCUMENT'">
+            @for (documentType of collateralDocumentTypes(); track documentType.code) {
+              <div>
+                <strong>{{ documentType.label | translate }}</strong>
+                @if (collateralDocumentExists(collateral, documentType.code)) {
+                  <span class="requirement-status verified">{{ 'Uploaded' | translate }}</span>
+                } @else {
+                  <mifosx-file-upload
+                    [acceptFilter]="documentType.accept"
+                    (change)="uploadCollateralDocument(collateral, documentType.code, $event)"
+                  ></mifosx-file-upload>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
 @if (!isLoanOfficerFlow) {
   <mifosx-entity-documents-tab
     [entityType]="entityType"

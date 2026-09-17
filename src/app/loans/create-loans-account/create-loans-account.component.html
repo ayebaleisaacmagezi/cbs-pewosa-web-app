@@ -126,18 +126,22 @@
                 </div>
 
                 <div class="security-records">
-                  @for (collateral of draftCollaterals; track collateral.type.collateralId) {
+                  @for (collateral of draftCollaterals; track collateral.type.id) {
                     <div class="security-record">
                       <div>
                         <strong>{{ collateral.type.name }}</strong>
-                        <small>{{ 'labels.inputs.Quantity' | translate }}: {{ collateral.value }}</small>
+                        <small>{{ 'Assessed value' | translate }}: UGX {{ collateral.value | number }}</small>
+                        <small>{{ collateral.description }}</small>
+                        @if (collateral.referenceNumber) {
+                          <small>{{ 'Reference' | translate }}: {{ collateral.referenceNumber }}</small>
+                        }
                       </div>
                       <button
                         mat-icon-button
                         type="button"
                         color="warn"
                         [attr.aria-label]="'Remove collateral' | translate"
-                        (click)="removeCollateral(collateral.type.collateralId)"
+                        (click)="removeCollateral(collateral.type.id)"
                       >
                         <fa-icon icon="trash" aria-hidden="true"></fa-icon>
                       </button>

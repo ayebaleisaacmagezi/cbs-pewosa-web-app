@@ -74,6 +74,8 @@ export class LoansAccountAddCollateralDialogComponent implements OnInit {
         '',
         Validators.required
       ],
+      description: ['', [Validators.required, Validators.maxLength(500)]],
+      referenceNumber: ['', Validators.maxLength(100)],
       totalValue: [{ value: '', disabled: true }],
       totalCollateralValue: [{ value: '', disabled: true }]
     });
@@ -87,7 +89,7 @@ export class LoansAccountAddCollateralDialogComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((collateral: any) => {
         this.collateralData = collateral;
-        this.maxQuantity = collateral.quantity;
+        this.maxQuantity = null;
       });
 
     this.addCollateralForm.controls.quantity.valueChanges

@@ -57,6 +57,8 @@ export class LoanDocumentsTabComponent implements OnInit {
   uploadingRequirementCode: string | null = null;
   isLoanOfficerFlow = false;
   activeRequirementIndex = 0;
+  collateralRecords: any[] = [];
+  uploadingCollateralDocumentKey: string | null = null;
 
   private readonly requirementLabelKeys: Record<string, string> = {
     NATIONAL_ID: 'National ID copy',
@@ -84,6 +86,7 @@ export class LoanDocumentsTabComponent implements OnInit {
     this.route.parent.params.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.entityId = params['loanId'];
       this.loadDocumentChecklist();
+      this.loadCollateralRecords();
     });
   }
 
@@ -125,6 +128,56 @@ export class LoanDocumentsTabComponent implements OnInit {
           this.changeDetectorRef.markForCheck();
         }
       });
+  }
+
+  uploadCollateralDocument(collateralRecord: any, documentType: string, event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file || this.uploadingCollateralDocumentKey) return;
+
+    const formData = new FormData();
+    formData.append('name', file.name);
+    formData.append('file', file);
+    formData.append('description', `${collateralRecord.description} - ${documentType}`);
+    this.uploadingCollateralDocumentKey = `${collateralRecord.id}:${documentType}`;
+    this.loansService
+      .loadLoanDocument(this.entityId, formData)
+      .pipe(
+        switchMap((response: any) =>
+          this.pewosaLoanApplicationService.linkCollateralDocument(
+            Number(this.entityId),
+            collateralRecord.id,
+            response.resourceId,
+            documentType
+          )
+        ),
+        finalize(() => {
+          this.uploadingCollateralDocumentKey = null;
+          this.changeDetectorRef.markForCheck();
+        })
+      )
+      .subscribe({
+        next: (records) => {
+          this.collateralRecords = records;
+          this.workflowMessageKey = 'Collateral evidence uploaded successfully';
+          this.loadLoanDocuments();
+        },
+        error: () => {
+          this.workflowMessageKey = 'Collateral evidence upload failed';
+        }
+      });
+  }
+
+  collateralDocumentTypes(): { code: string; label: string; accept: string }[] {
+    return [
+      { code: 'PHOTO', label: 'Asset photo', accept: 'image/jpeg,image/png' },
+      { code: 'OWNERSHIP_PROOF', label: 'Ownership proof', accept: 'application/pdf,image/jpeg,image/png' },
+      { code: 'VALUATION', label: 'Valuation report', accept: 'application/pdf,image/jpeg,image/png' },
+      { code: 'REGISTRATION', label: 'Registration or logbook', accept: 'application/pdf,image/jpeg,image/png' }
+    ];
+  }
+
+  collateralDocumentExists(collateralRecord: any, documentType: string): boolean {
+    return (collateralRecord.documents ?? []).some((document: any) => document.documentType === documentType);
   }
 
   verifyRequirement(requirementCode: string, decision: 'VERIFIED' | 'REJECTED'): void {
@@ -288,6 +341,20 @@ export class LoanDocumentsTabComponent implements OnInit {
         this.changeDetectorRef.markForCheck();
       },
       error: () => undefined
+    });
+  }
+
+  private loadCollateralRecords(): void {
+    if (!this.isLoanOfficerFlow || !this.entityId) return;
+    this.pewosaLoanApplicationService.getCollateralRecords(Number(this.entityId)).subscribe({
+      next: (records) => {
+        this.collateralRecords = records;
+        this.changeDetectorRef.markForCheck();
+      },
+      error: () => {
+        this.collateralRecords = [];
+        this.changeDetectorRef.markForCheck();
+      }
     });
   }
 }

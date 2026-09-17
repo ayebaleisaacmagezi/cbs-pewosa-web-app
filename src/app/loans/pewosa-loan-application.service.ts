@@ -48,6 +48,26 @@ export class PewosaLoanApplicationService {
     });
   }
 
+  createCollateralRecords(loanId: number, payload: { collaterals: unknown[] }): Observable<unknown> {
+    return this.http.post(`${this.basePath}/${loanId}/collateral-records`, payload);
+  }
+
+  getCollateralRecords(loanId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.basePath}/${loanId}/collateral-records`);
+  }
+
+  linkCollateralDocument(
+    loanId: number,
+    collateralRecordId: number,
+    documentId: number,
+    documentType: string
+  ): Observable<any[]> {
+    return this.http.post<any[]>(`${this.basePath}/${loanId}/collateral-records/${collateralRecordId}/documents`, {
+      documentId,
+      documentType
+    });
+  }
+
   getDocumentChecklist(loanId: number): Observable<LoanDocumentChecklist> {
     return this.http.get<LoanDocumentChecklist>(`${this.basePath}/${loanId}/document-checklist`);
   }

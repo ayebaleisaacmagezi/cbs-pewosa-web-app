@@ -27,6 +27,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { LoansService } from '../loans.service';
 import { SettingsService } from 'app/settings/settings.service';
 import { ClientsService } from 'app/clients/clients.service';
+import { Logger } from 'app/core/logger/logger.service';
 
 /** Step Components */
 import { LoansAccountDetailsStepComponent } from '../loans-account-stepper/loans-account-details-step/loans-account-details-step.component';
@@ -44,6 +45,8 @@ import { Dates } from 'app/core/utils/dates';
 import { PewosaLoanApplicationService } from '../pewosa-loan-application.service';
 import { MemberSearchComponent } from 'app/staff-workspaces/member-search/member-search.component';
 import { LoansAccountAddCollateralDialogComponent } from '../custom-dialog/loans-account-add-collateral-dialog/loans-account-add-collateral-dialog.component';
+
+const log = new Logger('LoanApplicationCollateral');
 
 /**
  * Create loans account
@@ -163,8 +166,22 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
     if (this.loanProductService.isLoanProduct) {
       const clientId = this.loansAccountTemplate.clientId;
       if (!!clientId) {
-        this.clientService.getCollateralTemplate(clientId).subscribe((response: any) => {
-          this.collateralOptions = response;
+        log.debug('Loading global collateral catalogue', { clientId, productId: this.productId });
+        this.clientService.getCollateralProducts().subscribe({
+          next: (response: any) => {
+            this.collateralOptions = Array.isArray(response) ? response : [];
+            log.debug('Global collateral catalogue loaded', {
+              clientId,
+              count: this.collateralOptions.length,
+              collateralIds: this.collateralOptions.map((collateral: any) => collateral.id)
+            });
+            this.cdr.markForCheck();
+          },
+          error: (error: unknown) => {
+            this.collateralOptions = [];
+            log.error('Global collateral catalogue failed to load', { clientId, error });
+            this.cdr.markForCheck();
+          }
         });
       } else {
         // Fineract API doesn't have "Group Collateral Management" endpoint; from the obsolete
@@ -262,26 +279,28 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   submitLoanProduct() {
     const locale = this.settingsService.language.code;
     const dateFormat = this.settingsService.dateFormat;
-    const payload = this.loansService.buildLoanRequestPayload(
-      this.loansAccount,
-      this.loansAccountTemplate,
-      this.loansAccountProductTemplate.calendarOptions,
-      locale,
-      dateFormat
-    );
-
-    if (this.loansAccountProductTemplate.datatables && this.loansAccountProductTemplate.datatables.length > 0) {
-      const datatables: any[] = [];
-      this.loanDatatables.forEach((loanDatatable: LoansAccountDatatableStepComponent) => {
-        datatables.push(loanDatatable.payload);
-      });
-      payload['datatables'] = datatables;
-    }
-
     this.submitting = true;
-    this.loansService
-      .createLoansAccount(this.loanProductService.loanAccountPath, payload)
+    this.prepareDraftCollaterals(locale)
       .pipe(
+        switchMap(() => {
+          const payload = this.loansService.buildLoanRequestPayload(
+            this.loansAccount,
+            this.loansAccountTemplate,
+            this.loansAccountProductTemplate.calendarOptions,
+            locale,
+            dateFormat
+          );
+
+          if (this.loansAccountProductTemplate.datatables && this.loansAccountProductTemplate.datatables.length > 0) {
+            const datatables: any[] = [];
+            this.loanDatatables.forEach((loanDatatable: LoansAccountDatatableStepComponent) => {
+              datatables.push(loanDatatable.payload);
+            });
+            payload['datatables'] = datatables;
+          }
+          return this.loansService.createLoansAccount(this.loanProductService.loanAccountPath, payload);
+        }),
+        switchMap((response: any) => this.createDraftCollateralRecords(response)),
         switchMap((response: any) => this.attachDraftGuarantors(response)),
         switchMap((response: any) => {
           const eligibilityReference = this.route.snapshot.queryParamMap.get('eligibilityReference');
@@ -321,7 +340,13 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   }
 
   get loanOfficeId(): number | null {
-    return this.loansAccountProductTemplate?.client?.officeId ?? this.loansAccountTemplate?.client?.officeId ?? null;
+    return (
+      this.loansAccountProductTemplate?.clientOfficeId ??
+      this.loansAccountProductTemplate?.client?.officeId ??
+      this.loansAccountTemplate?.clientOfficeId ??
+      this.loansAccountTemplate?.client?.officeId ??
+      null
+    );
   }
 
   addGuarantor(member: any): void {
@@ -345,9 +370,9 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   }
 
   addCollateral(): void {
-    const selectedIds = new Set(this.draftCollaterals.map((collateral) => collateral.type.collateralId));
+    const selectedIds = new Set(this.draftCollaterals.map((collateral) => collateral.type.id));
     const availableOptions = (this.collateralOptions ?? []).filter(
-      (collateral: any) => !selectedIds.has(collateral.collateralId)
+      (collateral: any) => !selectedIds.has(collateral.id)
     );
     const dialogRef = this.dialog.open(LoansAccountAddCollateralDialogComponent, {
       data: { collateralOptions: availableOptions }
@@ -361,7 +386,9 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
           ...this.draftCollaterals,
           {
             type: response.data.value.collateral,
-            value: response.data.value.quantity
+            value: response.data.value.quantity,
+            description: response.data.value.description,
+            referenceNumber: response.data.value.referenceNumber
           }
         ];
         this.cdr.markForCheck();
@@ -369,7 +396,49 @@ export class CreateLoansAccountComponent extends LoanProductBaseComponent implem
   }
 
   removeCollateral(collateralId: number): void {
-    this.draftCollaterals = this.draftCollaterals.filter((collateral) => collateral.type.collateralId !== collateralId);
+    this.draftCollaterals = this.draftCollaterals.filter((collateral) => collateral.type.id !== collateralId);
+  }
+
+  private prepareDraftCollaterals(locale: string): Observable<any> {
+    if (!this.isLoanOfficerFlow || this.draftCollaterals.length === 0) return of([]);
+    const clientId = this.loansAccountTemplate?.clientId ?? this.loansAccountProductTemplate?.client?.id;
+    if (!clientId) throw new Error('The borrower is required before collateral can be attached.');
+
+    return from(this.draftCollaterals).pipe(
+      concatMap((draft) =>
+        this.clientService
+          .createClientCollateral(clientId, {
+            collateralId: draft.type.id,
+            quantity: draft.value,
+            locale
+          })
+          .pipe(
+            map((response: any) => {
+              draft.type = {
+                ...draft.type,
+                collateralId: response.resourceId
+              };
+              return draft;
+            })
+          )
+      ),
+      toArray()
+    );
+  }
+
+  private createDraftCollateralRecords(response: any): Observable<any> {
+    if (!this.isLoanOfficerFlow || this.draftCollaterals.length === 0) return of(response);
+    return this.pewosaLoanApplicationService
+      .createCollateralRecords(response.resourceId, {
+        collaterals: this.draftCollaterals.map((collateral) => ({
+          clientCollateralId: collateral.type.collateralId,
+          collateralProductId: collateral.type.id,
+          assessedValue: collateral.value,
+          description: collateral.description,
+          referenceNumber: collateral.referenceNumber || null
+        }))
+      })
+      .pipe(map(() => response));
   }
 
   private attachDraftGuarantors(response: any): Observable<any> {
