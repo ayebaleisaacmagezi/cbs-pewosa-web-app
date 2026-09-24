@@ -61,7 +61,7 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
 
   credentials = this.authenticationService.getCredentials();
-  activeView: ChiefTellerWorkspaceView | 'home' = 'home';
+  activeView: ChiefTellerWorkspaceView | 'home' = 'drawers';
   tellers: any[] = [];
   cashiers: any[] = [];
   selectedTeller: any = null;
@@ -179,21 +179,17 @@ export class ChiefTellerWorkspaceComponent implements OnInit {
     this.movementForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.pendingMovement = null;
     });
-    this.route.queryParamMap.subscribe((params) => {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const view = params.get('view');
-      if (
-        view === 'drawers' ||
-        view === 'movement' ||
-        view === 'approvals' ||
-        view === 'reconciliation' ||
-        view === 'records'
-      ) {
-        this.activeView = view;
-        this.workspaceNavigation.setChiefTellerView(view);
-        if (view === 'approvals') {
-          this.loadApprovals();
-          this.loadReversals();
-        }
+      const resolvedView: ChiefTellerWorkspaceView =
+        view === 'movement' || view === 'approvals' || view === 'reconciliation' || view === 'records'
+          ? view
+          : 'drawers';
+      this.activeView = resolvedView;
+      this.workspaceNavigation.setChiefTellerView(resolvedView);
+      if (resolvedView === 'approvals') {
+        this.loadApprovals();
+        this.loadReversals();
       }
     });
     this.workspaceNavigation.chiefTellerView$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((view) => {

@@ -25,6 +25,20 @@ import { environment } from '../../../environments/environment';
 export class CacheInterceptor implements HttpInterceptor {
   private forceUpdate = false;
 
+  /**
+   * Reference-data endpoints that rarely change within a session and are
+   * fetched on nearly every page. Only these are cached; entity data
+   * (clients, loans, accounts, datatables rows) is never cached so screens
+   * always show fresh values after mutations.
+   */
+  private static readonly CACHEABLE_URL_PATTERNS = [
+    '/offices',
+    '/staff',
+    '/paymenttypes',
+    '/currencies',
+    '/configurations'
+  ];
+
   // eslint-disable-next-line @angular-eslint/prefer-inject
   constructor(private httpCacheService: HttpCacheService) {}
 
@@ -41,8 +55,12 @@ export class CacheInterceptor implements HttpInterceptor {
     return instance;
   }
 
+  private isCacheableRequest(url: string): boolean {
+    return CacheInterceptor.CACHEABLE_URL_PATTERNS.some((pattern) => url.includes(pattern));
+  }
+
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (request.method !== 'GET') {
+    if (request.method !== 'GET' || !this.isCacheableRequest(request.urlWithParams)) {
       return next.handle(request);
     }
 

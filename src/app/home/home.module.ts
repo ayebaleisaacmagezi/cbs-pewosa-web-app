@@ -9,6 +9,7 @@
 /** Angular Imports */
 import { NgModule } from '@angular/core';
 import { MatDialogModule } from '@angular/material/dialog';
+import { TranslateModule } from '@ngx-translate/core';
 
 /** Custom Modules */
 import { SharedModule } from '../shared/shared.module';
@@ -17,8 +18,6 @@ import { PipesModule } from '../pipes/pipes.module';
 
 /** Custom Components */
 import { HomeComponent } from './home.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
-import { TranslateModule } from '@ngx-translate/core';
 import { SessionTimeoutDialogComponent } from './timeout-dialog/session-timeout-dialog.component';
 
 /**
@@ -34,7 +33,6 @@ import { SessionTimeoutDialogComponent } from './timeout-dialog/session-timeout-
     HomeRoutingModule,
     TranslateModule,
     HomeComponent,
-    DashboardComponent,
     SessionTimeoutDialogComponent
   ],
   providers: []

@@ -125,6 +125,7 @@ export class CashierWorkspaceComponent implements OnInit {
   shift: TellerShift | null = null;
   drawerPanel: 'request' | 'reconcile' | null = null;
   tillSheetOpen = false;
+  journalPrintOpen = false;
   awaitingCashReceipt: TellerCashMovement | null = null;
   reversal: TellerReversal | null = null;
   reversalOriginalTransaction: TellerTransactionDetail | null = null;
@@ -419,6 +420,18 @@ export class CashierWorkspaceComponent implements OnInit {
     return transactions?.pageItems || [];
   }
 
+  get journalDebitTotal(): number {
+    return this.shiftTransactions
+      .filter((transaction) => transaction.status !== 'REVERSED')
+      .reduce((total, transaction) => total + Number(transaction.debit || 0), 0);
+  }
+
+  get journalCreditTotal(): number {
+    return this.shiftTransactions
+      .filter((transaction) => transaction.status !== 'REVERSED')
+      .reduce((total, transaction) => total + Number(transaction.credit || 0), 0);
+  }
+
   get currencyCode(): string {
     const form = this.transactionForm.getRawValue();
     const selectedAccount = [
@@ -478,6 +491,19 @@ export class CashierWorkspaceComponent implements OnInit {
   printTillSheet(): void {
     this.changeDetectorRef.detectChanges();
     window.print();
+  }
+
+  openJournalPrint(): void {
+    this.journalPrintOpen = true;
+  }
+
+  printJournal(): void {
+    this.changeDetectorRef.detectChanges();
+    window.print();
+  }
+
+  closeJournalPrint(): void {
+    this.journalPrintOpen = false;
   }
 
   addDenominationLine(): void {

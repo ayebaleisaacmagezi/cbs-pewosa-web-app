@@ -134,7 +134,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
     if (this.isChiefTellerWorkspace) {
-      this.router.navigate(['/staff-workspaces/chief-teller'], { replaceUrl: true });
+      this.router.navigate(['/staff-workspaces/chief-teller'], {
+        queryParams: { view: 'drawers' },
+        replaceUrl: true
+      });
       return;
     }
     if (this.isVaultOfficerWorkspace) {
@@ -150,7 +153,10 @@ export class HomeComponent implements OnInit, AfterViewInit {
       return;
     }
     if (this.isLoanOfficerWorkspace) {
-      this.router.navigate(['/staff-workspaces/loan-officer'], { replaceUrl: true });
+      this.router.navigate(['/staff-workspaces/loan-officer'], {
+        queryParams: { view: 'home' },
+        replaceUrl: true
+      });
       return;
     }
     this.setFilteredActivities();

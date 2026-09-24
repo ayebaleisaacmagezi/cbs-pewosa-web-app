@@ -77,7 +77,7 @@ export const environment = {
       idleTimeout: loadedEnv.sessionIdleTimeout || 300000 // 5 minutes
     }
   },
-  httpCacheEnabled: loadedEnv.httpCacheEnabled || false,
+  httpCacheEnabled: loadedEnv.httpCacheEnabled !== false && loadedEnv.httpCacheEnabled !== 'false',
 
   mifosInterbankTransfersApiUrl: window.env?.mifosInterbankTransfersApiUrl || 'https://apis.mifos.community',
   mifosInterbankTransfersApiProvider: window.env?.mifosInterbankTransfersApiProvider || '/vnext1',

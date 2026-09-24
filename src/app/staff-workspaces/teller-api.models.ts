@@ -325,6 +325,13 @@ export interface TellerShiftTransaction {
   status: string;
   complianceStatus?: string;
   notificationStatus?: string;
+  clientId?: number;
+  memberNo?: string;
+  memberName?: string;
+  chequeNo?: string;
+  debit?: number;
+  credit?: number;
+  tellerBalance?: number;
 }
 
 export interface TellerShiftReport extends TellerShift {

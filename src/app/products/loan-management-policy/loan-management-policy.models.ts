@@ -17,7 +17,7 @@ export interface LoanPolicyProductOption {
 }
 
 export interface LoanPolicyApprovalLevel {
-  authority: 'BRANCH_MANAGER' | 'CREDIT_COMMITTEE' | 'BOARD';
+  authority: 'LOAN_OFFICER' | 'BRANCH_MANAGER' | 'CREDIT_COMMITTEE' | 'BOARD';
   minimumAmount: number;
   minimumExclusive?: boolean;
   maximumAmount: number | null;
@@ -49,6 +49,9 @@ export interface LoanManagementPolicyDefinition {
   prequalification: {
     requireActiveMember: boolean;
     minimumMembershipMonths: number;
+    minimumAgeYears: number;
+    minimumApprovedShares: number;
+    maximumConcurrentLoans: number;
     minimumSavingsBalance: number;
     minimumSharesBalance: number;
     minimumSavingsToRequestedAmountRatio: number;
@@ -56,11 +59,15 @@ export interface LoanManagementPolicyDefinition {
     disallowExistingDefaultedLoan: boolean;
     disallowAnyActiveLoan: boolean;
   };
+  underwriting?: {
+    minimumMonthlyIncome: number;
+    maximumDebtToIncomeRatio: number;
+  };
   creditScoring: {
     factors: LoanPolicyCreditFactor[];
     bands: LoanPolicyRiskBand[];
   };
-  loanOfficerCanApprove: false;
+  loanOfficerCanApprove: boolean;
   approvalRouting: LoanPolicyApprovalLevel[];
   documentRequirements: LoanPolicyDocumentRequirement[];
   guarantorCollateral: {

@@ -8,6 +8,7 @@
 
 import { Component, OnInit, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
 
 import { ProductsService } from 'app/products/products.service';
@@ -32,6 +33,7 @@ export class LoanManagementPolicyComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly policyService = inject(LoanManagementPolicyService);
   private readonly productsService = inject(ProductsService);
+  private readonly route = inject(ActivatedRoute);
 
   loanProducts: LoanPolicyProductOption[] = [];
   selectedProduct: LoanPolicyProductOption | null = null;
@@ -41,6 +43,7 @@ export class LoanManagementPolicyComponent implements OnInit {
   saving = false;
   message = '';
   messageType: 'success' | 'error' | '' = '';
+  private loadedPolicy: LoanManagementPolicyDefinition | null = null;
 
   readonly disbursementMethods: Array<{ code: LoanPolicyDisbursementMethod; label: string }> = [
     { code: 'ACCOUNT_CREDIT', label: 'labels.inputs.Account credit' },
@@ -60,6 +63,31 @@ export class LoanManagementPolicyComponent implements OnInit {
         [
           Validators.required,
           Validators.min(0)
+        ]
+      ],
+      minimumAgeYears: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(120),
+          Validators.pattern(/^\d+$/)
+        ]
+      ],
+      minimumApprovedShares: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.pattern(/^\d+$/)
+        ]
+      ],
+      maximumConcurrentLoans: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.pattern(/^\d+$/)
         ]
       ],
       minimumSavingsBalance: [
@@ -93,11 +121,28 @@ export class LoanManagementPolicyComponent implements OnInit {
       disallowExistingDefaultedLoan: [true],
       disallowAnyActiveLoan: [false]
     }),
+    underwriting: this.formBuilder.group({
+      minimumMonthlyIncome: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0)
+        ]
+      ],
+      maximumDebtToIncomeRatio: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(1)
+        ]
+      ]
+    }),
     creditScoring: this.formBuilder.group({
       factors: this.formBuilder.array<FormGroup>([]),
       bands: this.formBuilder.array<FormGroup>([])
     }),
-    loanOfficerCanApprove: this.formBuilder.control<false>(false, { nonNullable: true }),
+    loanOfficerCanApprove: this.formBuilder.control<boolean>(false, { nonNullable: true }),
     approvalRouting: this.formBuilder.array<FormGroup>([]),
     documentRequirements: this.formBuilder.array<FormGroup>([]),
     guarantorCollateral: this.formBuilder.group({
@@ -148,28 +193,87 @@ export class LoanManagementPolicyComponent implements OnInit {
       Validators.required
     ),
     groupLending: this.formBuilder.group({
-      minimumGroupAgeMonths: [6, [Validators.required, Validators.min(0)]],
-      minimumActiveMembers: [5, [Validators.required, Validators.min(2)]],
-      requiredRoleCodes: this.formBuilder.control<string[]>(['CHAIRPERSON', 'SECRETARY', 'TREASURER'], {
-        nonNullable: true,
-        validators: Validators.required
-      }),
+      minimumGroupAgeMonths: [
+        6,
+        [
+          Validators.required,
+          Validators.min(0)
+        ]
+      ],
+      minimumActiveMembers: [
+        5,
+        [
+          Validators.required,
+          Validators.min(2)
+        ]
+      ],
+      requiredRoleCodes: this.formBuilder.control<string[]>(
+        [
+          'CHAIRPERSON',
+          'SECRETARY',
+          'TREASURER'
+        ],
+        {
+          nonNullable: true,
+          validators: Validators.required
+        }
+      ),
       requireConstitution: [true],
       requireTraining: [true],
-      minimumSavingsToRequestedAmountRatio: [0.2, [Validators.required, Validators.min(0), Validators.max(1)]],
-      maximumDelinquentMembers: [0, [Validators.required, Validators.min(0)]],
-      minimumAttendanceRate: [75.0, [Validators.required, Validators.min(0), Validators.max(100)]],
-      attendanceLookbackMeetings: [10, [Validators.required, Validators.min(1)]],
+      minimumSavingsToRequestedAmountRatio: [
+        0.2,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(1)
+        ]
+      ],
+      maximumDelinquentMembers: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0)
+        ]
+      ],
+      minimumAttendanceRate: [
+        75.0,
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(100)
+        ]
+      ],
+      attendanceLookbackMeetings: [
+        10,
+        [
+          Validators.required,
+          Validators.min(1)
+        ]
+      ],
       jointLiabilityRequired: [true],
       allowedRecoverySources: this.formBuilder.control<string[]>(
-        ['GROUP_SOCIAL_FUND', 'GROUP_SAVINGS', 'MEMBER_GUARANTOR_SAVINGS'],
+        [
+          'GROUP_SOCIAL_FUND',
+          'GROUP_SAVINGS',
+          'MEMBER_GUARANTOR_SAVINGS'
+        ],
         { nonNullable: true, validators: Validators.required }
       )
     })
   });
 
-  readonly availableGroupRoles = ['CHAIRPERSON', 'SECRETARY', 'TREASURER', 'VICE_CHAIRPERSON', 'MOBILIZER'];
-  readonly availableRecoverySources = ['GROUP_SOCIAL_FUND', 'GROUP_SAVINGS', 'MEMBER_GUARANTOR_SAVINGS'];
+  readonly availableGroupRoles = [
+    'CHAIRPERSON',
+    'SECRETARY',
+    'TREASURER',
+    'VICE_CHAIRPERSON',
+    'MOBILIZER'
+  ];
+  readonly availableRecoverySources = [
+    'GROUP_SOCIAL_FUND',
+    'GROUP_SAVINGS',
+    'MEMBER_GUARANTOR_SAVINGS'
+  ];
 
   get scoringFactors(): FormArray<FormGroup> {
     return this.policyForm.controls.creditScoring.controls.factors;
@@ -207,6 +311,10 @@ export class LoanManagementPolicyComponent implements OnInit {
         next: ({ template, loanProducts }) => {
           this.loanProducts = loanProducts || [];
           this.resetPolicy(template.policy, 0);
+          const requestedProductId = Number(this.route.snapshot.queryParamMap.get('loanProductId'));
+          if (this.loanProducts.some((product) => product.id === requestedProductId)) {
+            this.selectProduct(requestedProductId);
+          }
         },
         error: () => this.showMessage('labels.text.Loan policy configuration could not be loaded', 'error')
       });
@@ -292,7 +400,36 @@ export class LoanManagementPolicyComponent implements OnInit {
     disbursement.controls.allowedMethods.markAsDirty();
   }
 
+  setLoanOfficerApproval(enabled: boolean): void {
+    const index = this.approvalLevels.controls.findIndex((level) => level.get('authority')?.value === 'LOAN_OFFICER');
+    if (enabled && index < 0) {
+      this.approvalLevels.insert(
+        0,
+        this.createApprovalLevelGroup({ authority: 'LOAN_OFFICER', minimumAmount: 0, maximumAmount: null })
+      );
+    } else if (!enabled && index >= 0) {
+      this.approvalLevels.removeAt(index);
+    }
+    this.syncLoanOfficerBand();
+  }
+
+  syncLoanOfficerBand(): void {
+    const branch = this.approvalLevels.controls.find((level) => level.get('authority')?.value === 'BRANCH_MANAGER');
+    const officer = this.approvalLevels.controls.find((level) => level.get('authority')?.value === 'LOAN_OFFICER');
+    if (!branch) return;
+    const limit = officer ? Number(officer.get('maximumAmount')?.value) : 0;
+    branch.get('minimumAmount')?.setValue(limit > 0 ? limit : 0);
+    branch.get('minimumExclusive')?.setValue(!!officer);
+  }
+
   private resetPolicy(policy: LoanManagementPolicyDefinition, loanProductId: number): void {
+    this.loadedPolicy = policy;
+    this.policyForm.controls.prequalification.patchValue({
+      minimumAgeYears: 0,
+      minimumApprovedShares: 0,
+      maximumConcurrentLoans: 0
+    });
+    this.policyForm.controls.underwriting.patchValue({ minimumMonthlyIncome: 0, maximumDebtToIncomeRatio: 0 });
     this.scoringFactors.clear();
     (policy.creditScoring?.factors || []).forEach((factor) =>
       this.scoringFactors.push(
@@ -352,7 +489,10 @@ export class LoanManagementPolicyComponent implements OnInit {
       minimumExclusive: [level.minimumExclusive || false],
       maximumAmount: [
         level.maximumAmount,
-        Validators.min(0)
+        level.authority === 'LOAN_OFFICER' ? [
+              Validators.required,
+              Validators.min(0.01)
+            ] : Validators.min(0)
       ]
     });
   }
@@ -385,7 +525,9 @@ export class LoanManagementPolicyComponent implements OnInit {
 
   private toPolicyDefinition(raw: ReturnType<typeof this.policyForm.getRawValue>): LoanManagementPolicyDefinition {
     return {
+      ...(this.loadedPolicy || {}),
       prequalification: raw.prequalification,
+      underwriting: raw.underwriting,
       creditScoring: {
         factors: raw.creditScoring.factors.map(({ code, enabled, weight, fullScoreAt, zeroScoreAt }) => ({
           code,
@@ -395,7 +537,7 @@ export class LoanManagementPolicyComponent implements OnInit {
         })),
         bands: raw.creditScoring.bands
       },
-      loanOfficerCanApprove: false,
+      loanOfficerCanApprove: raw.loanOfficerCanApprove,
       approvalRouting: raw.approvalRouting.map(({ authority, minimumAmount, minimumExclusive, maximumAmount }) => ({
         authority,
         minimumAmount,
@@ -422,6 +564,9 @@ export class LoanManagementPolicyComponent implements OnInit {
       prequalification: {
         requireActiveMember: true,
         minimumMembershipMonths: 0,
+        minimumAgeYears: 0,
+        minimumApprovedShares: 0,
+        maximumConcurrentLoans: 0,
         minimumSavingsBalance: 0,
         minimumSharesBalance: 0,
         minimumSavingsToRequestedAmountRatio: 0,
@@ -429,6 +574,7 @@ export class LoanManagementPolicyComponent implements OnInit {
         disallowExistingDefaultedLoan: true,
         disallowAnyActiveLoan: false
       },
+      underwriting: { minimumMonthlyIncome: 0, maximumDebtToIncomeRatio: 0 },
       creditScoring: {
         factors: [
           { code: 'MEMBERSHIP_DURATION', enabled: true, weight: 15, fullScoreAt: 12 },

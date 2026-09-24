@@ -1109,35 +1109,55 @@
       <header>
         <div>
           <span class="step">{{ 'Today' | translate }}</span>
-          <h2>{{ 'Transactions' | translate }}</h2>
+          <h2>{{ 'Teller journal' | translate }}</h2>
           <p>{{ 'Select a posted transaction when a correction is required.' | translate }}</p>
         </div>
+        <button mat-stroked-button type="button" (click)="openJournalPrint()">
+          <mat-icon>print</mat-icon>
+          {{ 'Print journal' | translate }}
+        </button>
       </header>
       <div class="table-scroll">
-        <table>
+        <table class="teller-journal-table">
           <thead>
             <tr>
               <th>{{ 'Date' | translate }}</th>
+              <th>{{ 'Description' | translate }}</th>
+              <th>{{ 'Member No.' | translate }}</th>
               <th>{{ 'Reference' | translate }}</th>
+              <th>{{ 'Member Name' | translate }}</th>
+              <th class="numeric">{{ 'Debit' | translate }}</th>
+              <th class="numeric">{{ 'Credit' | translate }}</th>
               <th>{{ 'Transaction' | translate }}</th>
-              <th>{{ 'Amount' | translate }}</th>
-              <th>{{ 'Status' | translate }}</th>
+              <th>{{ 'Cheque No.' | translate }}</th>
+              <th class="numeric">{{ 'Teller Balance' | translate }}</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (transaction of shiftTransactions; track transaction.reference) {
-              <tr>
+              <tr [class.reversed-row]="transaction.status === 'REVERSED'">
                 <td>{{ shiftBusinessDate() }}</td>
+                <td>{{ transactionTypeLabel(transaction.operationType) | translate }}</td>
+                <td>{{ transaction.memberNo || '—' }}</td>
                 <td>
                   <strong>{{ transaction.reference }}</strong>
                 </td>
-                <td>{{ transactionTypeLabel(transaction.operationType) | translate }}</td>
-                <td>
-                  <b>{{ transaction.currencyCode }} {{ transaction.amount | number }}</b>
+                <td>{{ transaction.memberName || '—' }}</td>
+                <td class="numeric">
+                  @if (transaction.debit) {
+                    <b>{{ transaction.currencyCode }} {{ transaction.debit | number }}</b>
+                  }
                 </td>
-                <td>
-                  <span class="posted-pill">{{ statusLabel(transaction.status) | translate }}</span>
+                <td class="numeric">
+                  @if (transaction.credit) {
+                    <b>{{ transaction.currencyCode }} {{ transaction.credit | number }}</b>
+                  }
+                </td>
+                <td>{{ transaction.productEntityType || '—' }}</td>
+                <td>{{ transaction.chequeNo || '—' }}</td>
+                <td class="numeric">
+                  <b>{{ transaction.currencyCode }} {{ transaction.tellerBalance | number }}</b>
                 </td>
                 <td>
                   @if (canRequestReversal(transaction)) {
@@ -1146,7 +1166,7 @@
                       {{ 'Request reversal' | translate }}
                     </button>
                   } @else if (transaction.status === 'REVERSED') {
-                    <span>{{ 'Reversed' | translate }}</span>
+                    <span class="reversed-pill">{{ 'Reversed' | translate }}</span>
                   } @else if (transaction.status === 'POSTED') {
                     <span>{{ 'Reversal requested' | translate }}</span>
                   }
@@ -1154,11 +1174,23 @@
               </tr>
             } @empty {
               <tr>
-                <td colspan="6" class="empty-row">
+                <td colspan="11" class="empty-row">
                   {{ 'No teller transactions were returned for this shift.' | translate }}
                 </td>
               </tr>
             }
+            <tr class="total-row">
+              <td colspan="5">
+                <strong>{{ 'Total' | translate }}</strong>
+              </td>
+              <td class="numeric">
+                <strong>{{ currencyCode }} {{ journalDebitTotal | number }}</strong>
+              </td>
+              <td class="numeric">
+                <strong>{{ currencyCode }} {{ journalCreditTotal | number }}</strong>
+              </td>
+              <td colspan="4"></td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -1308,6 +1340,102 @@
         <div class="till-sheet-actions">
           <button mat-stroked-button type="button" (click)="tillSheetOpen = false">{{ 'Close' | translate }}</button>
           <button mat-flat-button color="primary" type="button" (click)="printTillSheet()">
+            {{ 'Print / Save PDF' | translate }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (journalPrintOpen) {
+    <div class="receipt-overlay journal-print-overlay">
+      <section class="receipt-modal journal-print-modal">
+        <header class="journal-print-header">
+          <h1>{{ 'CBS PEWOSA SACCO' | translate }}</h1>
+          <h2>{{ 'TELLER JOURNAL' | translate }}</h2>
+          <p>
+            {{ 'Printed on' | translate }} {{ shiftBusinessDate() }} {{ 'by' | translate }}
+            {{ credentials?.staffDisplayName || credentials?.username }}
+          </p>
+        </header>
+        <table class="teller-journal-table journal-print-table">
+          <thead>
+            <tr>
+              <th>{{ 'Date' | translate }}</th>
+              <th>{{ 'Description' | translate }}</th>
+              <th>{{ 'Member No.' | translate }}</th>
+              <th>{{ 'Reference' | translate }}</th>
+              <th>{{ 'Member Name' | translate }}</th>
+              <th class="numeric">{{ 'Debit' | translate }}</th>
+              <th class="numeric">{{ 'Credit' | translate }}</th>
+              <th>{{ 'Transaction' | translate }}</th>
+              <th>{{ 'Cheque No.' | translate }}</th>
+              <th class="numeric">{{ 'Teller Balance' | translate }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (transaction of shiftTransactions; track transaction.reference) {
+              <tr [class.reversed-row]="transaction.status === 'REVERSED'">
+                <td>{{ shiftBusinessDate() }}</td>
+                <td>{{ transactionTypeLabel(transaction.operationType) | translate }}</td>
+                <td>{{ transaction.memberNo || '—' }}</td>
+                <td>{{ transaction.reference }}</td>
+                <td>{{ transaction.memberName || '—' }}</td>
+                <td class="numeric">
+                  @if (transaction.debit) {
+                    {{ transaction.currencyCode }} {{ transaction.debit | number }}
+                  }
+                </td>
+                <td class="numeric">
+                  @if (transaction.credit) {
+                    {{ transaction.currencyCode }} {{ transaction.credit | number }}
+                  }
+                </td>
+                <td>{{ transaction.productEntityType || '—' }}</td>
+                <td>{{ transaction.chequeNo || '—' }}</td>
+                <td class="numeric">{{ transaction.currencyCode }} {{ transaction.tellerBalance | number }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="10" class="empty-row">
+                  {{ 'No teller transactions were returned for this shift.' | translate }}
+                </td>
+              </tr>
+            }
+            <tr class="total-row">
+              <td colspan="5">
+                <strong>{{ 'Total' | translate }}</strong>
+              </td>
+              <td class="numeric">
+                <strong>{{ currencyCode }} {{ journalDebitTotal | number }}</strong>
+              </td>
+              <td class="numeric">
+                <strong>{{ currencyCode }} {{ journalCreditTotal | number }}</strong>
+              </td>
+              <td colspan="3"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="journal-print-signatures">
+          <div>
+            <span>{{ 'Prepared by' | translate }}</span>
+            <div class="signature-line"></div>
+            <small>{{ 'Date' | translate }}: ___/___/______</small>
+          </div>
+          <div>
+            <span>{{ 'Checked by' | translate }}</span>
+            <div class="signature-line"></div>
+            <small>{{ 'Date' | translate }}: ___/___/______</small>
+          </div>
+          <div>
+            <span>{{ 'Received and discussed by' | translate }}</span>
+            <div class="signature-line"></div>
+            <small>{{ 'Date' | translate }}: ___/___/______</small>
+          </div>
+        </div>
+        <div class="till-sheet-actions">
+          <button mat-stroked-button type="button" (click)="closeJournalPrint()">{{ 'Close' | translate }}</button>
+          <button mat-flat-button color="primary" type="button" (click)="printJournal()">
             {{ 'Print / Save PDF' | translate }}
           </button>
         </div>

@@ -593,6 +593,8 @@
     "error.resource.notImplemented.message": "Not implemented functionality!",
     "error.server.internal.type": "Internal Server Error",
     "error.server.internal.message": "An unexpected error occurred on the server. Please try again later.",
+    "error.server.timeout.type": "Request Timed Out",
+    "error.server.timeout.message": "The server did not respond in time. Please check your connection and retry.",
     "error.unknown.type": "Unknown Error",
     "error.unknown.message": "An unexpected error occurred.",
     "validation.required": "This field is required",
@@ -667,6 +669,7 @@
       "Home": "Home"
     },
     "buttons": {
+      "Configure Loan Policy": "Configure Loan Policy",
       "View drawer": "View drawer",
       "Accept Transfer": "Accept Transfer",
       "Actions": "Actions",
@@ -1320,6 +1323,7 @@
       "NotEqual": "Not equal"
     },
     "heading": {
+      "Underwriting limits": "Underwriting limits",
       "Balance your drawer": "Balance your drawer",
       "Cashier": "Cashier",
       "Check your opening cash": "Check your opening cash",
@@ -1858,6 +1862,11 @@
       "Recovery Actions History": "Recovery Actions History"
     },
     "inputs": {
+      "Maximum concurrent loans": "Maximum concurrent loans",
+      "Minimum monthly income": "Minimum monthly income",
+      "Maximum existing debt-to-income ratio": "Maximum existing debt-to-income ratio",
+      "Minimum member age years": "Minimum member age (years)",
+      "Minimum approved shares": "Minimum approved shares",
       "# Remittance": "# Remittance",
       "# Senders": "# Senders",
       "ACCOUNTING": "ACCOUNTING",
@@ -2318,6 +2327,7 @@
       "Enable Buy down fee": "Enable Buy down fee",
       "Enable Dormancy Tracking": "Enable Dormancy Tracking",
       "Enable Down Payment": "Enable Down Payment",
+      "Enable Loan Officer approval for this product": "Enable Loan Officer approval for this product",
       "Enable Down Payments": "Enable Down Payments",
       "Enable Lock-in Period": "Enable Lock-in Period",
       "Enable Multiple Disbursals": "Enable Multiple Disbursals",
@@ -3729,8 +3739,15 @@
       "Term Remaining": "Term Remaining"
     },
     "text": {
+      "Create the loan product and its financial terms first, then configure its lending rules here": "Create the loan product and its financial terms first, then configure its lending rules here",
+      "Guarantor count and coverage and collateral presence are checked before approval routing": "Guarantor count, coverage, and collateral presence are checked before approval routing",
+      "Valuation type and release preferences are recorded but not yet enforced": "Valuation, collateral type, and release preferences are recorded but not yet enforced",
+      "Zero means no limit": "Zero means no limit",
+      "These limits are checked against the loan officer appraisal before approval": "These limits are checked against the loan officer appraisal before approval",
+      "Zero disables this limit; 0.4 means 40 percent": "Zero disables this limit; 0.4 means 40 percent",
       "Add the loan terms, guarantors and collateral where required.": "Add the loan terms, guarantors and collateral where required.",
       "An authorized approver makes the final decision.": "An authorized approver makes the final decision.",
+      "An independent authorized officer may approve loans within the configured product limit": "An independent authorized officer may approve loans within the configured product limit",
       "Approval stays separate from loan preparation.": "Approval stays separate from loan preparation.",
       "Choose a task to continue.": "Choose a task to continue.",
       "Choose the transaction, then find the member and their account.": "Choose the transaction, then find the member and their account.",

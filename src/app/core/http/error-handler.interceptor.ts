@@ -182,6 +182,11 @@ export class ErrorHandlerInterceptor implements HttpInterceptor {
           message: errorMessage || this.translate.instant('errors.error.resource.not.found.message')
         });
       }
+    } else if (status === 408) {
+      this.alertService.alert({
+        type: this.translate.instant('errors.error.server.timeout.type'),
+        message: this.translate.instant('errors.error.server.timeout.message')
+      });
     } else if (status === 500) {
       this.alertService.alert({
         type: this.translate.instant('errors.error.server.internal.type'),

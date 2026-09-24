@@ -8,7 +8,7 @@
 
 <main class="staff-workspace loan-servicing-queue-page">
   <div class="breadcrumb-bar">
-    <a mat-button routerLink="/staff-workspaces/loan-officer" class="back-link">
+    <a mat-button routerLink="/staff-workspaces/loan-officer" [queryParams]="{ view: 'home' }" class="back-link">
       <fa-icon icon="arrow-left"></fa-icon>
       {{ 'Back to Loan Officer Workspace' | translate }}
     </a>

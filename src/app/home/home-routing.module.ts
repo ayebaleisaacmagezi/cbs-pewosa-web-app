@@ -15,7 +15,6 @@ import { Route } from '../core/route/route.service';
 
 /** Custom Components */
 import { HomeComponent } from './home.component';
-import { DashboardComponent } from './dashboard/dashboard.component';
 
 /** Custom Resolvers */
 import { OfficesResolver } from '../accounting/common-resolvers/offices.resolver';
@@ -35,7 +34,7 @@ const routes: Routes = [
     },
     {
       path: 'dashboard',
-      component: DashboardComponent,
+      loadComponent: () => import('./dashboard/dashboard.component').then((m) => m.DashboardComponent),
       data: { title: 'Dashboard', breadcrumb: 'Dashboard' },
       resolve: {
         offices: OfficesResolver

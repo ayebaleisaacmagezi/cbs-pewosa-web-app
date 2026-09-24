@@ -34,6 +34,7 @@ import { ProgressInterceptor } from './progress-bar/progress.interceptor';
 import { ApiPrefixInterceptor } from './http/api-prefix.interceptor';
 import { ErrorHandlerInterceptor } from './http/error-handler.interceptor';
 import { CacheInterceptor } from './http/cache.interceptor';
+import { TimeoutInterceptor } from './http/timeout.interceptor';
 import { AuthenticationInterceptor } from './authentication/authentication.interceptor';
 import { ProductionErrorHandler } from './diagnostics/production-error-handler';
 
@@ -114,6 +115,11 @@ import { ContentComponent } from './shell/content/content.component';
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ProgressInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: TimeoutInterceptor,
       multi: true
     },
     {

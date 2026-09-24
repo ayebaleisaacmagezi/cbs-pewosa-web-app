@@ -125,13 +125,14 @@ export class LoanOfficerWorkspaceComponent implements OnInit, AfterViewInit {
   });
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe((params) => {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const view = params.get('view') as LoanOfficerWorkspaceView | null;
-      if (view && [
+      const resolvedView: LoanOfficerWorkspaceView = view && [
           'home',
           'new-loan',
           'applications'
-        ].includes(view)) this.workspaceNavigation.setLoanOfficerView(view);
+        ].includes(view) ? view : 'home';
+      this.workspaceNavigation.setLoanOfficerView(resolvedView);
     });
     this.workspaceNavigation.loanOfficerView$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((view) => {
       this.setView(view);

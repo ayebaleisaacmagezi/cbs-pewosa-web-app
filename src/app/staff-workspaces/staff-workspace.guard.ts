@@ -20,6 +20,60 @@ export const normalizedWorkspaceRoles = (roles: any): string[] =>
       )
     : [];
 
+/** Entry target for a dedicated staff workspace role. */
+export interface FocusedWorkspaceEntry {
+  path: string;
+  view?: string;
+}
+
+/** Roles whose users keep the standard portal instead of a focused workspace. */
+const ELEVATED_WORKSPACE_ROLES = [
+  'super user',
+  'general manager',
+  'deputy gm',
+  'branch manager',
+  'accountant',
+  'it officer'
+];
+
+/**
+ * Resolves the focused workspace entry for the user's roles, if any.
+ * Mirrors the role priority used by the home component fallback redirect.
+ */
+export const focusedWorkspaceEntry = (roles: any): FocusedWorkspaceEntry | null => {
+  const roleNames = normalizedWorkspaceRoles(roles);
+  const hasRole = (role: string) => roleNames.includes(role);
+  const hasElevatedRole = roleNames.some((role) => ELEVATED_WORKSPACE_ROLES.includes(role));
+  const focused = (role: string) => hasRole(role) && !hasElevatedRole;
+
+  if (hasRole('branch manager')) return { path: 'manager', view: 'home' };
+  if (hasRole('chief teller')) return { path: 'chief-teller', view: 'drawers' };
+  if (focused('vault officer')) return { path: 'vault-officer' };
+  if (focused('compliance officer')) return { path: 'compliance-officer' };
+  if (focused('cashier')) return { path: 'cashier', view: 'home' };
+  if (focused('loan officer')) return { path: 'loan-officer', view: 'home' };
+  return null;
+};
+
+/**
+ * Redirects dedicated staff roles straight to their workspace before the
+ * home portal renders, so they never see the default dashboard flash.
+ */
+export const staffWorkspaceHomeRedirectGuard: CanActivateFn = () => {
+  const authenticationService = inject(AuthenticationService);
+  const router = inject(Router);
+  const credentials = authenticationService.getCredentials();
+  const entry = credentials ? focusedWorkspaceEntry(credentials.roles) : null;
+  if (!entry) return true;
+  return router.createUrlTree(
+    [
+      '/staff-workspaces',
+      entry.path
+    ],
+    { queryParams: entry.view ? { view: entry.view } : undefined }
+  );
+};
+
 export const staffWorkspaceGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const authenticationService = inject(AuthenticationService);
   const router = inject(Router);
