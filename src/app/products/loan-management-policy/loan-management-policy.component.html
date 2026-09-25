@@ -7,21 +7,8 @@
 -->
 
 <main class="loan-policy-page">
-  <header class="policy-hero">
-    <div>
-      <span class="eyebrow">{{ 'labels.heading.Loan management' | translate }}</span>
-      <h1>{{ 'labels.heading.Loan product policy' | translate }}</h1>
-      <p>{{ 'labels.text.Configure how each loan product is assessed approved and disbursed' | translate }}.</p>
-    </div>
-    <div class="policy-status">
-      <span>{{ 'labels.inputs.Policy status' | translate }}</span>
-      <strong>{{ policyStatusLabel | translate }}</strong>
-      @if (selectedProduct) {
-        <small>{{ selectedProduct.name }} · {{ 'labels.inputs.Version' | translate }} {{ policyVersion }}</small>
-      } @else {
-        <small>{{ 'labels.text.Select a loan product to begin' | translate }}</small>
-      }
-    </div>
+  <header class="policy-header">
+    <h1>{{ 'labels.heading.Loan product policy' | translate }}</h1>
   </header>
 
   @if (message) {
@@ -35,7 +22,6 @@
       <div class="section-heading">
         <div>
           <h2>{{ 'labels.heading.Choose a loan product' | translate }}</h2>
-          <p>{{ 'labels.text.Rules are versioned separately for every loan product' | translate }}.</p>
         </div>
         <button
           mat-stroked-button
@@ -50,15 +36,13 @@
           <span class="loading-label">{{ 'labels.text.Loading policy' | translate }}...</span>
         }
       </div>
-      <p>
-        {{
-          'labels.text.Create the loan product and its financial terms first, then configure its lending rules here'
-            | translate
-        }}.
-      </p>
       <mat-form-field appearance="outline" class="product-select">
         <mat-label>{{ 'labels.inputs.Loan product' | translate }}</mat-label>
-        <mat-select [formControl]="policyForm.controls.loanProductId" (selectionChange)="selectProduct($event.value)">
+        <mat-select
+          [formControl]="policyForm.controls.loanProductId"
+          [disabled]="saving"
+          (selectionChange)="selectProduct($event.value)"
+        >
           @for (product of loanProducts; track product.id) {
             <mat-option [value]="product.id"
               >{{ product.name }}
@@ -83,13 +67,12 @@
     </mat-card-content>
   </mat-card>
 
-  @if (policyForm.controls.loanProductId.value) {
+  @if (policyForm.controls.loanProductId.value && !loading && !policyLoadFailed) {
     <form [formGroup]="policyForm" (ngSubmit)="save()" class="policy-form">
       <mat-card class="policy-section">
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">1</span>
               <h2>{{ 'labels.heading.Policy control' | translate }}</h2>
               <p>{{ 'labels.text.Choose when this policy becomes effective and whether it is active' | translate }}.</p>
             </div>
@@ -108,7 +91,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">2</span>
               <h2>{{ 'labels.heading.Pre-qualification rules' | translate }}</h2>
               <p>{{ 'labels.text.Control whether an application may proceed' | translate }}.</p>
             </div>
@@ -192,7 +174,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">3</span>
               <h2>{{ 'labels.heading.Credit scoring' | translate }}</h2>
               <p>{{ 'labels.text.Set factor weights and the outcome for every risk band' | translate }}.</p>
             </div>
@@ -258,7 +239,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">4</span>
               <h2>{{ 'labels.heading.Approval authority' | translate }}</h2>
               <p>
                 {{
@@ -324,7 +304,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">5</span>
               <h2>{{ 'labels.heading.Required documents' | translate }}</h2>
               <p>{{ 'labels.text.Accepted uploads are PDF JPG and PNG' | translate }}.</p>
             </div>
@@ -369,7 +348,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">6</span>
               <h2>{{ 'labels.heading.Guarantors and collateral' | translate }}</h2>
               <p>
                 {{
@@ -431,7 +409,6 @@
         <mat-card-content>
           <div class="section-heading">
             <div>
-              <span class="section-number">7</span>
               <h2>{{ 'labels.heading.Fees and disbursement' | translate }}</h2>
               <p>{{ 'labels.text.Choose how fees are settled and which payment rails are available' | translate }}.</p>
             </div>
@@ -473,7 +450,6 @@
         <mat-card-content formGroupName="groupLending">
           <div class="section-heading">
             <div>
-              <span class="section-number">8</span>
               <h2>{{ 'labels.heading.Group Lending Rules' | translate }}</h2>
               <p>
                 {{
@@ -546,23 +522,17 @@
         </mat-card-content>
       </mat-card>
 
-      <mat-card class="save-bar"
-        ><mat-card-content
-          ><div>
-            <strong>{{ 'labels.heading.Save as a versioned policy' | translate }}</strong
-            ><span>{{ 'labels.text.Activation and every later change remain auditable' | translate }}.</span>
-          </div>
-          <button
-            mat-raised-button
-            color="primary"
-            type="submit"
-            [disabled]="saving || loading"
-            *mifosxHasPermission="'UPDATE_PEWOSALOANPOLICY'"
-          >
-            {{ (saving ? 'labels.buttons.Saving' : 'labels.buttons.Save loan policy') | translate }}
-          </button></mat-card-content
-        ></mat-card
-      >
+      <div class="save-bar">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="saving || loading"
+          *mifosxHasPermission="'UPDATE_PEWOSALOANPOLICY'"
+        >
+          {{ (saving ? 'labels.buttons.Saving' : 'labels.buttons.Save loan policy') | translate }}
+        </button>
+      </div>
     </form>
   }
 </main>

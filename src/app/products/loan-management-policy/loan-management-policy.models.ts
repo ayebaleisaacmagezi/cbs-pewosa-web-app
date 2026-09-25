@@ -25,6 +25,7 @@ export interface LoanPolicyApprovalLevel {
 
 export interface LoanPolicyDocumentRequirement {
   code: string;
+  name?: string;
   required: boolean;
   requiredBefore: 'SUBMISSION' | 'APPROVAL' | 'DISBURSEMENT';
   acceptedContentTypes: string[];
