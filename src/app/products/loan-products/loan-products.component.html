@@ -11,32 +11,12 @@
     <button
       mat-raised-button
       color="primary"
-      [matMenuTriggerFor]="createMenu"
+      [routerLink]="['create']"
+      [queryParams]="{ productType: 'loan' }"
       *mifosxHasPermission="'CREATE_LOANPRODUCT'"
     >
       {{ 'labels.buttons.Create' | translate }}
-      <fa-icon icon="caret-down" class="m-l-10"></fa-icon>
     </button>
-    <mat-menu #createMenu="matMenu">
-      <button
-        mat-menu-item
-        [routerLink]="['create']"
-        [queryParams]="{ productType: 'loan' }"
-        *mifosxHasPermission="'CREATE_LOANPRODUCT'"
-      >
-        <fa-icon icon="calendar-alt" class="m-r-10"></fa-icon>
-        {{ 'labels.buttons.Create Loan Product' | translate }}
-      </button>
-      <button
-        mat-menu-item
-        [routerLink]="['create']"
-        [queryParams]="{ productType: 'working-capital' }"
-        *mifosxHasPermission="'CREATE_LOANPRODUCT'"
-      >
-        <fa-icon icon="money-bill-alt" class="m-r-10"></fa-icon>
-        {{ 'labels.buttons.Create Working Capital Product' | translate }}
-      </button>
-    </mat-menu>
   </div>
   <div class="in-block">
     <button mat-raised-button color="primary" (click)="openImportDialog()" *mifosxHasPermission="'CREATE_LOANPRODUCT'">

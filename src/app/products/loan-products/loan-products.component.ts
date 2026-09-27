@@ -47,7 +47,6 @@ import { ErrorHandlerService } from 'app/core/error-handler/error-handler.servic
 import { ImportLoanProductDialogComponent } from './import-loan-product-dialog/import-loan-product-dialog.component';
 import { FaIconComponent } from '@fortawesome/angular-fontawesome';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatMenu, MatMenuTrigger, MatMenuItem } from '@angular/material/menu';
 import { StatusLookupPipe } from '../../pipes/status-lookup.pipe';
 import { DateFormatPipe } from '../../pipes/date-format.pipe';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
@@ -76,9 +75,6 @@ import { LoanProductBaseComponent } from './common/loan-product-base.component';
     MatRowDef,
     MatRow,
     MatPaginator,
-    MatMenu,
-    MatMenuTrigger,
-    MatMenuItem,
     StatusLookupPipe,
     DateFormatPipe
   ],

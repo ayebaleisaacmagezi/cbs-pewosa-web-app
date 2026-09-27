@@ -396,3 +396,168 @@
     justify-content: center;
   }
 }
+
+// Match the PHP staff sidebar for the general Angular navigation.
+.sidebar-layout {
+  height: 100%;
+  color: #17213a;
+  background: #fff;
+}
+
+.sidebar-full,
+.sidebar-compact {
+  .navigation-panel {
+    display: flex;
+    min-height: 0;
+    padding: 0 8px 8px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .app-brand {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    min-height: 64px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px;
+    color: #17213a;
+    text-decoration: none;
+    text-align: left;
+
+    .app-logo {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 40px;
+      margin: 0;
+      object-fit: contain;
+    }
+
+    .app-logo-text {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .app-sidenav {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 16px;
+
+    .nav-item-sep {
+      margin: 8px 0;
+
+      span {
+        padding: 8px;
+        color: #68758c;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+    }
+
+    .icon-menu {
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+
+      .icon-menu-item button {
+        margin: 0;
+        color: #4e5d77;
+        background: #f3f4f6;
+        box-shadow: none;
+        border-radius: 8px;
+      }
+    }
+
+    mat-list-item {
+      min-height: 40px;
+      height: auto;
+      margin: 4px 0;
+      padding: 4px 8px;
+      border: 0;
+      border-radius: 8px;
+      color: #4e5d77;
+      cursor: pointer;
+      --mdc-list-list-item-label-text-color: #4e5d77;
+      --mdc-list-list-item-hover-label-text-color: #17213a;
+      --mdc-list-list-item-focus-label-text-color: #17213a;
+
+      &:hover {
+        background: #f3f4f6;
+      }
+      &.active-menu {
+        color: #fff;
+        background: #244d9a;
+        font-weight: 700;
+        --mdc-list-list-item-label-text-color: #fff;
+        --mdc-list-list-item-hover-label-text-color: #fff;
+        --mdc-list-list-item-focus-label-text-color: #fff;
+      }
+
+      mat-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 8px;
+        color: inherit;
+      }
+      a {
+        color: inherit;
+        font-size: 14px;
+        text-decoration: none;
+      }
+      &:focus-visible {
+        outline: 2px solid #244d9a;
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+.cashier-sidebar-header,
+.cashier-profile {
+  flex-shrink: 0;
+}
+
+.cashier-nav {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cashier-profile {
+  border-top: 1px solid #e2e5eb;
+}
+.cashier-profile-row {
+  gap: 8px;
+}
+.cashier-profile-row button {
+  flex-shrink: 0;
+  color: #68758c;
+}
+
+.sidebar-compact {
+  .navigation-panel .app-brand {
+    display: none;
+  }
+  .app-sidenav .nav-item-sep,
+  .app-sidenav mat-list-item a {
+    display: none;
+  }
+  .app-sidenav mat-list-item {
+    padding-inline: 0;
+    text-align: center;
+  }
+  .app-sidenav mat-list-item mat-icon {
+    margin: 0;
+  }
+  .cashier-profile-row button {
+    display: none;
+  }
+}
