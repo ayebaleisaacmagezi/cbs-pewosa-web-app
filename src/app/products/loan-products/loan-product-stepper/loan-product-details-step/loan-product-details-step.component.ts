@@ -9,10 +9,8 @@
 /** Angular Imports */
 import { ChangeDetectionStrategy, Component, OnInit, Input, inject } from '@angular/core';
 import { UntypedFormGroup, UntypedFormBuilder, Validators, UntypedFormControl } from '@angular/forms';
-import { Dates } from 'app/core/utils/dates';
 
 /** Custom Services */
-import { SettingsService } from 'app/settings/settings.service';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { CdkTextareaAutosize } from '@angular/cdk/text-field';
@@ -38,8 +36,6 @@ import { LoanProductBaseComponent } from '../../common/loan-product-base.compone
 })
 export class LoanProductDetailsStepComponent extends LoanProductBaseComponent implements OnInit {
   private formBuilder = inject(UntypedFormBuilder);
-  private dateUtils = inject(Dates);
-  private settingsService = inject(SettingsService);
 
   @Input() loanProductsTemplate: any;
 
@@ -47,8 +43,6 @@ export class LoanProductDetailsStepComponent extends LoanProductBaseComponent im
 
   fundData: any;
 
-  minDate = new Date(2000, 0, 1);
-  maxDate = new Date(new Date().setFullYear(new Date().getFullYear() + 10));
 
   constructor() {
     super();
@@ -60,12 +54,9 @@ export class LoanProductDetailsStepComponent extends LoanProductBaseComponent im
 
     this.loanProductDetailsForm.patchValue({
       name: this.loanProductsTemplate.name,
-      shortName: this.loanProductsTemplate.shortName,
+      shortName: this.loanProductsTemplate.shortName || this.loanProductDetailsForm.controls.shortName.value,
       description: this.loanProductsTemplate.description,
-      externalId: this.loanProductsTemplate.externalId,
       fundId: this.loanProductsTemplate.fundId,
-      startDate: this.loanProductsTemplate.startDate && new Date(this.loanProductsTemplate.startDate),
-      closeDate: this.loanProductsTemplate.closeDate && new Date(this.loanProductsTemplate.closeDate),
       includeInBorrowerCycle: this.loanProductsTemplate.includeInBorrowerCycle
     });
   }
@@ -80,7 +71,7 @@ export class LoanProductDetailsStepComponent extends LoanProductBaseComponent im
         ]
       ],
       shortName: [
-        '',
+        this.generateProductCode(),
         [
           Validators.required,
           Validators.maxLength(4)
@@ -90,10 +81,7 @@ export class LoanProductDetailsStepComponent extends LoanProductBaseComponent im
         '',
         Validators.maxLength(500)
       ],
-      externalId: [''],
-      fundId: [''],
-      startDate: [''],
-      closeDate: ['']
+      fundId: ['']
     });
 
     if (this.loanProductService.isLoanProduct) {
@@ -101,17 +89,13 @@ export class LoanProductDetailsStepComponent extends LoanProductBaseComponent im
     }
   }
 
+  private generateProductCode(): string {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const values = crypto.getRandomValues(new Uint32Array(4));
+    return Array.from(values, (value) => alphabet[value % alphabet.length]).join('');
+  }
+
   get loanProductDetails() {
-    const loanProductDetailsFormData = this.loanProductDetailsForm.value;
-    const prevStartDate: Date = this.loanProductDetailsForm.value.startDate;
-    const prevCloseDate: Date = this.loanProductDetailsForm.value.closeDate;
-    const dateFormat = this.settingsService.dateFormat;
-    if (loanProductDetailsFormData.startDate instanceof Date) {
-      loanProductDetailsFormData.startDate = this.dateUtils.formatDate(prevStartDate, dateFormat) || '';
-    }
-    if (loanProductDetailsFormData.closeDate instanceof Date) {
-      loanProductDetailsFormData.closeDate = this.dateUtils.formatDate(prevCloseDate, dateFormat) || '';
-    }
-    return loanProductDetailsFormData;
+    return this.loanProductDetailsForm.value;
   }
 }

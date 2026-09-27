@@ -415,21 +415,6 @@
         }
       </div>
 
-      <h4 class="mat-h4 m-r-10 flex-98">
-        {{ 'labels.inputs.Moratorium' | translate }}
-        <i class="fas fa-question" matTooltip="{{ 'tooltips.The moratorium information' | translate }}"></i>
-      </h4>
-
-      <mat-form-field class="flex-48">
-        <mat-label>{{ 'labels.inputs.Grace on principal payment' | translate }}</mat-label>
-        <input type="number" min="0" matInput formControlName="graceOnPrincipalPayment" />
-      </mat-form-field>
-
-      <mat-form-field class="flex-48">
-        <mat-label>{{ 'labels.inputs.Grace on interest payment' | translate }}</mat-label>
-        <input type="number" min="0" matInput formControlName="graceOnInterestPayment" />
-      </mat-form-field>
-
       <mat-divider class="flex-98"></mat-divider>
 
       <mat-form-field class="flex-48">
@@ -976,13 +961,6 @@
           </mat-checkbox>
           <mat-checkbox labelPosition="before" formControlName="repaymentEvery" class="margin-v flex-48">
             {{ 'labels.inputs.Repaid every' | translate }}
-          </mat-checkbox>
-          <mat-checkbox
-            class="flex-48 margin-v"
-            labelPosition="before"
-            formControlName="graceOnPrincipalAndInterestPayment"
-          >
-            {{ 'labels.inputs.Moratorium' | translate }}
           </mat-checkbox>
           <mat-checkbox labelPosition="before" formControlName="graceOnArrearsAgeing" class="margin-v flex-48">
             {{ 'labels.inputs.Number of days a loan may be overdue before moving into arrears' | translate }}

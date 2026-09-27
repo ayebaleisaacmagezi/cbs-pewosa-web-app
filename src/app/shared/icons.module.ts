@@ -12,6 +12,8 @@ import { NgModule, inject } from '@angular/core';
 /** Angular Font Awesome Imports */
 import { FontAwesomeModule, FaIconLibrary } from '@fortawesome/angular-fontawesome';
 import {
+  faDatabase,
+  faUserPlus,
   faAnchor,
   faArchive,
   faArrowLeft,
@@ -160,6 +162,8 @@ export class IconsModule {
     const library = inject(FaIconLibrary);
 
     library.addIcons(
+      faDatabase,
+      faUserPlus,
       faAnchor,
       faArchive,
       faArrowLeft,

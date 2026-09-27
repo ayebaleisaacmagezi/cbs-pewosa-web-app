@@ -7,12 +7,33 @@
 -->
 
 @if (filtersForm) {
-  <div class="dashboard-shell">
+  <div class="dashboard-shell" [class.super-admin-dashboard]="isSuperAdmin">
+    @if (isSuperAdmin) {
+      <div class="overview-heading">
+        <div>
+          <h1>{{ activeArea === 'all' ? 'Super Admin Dashboard' : (areaTitleKey | translate) }}</h1>
+        </div>
+      </div>
+    }
     <mat-card class="filter-card">
       <div class="filter-row">
-        <mat-form-field class="office-field">
+        @if (isSuperAdmin) {
+          <mat-form-field class="office-field" subscriptSizing="dynamic">
+            <mat-label>{{ 'labels.superAdmin.Analytics area' | translate }}</mat-label>
+            <mat-select [value]="activeArea" (selectionChange)="selectArea($event.value)">
+              <mat-option value="all">All analytics</mat-option>
+              @for (area of dashboardAreas; track area.id) {
+                <mat-option [value]="area.id">{{ area.titleKey | translate }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+        <mat-form-field class="office-field" subscriptSizing="dynamic">
           <mat-label>{{ 'labels.inputs.Office' | translate }}</mat-label>
           <mat-select [formControl]="filtersForm.controls.officeId">
+            @if (isSuperAdmin) {
+              <mat-option [value]="null">{{ 'labels.superAdmin.All branches' | translate }}</mat-option>
+            }
             @for (office of offices; track office.id) {
               <mat-option [value]="office.id">
                 {{ office.name }}
@@ -21,11 +42,13 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-button-toggle-group [formControl]="filtersForm.controls.timescale" appearance="legacy">
-          <mat-button-toggle value="Day">{{ 'labels.buttons.Day' | translate }}</mat-button-toggle>
-          <mat-button-toggle value="Week">{{ 'labels.buttons.Week' | translate }}</mat-button-toggle>
-          <mat-button-toggle value="Month">{{ 'labels.buttons.Month' | translate }}</mat-button-toggle>
-        </mat-button-toggle-group>
+        @if (!isSuperAdmin || activeArea === 'reports' || activeArea === 'all') {
+          <mat-button-toggle-group [formControl]="filtersForm.controls.timescale" appearance="legacy">
+            <mat-button-toggle value="Day">{{ 'labels.buttons.Day' | translate }}</mat-button-toggle>
+            <mat-button-toggle value="Week">{{ 'labels.buttons.Week' | translate }}</mat-button-toggle>
+            <mat-button-toggle value="Month">{{ 'labels.buttons.Month' | translate }}</mat-button-toggle>
+          </mat-button-toggle-group>
+        }
 
         <button mat-stroked-button type="button" (click)="reloadDashboard(true)">
           {{ 'labels.buttons.Refresh' | translate }}
@@ -33,24 +56,108 @@
       </div>
     </mat-card>
 
+    @if (isSuperAdmin && activeArea === 'reports') {
+      <p>{{ 'labels.superAdmin.Business scope note' | translate }}</p>
+    }
     @if (!visibleWidgets.length) {
       <mat-card class="empty-dashboard">
         {{ 'labels.text.No Data' | translate }}
       </mat-card>
     } @else {
-      <div class="summary-grid">
-        @for (widget of metricWidgets; track widget.id) {
-          <mifosx-dashboard-widget [widget]="widget" [state]="widgetStateMap[widget.id]"></mifosx-dashboard-widget>
+      @if (isSuperAdmin && activeArea === 'all') {
+        @for (area of dashboardAreas; track area.id) {
+          <section class="analytics-area">
+            <h2>{{ area.titleKey | translate }}</h2>
+            <div class="summary-grid manager-style-grid">
+              @for (widget of widgetsForArea(area.id, 'metric'); track widget.id) {
+                <mifosx-dashboard-widget
+                  [widget]="widget"
+                  [state]="widgetStateMap[widget.id]"
+                  [compact]="true"
+                ></mifosx-dashboard-widget>
+              }
+            </div>
+            <div class="chart-grid">
+              @for (widget of widgetsForArea(area.id, 'chart'); track widget.id) {
+                <div [class.widget-wide]="widget.layout === 'wide'" [class.widget-half]="widget.layout === 'half'">
+                  <mifosx-dashboard-widget
+                    [widget]="widget"
+                    [state]="widgetStateMap[widget.id]"
+                    [compact]="true"
+                  ></mifosx-dashboard-widget>
+                </div>
+              }
+              @for (widget of widgetsForArea(area.id, 'list'); track widget.id) {
+                <div class="widget-half">
+                  <mifosx-dashboard-widget [widget]="widget" [state]="widgetStateMap[widget.id]"></mifosx-dashboard-widget>
+                </div>
+              }
+            </div>
+          </section>
         }
-      </div>
+      } @else {
+        <div class="summary-grid" [class.manager-style-grid]="isSuperAdmin">
+          @for (widget of metricWidgets; track widget.id) {
+            <mifosx-dashboard-widget
+              [widget]="widget"
+              [state]="widgetStateMap[widget.id]"
+              [compact]="isSuperAdmin"
+            ></mifosx-dashboard-widget>
+          }
+        </div>
 
-      <div class="chart-grid">
-        @for (widget of chartWidgets; track widget.id) {
-          <div [class.widget-wide]="widget.layout === 'wide'" [class.widget-half]="widget.layout === 'half'">
-            <mifosx-dashboard-widget [widget]="widget" [state]="widgetStateMap[widget.id]"></mifosx-dashboard-widget>
+        <div class="chart-grid">
+          @for (widget of chartWidgets; track widget.id) {
+            <div [class.widget-wide]="widget.layout === 'wide'" [class.widget-half]="widget.layout === 'half'">
+              <mifosx-dashboard-widget
+                [widget]="widget"
+                [state]="widgetStateMap[widget.id]"
+                [compact]="isSuperAdmin"
+              ></mifosx-dashboard-widget>
+            </div>
+          }
+        </div>
+        @if (isSuperAdmin && operationLists.length) {
+          <div class="chart-grid">
+            @for (widget of operationLists; track widget.id) {
+              <div class="widget-half">
+                <mifosx-dashboard-widget [widget]="widget" [state]="widgetStateMap[widget.id]"></mifosx-dashboard-widget>
+              </div>
+            }
           </div>
         }
-      </div>
+      }
+      @if (lastChecked) {
+        <p class="checked-at">
+          {{ 'labels.superAdmin.Checked' | translate }} {{ lastChecked | date: 'dd/MM/yyyy HH:mm:ss' }}
+        </p>
+      }
+      @if (operationMetrics.length) {
+        <section aria-labelledby="system-overview-title">
+          <h2 id="system-overview-title">{{ 'labels.superAdmin.System operations' | translate }}</h2>
+          <p>{{ 'labels.superAdmin.Scope note' | translate }}</p>
+          <div class="summary-grid" [class.manager-style-grid]="isSuperAdmin">
+            @for (widget of operationMetrics; track widget.id) {
+              <mifosx-dashboard-widget
+                [widget]="widget"
+                [state]="widgetStateMap[widget.id]"
+                [compact]="isSuperAdmin"
+              ></mifosx-dashboard-widget>
+            }
+          </div>
+        </section>
+        <div class="chart-grid">
+          @for (widget of operationLists; track widget.id) {
+            <div class="widget-half">
+              <mifosx-dashboard-widget
+                [widget]="widget"
+                [state]="widgetStateMap[widget.id]"
+                [compact]="isSuperAdmin"
+              ></mifosx-dashboard-widget>
+            </div>
+          }
+        </div>
+      }
     }
   </div>
 }

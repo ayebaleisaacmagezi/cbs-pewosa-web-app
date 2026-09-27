@@ -8,13 +8,15 @@
 
 import { AnalyticsDashboardDefinition } from './models/analytics-dashboard.model';
 
+import { SUPER_ADMIN_DASHBOARD_WIDGETS } from './super-admin-dashboard.config';
+
 export const GLOBAL_ANALYTICS_DASHBOARD: AnalyticsDashboardDefinition = {
   id: 'global-dashboard',
   titleKey: 'labels.menus.Dashboard',
   widgets: [
     {
       id: 'clients-total',
-      titleKey: 'labels.inputs.Clients',
+      titleKey: 'labels.superAdmin.Client trend total',
       type: 'metric',
       layout: 'metric',
       adapter: 'client-total',
@@ -29,7 +31,7 @@ export const GLOBAL_ANALYTICS_DASHBOARD: AnalyticsDashboardDefinition = {
     },
     {
       id: 'loans-total',
-      titleKey: 'labels.menus.Loans',
+      titleKey: 'labels.superAdmin.Loan trend total',
       type: 'metric',
       layout: 'metric',
       adapter: 'loan-total',
@@ -114,6 +116,91 @@ export const GLOBAL_ANALYTICS_DASHBOARD: AnalyticsDashboardDefinition = {
           'ALL_FUNCTIONS'
         ]
       }
-    }
+    },
+    {
+      id: 'approval-total',
+      titleKey: 'labels.superAdmin.Pending approvals',
+      type: 'metric',
+      layout: 'metric',
+      adapter: 'approval-total',
+      icon: 'tasks',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true }
+    },
+    {
+      id: 'users-count',
+      titleKey: 'labels.superAdmin.User records',
+      type: 'metric',
+      layout: 'metric',
+      adapter: 'users-count',
+      icon: 'users',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true },
+      link: '/appusers'
+    },
+    {
+      id: 'jobs-count',
+      titleKey: 'labels.superAdmin.Scheduled jobs',
+      type: 'metric',
+      layout: 'metric',
+      adapter: 'jobs-count',
+      icon: 'tasks',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true },
+      link: '/system/manage-jobs'
+    },
+    {
+      id: 'audits-count',
+      titleKey: 'labels.superAdmin.Audit entries shown',
+      type: 'metric',
+      layout: 'metric',
+      adapter: 'audits-count',
+      icon: 'tasks',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true },
+      link: '/system/audit-trails'
+    },
+    {
+      id: 'notifications-count',
+      titleKey: 'labels.superAdmin.Notifications shown',
+      type: 'metric',
+      layout: 'metric',
+      adapter: 'notifications-count',
+      icon: 'bell',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true }
+    },
+    {
+      id: 'jobs-list',
+      titleKey: 'labels.superAdmin.Scheduled jobs',
+      type: 'list',
+      layout: 'half',
+      adapter: 'jobs-list',
+      icon: 'tasks',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true },
+      link: '/system/manage-jobs'
+    },
+    {
+      id: 'notifications-list',
+      titleKey: 'labels.superAdmin.Recent notifications',
+      type: 'list',
+      layout: 'half',
+      adapter: 'notifications-list',
+      icon: 'bell',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true }
+    },
+    {
+      id: 'branch-workload',
+      titleKey: 'labels.superAdmin.Approval workload by branch',
+      type: 'list',
+      layout: 'half',
+      adapter: 'branch-workload',
+      icon: 'users',
+      section: 'operations',
+      visibleTo: { superAdminOnly: true }
+    },
+    ...SUPER_ADMIN_DASHBOARD_WIDGETS
   ]
 };

@@ -6,22 +6,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, Input, inject } from '@angular/core';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { DOCUMENT } from '@angular/common';
+import { MatExpansionModule } from '@angular/material/expansion';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
-import { finalize, forkJoin } from 'rxjs';
+import { Observable, finalize, forkJoin, of, tap } from 'rxjs';
 
-import { ProductsService } from 'app/products/products.service';
+import { AuthenticationService } from 'app/core/authentication/authentication.service';
+import { environment } from '../../../environments/environment';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 import {
   LoanManagementPolicyDefinition,
   LoanPolicyApprovalLevel,
   LoanPolicyDisbursementMethod,
   LoanPolicyDocumentRequirement,
-  LoanPolicyProductOption
+  SaveLoanManagementPolicyRequest
 } from './loan-management-policy.models';
 import { LoanManagementPolicyService } from './loan-management-policy.service';
 
@@ -30,23 +32,24 @@ import { LoanManagementPolicyService } from './loan-management-policy.service';
   standalone: true,
   imports: [
     ...STANDALONE_SHARED_IMPORTS,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatExpansionModule
   ],
   templateUrl: './loan-management-policy.component.html',
   styleUrls: ['./loan-management-policy.component.scss']
 })
 export class LoanManagementPolicyComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
+  private readonly http = inject(HttpClient);
+  private readonly document = inject(DOCUMENT);
   private readonly policyService = inject(LoanManagementPolicyService);
-  private readonly productsService = inject(ProductsService);
-  private readonly route = inject(ActivatedRoute);
+  private readonly authenticationService = inject(AuthenticationService);
+  @Input() productId: number | null = null;
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
   private readonly snackBar = inject(MatSnackBar);
   private readonly translateService = inject(TranslateService);
 
-  loanProducts: LoanPolicyProductOption[] = [];
-  selectedProduct: LoanPolicyProductOption | null = null;
   policyVersion = 0;
   configured = false;
   loading = false;
@@ -55,7 +58,54 @@ export class LoanManagementPolicyComponent implements OnInit {
   message = '';
   messageType: 'success' | 'error' | '' = '';
   private loadedPolicy: LoanManagementPolicyDefinition | null = null;
-  private productLoadSequence = 0;
+  definitionSections: Array<{ title: string; fields: Array<{ label: string; description: string }> }> = [];
+  definitionControls: Record<string, FormControl<string>> = {};
+
+  private readonly configuredElsewhere: Record<string, string> = {
+    'Product Name': 'General information',
+    'Product Description': 'General information',
+    'Currency': 'Currency',
+    'Membership Required': 'Pre-qualification rules',
+    'Minimum Membership Duration': 'Pre-qualification rules',
+    'Minimum Shares Needed': 'Pre-qualification rules',
+    'Minimum Share Balance': 'Pre-qualification rules',
+    'Minimum Principal Amount': 'Terms',
+    'Maximum Principal Amount': 'Terms',
+    'Minimum Tenor': 'Terms',
+    'Maximum Tenor': 'Terms',
+    'Repayment Frequency': 'Terms',
+    'Amortization Method': 'Terms',
+    'Loan Cycle Limit': 'Pre-qualification rules',
+    'Nominal Annual Interest Rate': 'Terms',
+    'Loan Application Fee': 'Charges',
+    'Application Fee Deduction Method': 'Fees and disbursement',
+    'Collateral Required': 'Guarantors and collateral',
+    'Valuation Requirement': 'Guarantors and collateral',
+    'Guarantor Required': 'Guarantors and collateral',
+    'Minimum Number of Guarantors': 'Guarantors and collateral',
+    'Maximum Number of Guarantors': 'Guarantors and collateral',
+    'Minimum Age': 'Pre-qualification rules',
+    'Minimum Income': 'Underwriting limits',
+    'Debt-to-Income Ratio': 'Underwriting limits',
+    'Membership Duration': 'Pre-qualification rules',
+    'Documentation Required': 'Required documents',
+    'Underwriting Approval Level': 'Approval authority',
+    'Disbursement Method': 'Fees and disbursement',
+    'Principal Ledger Account': 'Accounting',
+    'Interest Income Account': 'Accounting',
+    'Fee Income Account': 'Accounting',
+    'Penalty Income Account': 'Accounting',
+    'Write-off Account': 'Accounting',
+    'Suspense Account': 'Accounting'
+  };
+
+  fieldKey(section: string, field: string): string {
+    return `${section}|${field}`;
+  }
+
+  fieldLocation(field: string): string | null {
+    return this.configuredElsewhere[field] || null;
+  }
 
   readonly disbursementMethods: Array<{ code: LoanPolicyDisbursementMethod; label: string }> = [
     { code: 'ACCOUNT_CREDIT', label: 'labels.inputs.Account credit' },
@@ -308,152 +358,86 @@ export class LoanManagementPolicyComponent implements OnInit {
     return this.policyForm.controls.active.value ? 'labels.inputs.Active' : 'labels.inputs.Inactive';
   }
 
-  ngOnInit(): void {
-    this.loadTemplate();
+  get canWrite(): boolean {
+    const permissions = this.authenticationService.getCredentials()?.permissions || [];
+    return (
+      !environment.productionModeEnableRBAC ||
+      permissions.includes('ALL_FUNCTIONS') ||
+      permissions.includes('UPDATE_PEWOSALOANPOLICY')
+    );
   }
 
-  loadTemplate(): void {
+  ngOnInit(): void {
     this.loading = true;
     forkJoin({
       template: this.policyService.getTemplate(),
-      loanProducts: this.productsService.getLoanProducts('loanproducts')
-    }).subscribe({
-      next: ({ template, loanProducts }) => {
-        this.loanProducts = loanProducts || [];
-        this.resetPolicy(template.policy, 0);
-        const requestedProductId = Number(this.route.snapshot.queryParamMap.get('loanProductId'));
-        if (this.loanProducts.some((product) => product.id === requestedProductId)) {
-          this.selectProduct(requestedProductId);
-        } else {
-          this.loading = false;
-        }
-      },
-      error: () => {
-        this.loading = false;
-        this.showMessage('labels.text.Loan policy configuration could not be loaded', 'error');
-      }
-    });
-  }
-
-  selectProduct(loanProductId: number): void {
-    const loadSequence = ++this.productLoadSequence;
-    this.selectedProduct = this.loanProducts.find((product) => product.id === loanProductId) || null;
-    this.loading = true;
-    this.policyLoadFailed = false;
-    this.message = '';
-    this.policyService
-      .getPolicy(loanProductId)
+      existing: this.productId ? this.policyService.getPolicy(this.productId) : of(null),
+      definition: this.http.get<Array<{ title: string; fields: Array<{ label: string; description: string }> }>>(
+        new URL('assets/loan-product-definition.json', this.document.baseURI).href
+      )
+    })
       .pipe(
         finalize(() => {
-          if (loadSequence === this.productLoadSequence) {
-            this.loading = false;
-            if (!this.destroyRef.destroyed) {
-              this.changeDetectorRef.detectChanges();
-            }
-          }
+          this.loading = false;
+          if (!this.destroyRef.destroyed) this.changeDetectorRef.detectChanges();
         })
       )
       .subscribe({
-        next: (response) => {
-          if (loadSequence !== this.productLoadSequence) return;
-          this.policyVersion = response.version;
-          this.configured = response.configured;
-          this.resetPolicy(response.policy, loanProductId);
-          this.policyForm.patchValue({ active: response.active ?? false, effectiveFrom: response.effectiveFrom });
+        next: ({ template, existing, definition }) => {
+          this.definitionSections = definition;
+          this.resetPolicy(existing ? existing.policy : template.policy, this.productId || 0);
+          this.policyVersion = existing?.version || 0;
+          this.configured = existing?.configured || false;
+          this.policyForm.patchValue({
+            active: existing ? (existing.active ?? false) : true,
+            effectiveFrom: existing?.effectiveFrom || null
+          });
+          if (!this.canWrite) this.policyForm.disable();
         },
         error: () => {
-          if (loadSequence !== this.productLoadSequence) return;
           this.policyLoadFailed = true;
           this.showMessage('labels.text.Loan policy configuration could not be loaded', 'error');
         }
       });
   }
 
-  save(): void {
-    if (this.policyForm.invalid || this.saving) {
-      console.warn('[LoanPolicySave]', {
-        event: 'submit.skipped',
-        loanProductId: this.policyForm.controls.loanProductId.value,
-        formInvalid: this.policyForm.invalid,
-        alreadySaving: this.saving
-      });
-      this.policyForm.markAllAsTouched();
+  prepareSave(): SaveLoanManagementPolicyRequest | null {
+    if (!this.canWrite) return null;
+    if (this.loading || this.policyLoadFailed) {
+      this.showMessage('labels.text.Loan policy configuration could not be loaded', 'error');
+      return null;
+    }
+    // A new product has no ID until the native create succeeds.
+    this.policyForm.controls.loanProductId.setValue(this.productId || 0);
+    this.policyForm.markAllAsTouched();
+    if (this.policyForm.invalid) {
       this.showMessage('labels.text.Complete the required loan policy fields before saving', 'error');
-      return;
+      return null;
     }
-    const loanProductId = this.policyForm.controls.loanProductId.value as number;
     const raw = this.policyForm.getRawValue();
-    const documentCodes = raw.documentRequirements.map(({ code }) => code.trim().toUpperCase());
-    if (new Set(documentCodes).size !== documentCodes.length) {
+    const codes = raw.documentRequirements.map(({ code }) => code.trim().toUpperCase());
+    if (new Set(codes).size !== codes.length) {
       this.showMessage('labels.text.Duplicate document codes are not allowed', 'error');
-      return;
+      return null;
     }
-    const attemptId = Date.now();
-    console.info('[LoanPolicySave]', { event: 'payload.build.started', attemptId, loanProductId });
-    let policy: LoanManagementPolicyDefinition;
-    try {
-      policy = this.toPolicyDefinition(raw);
-    } catch (error) {
-      console.error('[LoanPolicySave] payload.build.failed', { attemptId, loanProductId, error });
-      this.showMessage('labels.text.Loan policy could not be saved', 'error');
-      return;
-    }
-    console.info('[LoanPolicySave]', { event: 'payload.build.completed', attemptId, loanProductId });
+    return { active: Boolean(raw.active), effectiveFrom: raw.effectiveFrom, policy: this.toPolicyDefinition(raw) };
+  }
+
+  saveForProduct(productId: number, request: SaveLoanManagementPolicyRequest): Observable<unknown> {
     this.saving = true;
-    console.info('[LoanPolicySave]', { event: 'request.started', attemptId, loanProductId });
-    this.policyService
-      .updatePolicy(loanProductId, {
-        effectiveFrom: raw.effectiveFrom,
-        active: Boolean(raw.active),
-        policy
+    return this.policyService.updatePolicy(productId, request).pipe(
+      tap((response) => {
+        this.productId = productId;
+        this.policyVersion = response.version;
+        this.configured = response.configured;
+        this.resetPolicy(response.policy, productId);
+        this.policyForm.patchValue({ active: response.active ?? true, effectiveFrom: response.effectiveFrom });
+      }),
+      finalize(() => {
+        this.saving = false;
+        if (!this.destroyRef.destroyed) this.changeDetectorRef.detectChanges();
       })
-      .pipe(
-        finalize(() => {
-          this.saving = false;
-          if (!this.destroyRef.destroyed) {
-            this.changeDetectorRef.detectChanges();
-          }
-          console.info('[LoanPolicySave]', {
-            event: 'request.finalized',
-            attemptId,
-            loanProductId,
-            saving: this.saving
-          });
-        })
-      )
-      .subscribe({
-        next: (response) => {
-          console.info('[LoanPolicySave]', {
-            event: 'response.received',
-            attemptId,
-            loanProductId: response.loanProductId,
-            version: response.version,
-            configured: response.configured
-          });
-          try {
-            this.policyVersion = response.version;
-            this.configured = response.configured;
-            console.info('[LoanPolicySave]', { event: 'form.reset.started', attemptId, loanProductId });
-            this.resetPolicy(response.policy, response.loanProductId);
-            this.policyForm.patchValue({ active: response.active ?? true, effectiveFrom: response.effectiveFrom });
-            console.info('[LoanPolicySave]', { event: 'form.reset.completed', attemptId, loanProductId });
-            this.showMessage('labels.text.Loan policy saved successfully', 'success');
-          } catch (error) {
-            console.error('[LoanPolicySave] response.processing.failed', { attemptId, loanProductId, error });
-            throw error;
-          }
-        },
-        error: (error: unknown) => {
-          console.error('[LoanPolicySave]', {
-            event: 'request.failed',
-            attemptId,
-            loanProductId,
-            status: error instanceof HttpErrorResponse ? error.status : undefined,
-            errorType: error instanceof Error ? error.name : typeof error
-          });
-          this.showMessage('labels.text.Loan policy could not be saved', 'error');
-        }
-      });
+    );
   }
 
   addDocumentRequirement(): void {
@@ -506,6 +490,19 @@ export class LoanManagementPolicyComponent implements OnInit {
 
   private resetPolicy(policy: LoanManagementPolicyDefinition, loanProductId: number): void {
     this.loadedPolicy = policy;
+    this.definitionControls = {};
+    for (const section of this.definitionSections) {
+      for (const field of section.fields) {
+        if (this.fieldLocation(field.label) || ['Product Code', 'Effective Date', 'Review Date', 'Moratorium'].includes(field.label)) {
+          continue;
+        }
+        const key = this.fieldKey(section.title, field.label);
+        this.definitionControls[key] = new FormControl<string>(policy.productDefinition?.[section.title]?.[field.label] || '', {
+          nonNullable: true
+        });
+        if (!this.canWrite) this.definitionControls[key].disable();
+      }
+    }
     const defaults = this.createDefaultPolicy();
     this.policyForm.patchValue({
       loanProductId,
@@ -610,8 +607,18 @@ export class LoanManagementPolicyComponent implements OnInit {
   }
 
   private toPolicyDefinition(raw: ReturnType<typeof this.policyForm.getRawValue>): LoanManagementPolicyDefinition {
+    const productDefinition: Record<string, Record<string, string>> = { ...(this.loadedPolicy?.productDefinition || {}) };
+    for (const section of this.definitionSections) {
+      const values = { ...(productDefinition[section.title] || {}) };
+      for (const field of section.fields) {
+        const control = this.definitionControls[this.fieldKey(section.title, field.label)];
+        if (control) values[field.label] = control.value.trim();
+      }
+      productDefinition[section.title] = values;
+    }
     return {
       ...(this.loadedPolicy || {}),
+      productDefinition,
       prequalification: raw.prequalification,
       underwriting: raw.underwriting,
       creditScoring: {

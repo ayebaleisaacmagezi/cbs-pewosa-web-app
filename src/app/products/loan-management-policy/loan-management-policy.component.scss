@@ -61,6 +61,38 @@
   gap: 24px;
 }
 
+.product-definition {
+  display: grid;
+  gap: 16px;
+}
+
+.product-definition h2,
+.product-definition p {
+  margin: 0;
+}
+
+.product-definition p,
+.definition-field span {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.definition-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  padding: 16px 0;
+}
+
+.definition-field {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.definition-field mat-form-field {
+  width: 100%;
+}
+
 .field-grid,
 .check-grid,
 .rail-grid {
@@ -165,6 +197,9 @@
 }
 
 @media (max-width: 720px) {
+  .definition-fields {
+    grid-template-columns: 1fr;
+  }
   .loan-policy-page {
     padding: 16px;
   }

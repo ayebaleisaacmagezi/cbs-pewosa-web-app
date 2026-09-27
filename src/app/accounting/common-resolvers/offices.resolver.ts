@@ -10,7 +10,10 @@
 import { Injectable, inject } from '@angular/core';
 
 /** rxjs Imports */
-import { Observable } from 'rxjs';
+import { Observable, defer } from 'rxjs';
+import { tap, timeout } from 'rxjs/operators';
+import { Logger } from 'app/core/logger/logger.service';
+const log = new Logger('Offices resolver');
 
 /** Custom Services */
 import { AccountingService } from '../accounting.service';
@@ -27,6 +30,25 @@ export class OfficesResolver {
    * @returns {Observable<any>}
    */
   resolve(): Observable<any> {
-    return this.accountingService.getOffices();
+    return defer(() => {
+      const started = Date.now();
+      log.info('Loading offices before route activation');
+      return this.accountingService.getOffices().pipe(
+        timeout(30000),
+        tap({
+          next: (offices) =>
+            log.info('Offices loaded', {
+              count: Array.isArray(offices) ? offices.length : undefined,
+              elapsedMs: Date.now() - started
+            }),
+          error: (error) =>
+            log.error('Office loading failed; route cannot activate', {
+              status: error?.status,
+              type: error?.name,
+              elapsedMs: Date.now() - started
+            })
+        })
+      );
+    });
   }
 }

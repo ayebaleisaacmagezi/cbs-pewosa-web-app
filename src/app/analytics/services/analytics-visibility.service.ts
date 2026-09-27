@@ -30,6 +30,8 @@ export class AnalyticsVisibilityService {
     const userPermissions = credentials.permissions || [];
     const userRoles = this.extractRoleNames(credentials.roles);
 
+    if (rule.superAdminOnly && !userPermissions.includes('ALL_FUNCTIONS')) return false;
+
     if (userPermissions.includes('ALL_FUNCTIONS')) {
       return true;
     }

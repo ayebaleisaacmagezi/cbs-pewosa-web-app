@@ -36,6 +36,8 @@ import { LoanProductBaseComponent } from '../../common/loan-product-base.compone
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoanProductPreviewStepComponent extends LoanProductBaseComponent implements OnInit, OnChanges {
+  @Input() saving = false;
+
   @Input() loanProductsTemplate: any;
   @Input() accountingRuleData: any;
   @Input() loanProduct: any;

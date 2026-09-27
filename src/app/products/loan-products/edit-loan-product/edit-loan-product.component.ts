@@ -27,6 +27,11 @@ import { LoanProductChargesStepComponent } from '../loan-product-stepper/loan-pr
 import { LoanProductAccountingStepComponent } from '../loan-product-stepper/loan-product-accounting-step/loan-product-accounting-step.component';
 
 /** Custom Services */
+import { LoanManagementPolicyComponent } from '../../loan-management-policy/loan-management-policy.component';
+import { LoanProductSelectorComponent } from '../common/loan-product-selector.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { TranslateService } from '@ngx-translate/core';
+import { finalize, of, switchMap } from 'rxjs';
 import { ProductsService } from 'app/products/products.service';
 import { GlobalConfiguration } from 'app/system/configurations/global-configurations-tab/configuration.model';
 import { LoanProducts } from '../loan-products';
@@ -74,13 +79,21 @@ import { LoanProductBaseComponent } from '../common/loan-product-base.component'
     LoanProductChargesStepComponent,
     LoanProductDeferredIncomeRecognitionStepComponent,
     LoanProductAccountingStepComponent,
-    LoanProductPreviewStepComponent
+    LoanProductPreviewStepComponent,
+    LoanManagementPolicyComponent,
+    LoanProductSelectorComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EditLoanProductComponent extends LoanProductBaseComponent implements OnInit, AfterViewInit {
   private route = inject(ActivatedRoute);
   private productsService = inject(ProductsService);
+  private snackBar = inject(MatSnackBar);
+  private translateService = inject(TranslateService);
+  @ViewChild(LoanManagementPolicyComponent) productRules?: LoanManagementPolicyComponent;
+  private savedProductId: number | null = null;
+  savingProduct = false;
+
   private loanProducts = inject(LoanProducts);
   private accounting = inject(Accounting);
   private advancedPaymentStrategy = inject(AdvancedPaymentStrategy);
@@ -343,7 +356,7 @@ export class EditLoanProductComponent extends LoanProductBaseComponent implement
   }
 
   get loanProductFormValidAndNotPristine(): boolean {
-    return this.loanProductFormValid && this.loanProductFormDirty;
+    return this.loanProductFormValid && (this.loanProductFormDirty || !!this.productRules?.policyForm.dirty);
   }
 
   get loanProduct() {
@@ -405,6 +418,11 @@ export class EditLoanProductComponent extends LoanProductBaseComponent implement
   }
 
   submit() {
+    if (this.savingProduct) return;
+    const policyRequest =
+      this.loanProductService.isLoanProduct && this.productRules?.canWrite ? this.productRules.prepareSave() : null;
+    if (this.loanProductService.isLoanProduct && (!this.productRules || (this.productRules.canWrite && !policyRequest)))
+      return;
     const loanProduct = this.loanProducts.buildPayload(this.loanProduct, this.itemsByDefault);
 
     if (this.loanProductService.isLoanProduct) {
@@ -423,21 +441,40 @@ export class EditLoanProductComponent extends LoanProductBaseComponent implement
       delete loanProduct['useDueForRepaymentsConfigurations'];
     }
 
+    this.savingProduct = true;
+    this.savedProductId = null;
     this.productsService
       .updateLoanProduct(this.loanProductService.loanProductPath, this.loanProductAndTemplate.id, loanProduct)
-      .subscribe((response: any) => {
-        this.router.navigate(
-          [
-            '../../',
-            response.resourceId
-          ],
-          {
-            queryParams: {
-              productType: this.loanProductService.productType.value
-            },
-            relativeTo: this.route
-          }
-        );
+      .pipe(
+        switchMap((response: any) => {
+          const id = Number(this.loanProductAndTemplate.id);
+          this.savedProductId = id;
+          return policyRequest ? this.productRules.saveForProduct(id, policyRequest) : of(response);
+        }),
+        finalize(() => {
+          this.savingProduct = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: () => {
+          this.router.navigate(
+            [
+              '../../',
+              this.loanProductAndTemplate.id
+            ],
+            {
+              queryParams: { productType: this.loanProductService.productType.value },
+              relativeTo: this.route
+            }
+          );
+        },
+        error: () => {
+          const key = this.savedProductId
+            ? 'labels.text.Product saved but rules failed. Retry updates the same product'
+            : 'labels.text.Product save failed. Check the product list before retrying';
+          this.snackBar.open(this.translateService.instant(key), this.translateService.instant('labels.buttons.Close'));
+        }
       });
   }
 

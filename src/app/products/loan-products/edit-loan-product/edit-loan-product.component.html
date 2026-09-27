@@ -7,6 +7,9 @@
 -->
 
 <div class="container">
+  @if (loanProductService.isLoanProduct) {
+    <mifosx-loan-product-selector [productId]="loanProductAndTemplate.id"></mifosx-loan-product-selector>
+  }
   <mat-stepper
     orientation="vertical"
     [linear]="false"
@@ -165,6 +168,14 @@
       </mifosx-loan-product-accounting-step>
     </mat-step>
 
+    @if (loanProductService.isLoanProduct) {
+      <mat-step>
+        <ng-template matStepLabel>{{ 'labels.heading.Loan product rules' | translate }}</ng-template>
+        <mifosx-loan-management-policy [productId]="loanProductAndTemplate.id"></mifosx-loan-management-policy>
+        <mifosx-stepper-buttons></mifosx-stepper-buttons>
+      </mat-step>
+    }
+
     @if (loanProductFormValidAndNotPristine) {
       <mat-step state="preview" completed>
         <ng-template matStepLabel
@@ -174,6 +185,7 @@
           [loanProductsTemplate]="loanProductAndTemplate"
           [accountingRuleData]="accountingRuleData"
           [loanProduct]="loanProduct"
+          [saving]="savingProduct"
           (submitEvent)="submit()"
         >
         </mifosx-loan-product-preview-step>

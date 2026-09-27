@@ -17,9 +17,10 @@ export interface AnalyticsVisibilityRule {
   permissionsAny?: string[];
   permissionsAll?: string[];
   roles?: string[];
+  superAdminOnly?: boolean;
 }
 export type AnalyticsWidgetLayout = 'metric' | 'wide' | 'half';
-export type AnalyticsWidgetType = 'metric' | 'chart';
+export type AnalyticsWidgetType = 'metric' | 'chart' | 'list';
 export type AnalyticsChartType = 'bar' | 'doughnut';
 export type AnalyticsWidgetAdapter =
   | 'client-total'
@@ -28,7 +29,55 @@ export type AnalyticsWidgetAdapter =
   | 'disbursement-total'
   | 'client-loan-trends'
   | 'collection-breakdown'
-  | 'disbursement-breakdown';
+  | 'disbursement-breakdown'
+  | 'approval-total'
+  | 'users-count'
+  | 'jobs-count'
+  | 'audits-count'
+  | 'notifications-count'
+  | 'jobs-list'
+  | 'notifications-list'
+  | 'branch-workload'
+  | 'portfolio-balance'
+  | 'portfolio-active'
+  | 'portfolio-par30'
+  | 'portfolio-arrears'
+  | 'portfolio-age30'
+  | 'portfolio-age90'
+  | 'portfolio-age180'
+  | 'portfolio-age360'
+  | 'portfolio-branch-ranking'
+  | 'portfolio-top-products'
+  | 'portfolio-top-exposures'
+  | 'portfolio-product-mix'
+  | 'portfolio-ageing'
+  | 'portfolio-classification'
+  | 'portfolio-member-loans'
+  | 'portfolio-member-arrears'
+  | 'members-active'
+  | 'members-total'
+  | 'members-mtd'
+  | 'members-today'
+  | 'members-by-category'
+  | 'members-by-gender'
+  | 'products-active'
+  | 'products-rates'
+  | 'journal-debits-mtd'
+  | 'journal-credits-mtd'
+  | 'savings-total'
+  | 'savings-average'
+  | 'savings-by-product'
+  | 'savings-top-members'
+  | 'shares-total'
+  | 'shares-top-members'
+  | 'standing-count'
+  | 'standing-failed-today'
+  | 'standing-failed-mtd'
+  | 'writeoffs-mtd-ytd'
+  | 'writeoff-recoveries'
+  | 'fixed-deposits-count'
+  | 'expense-total'
+  | 'not-connected';
 export interface AnalyticsWidgetDefinition {
   id: string;
   titleKey: string;
@@ -37,6 +86,9 @@ export interface AnalyticsWidgetDefinition {
   adapter: AnalyticsWidgetAdapter;
   icon: string;
   chartType?: AnalyticsChartType;
+  section?: 'operations';
+  area?: string;
+  link?: string;
   visibleTo?: AnalyticsVisibilityRule;
 }
 
@@ -62,7 +114,15 @@ export interface AnalyticsDetailItem {
 export interface AnalyticsWidgetState {
   loading: boolean;
   empty: boolean;
+  error?: boolean;
+  noteKey?: string;
+  noteText?: string;
+  rows?: { title: string; detail?: string; detailKey?: string; value?: number }[];
   metricValue?: number;
+  metricText?: string;
+  currencyCode?: string;
+  unit?: string;
+  unavailable?: boolean;
   contextKey?: string;
   labels?: string[];
   translateLabels?: boolean;

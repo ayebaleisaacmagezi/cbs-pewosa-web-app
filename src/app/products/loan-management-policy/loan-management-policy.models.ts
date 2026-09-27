@@ -47,6 +47,7 @@ export interface LoanPolicyRiskBand {
 }
 
 export interface LoanManagementPolicyDefinition {
+  productDefinition?: Record<string, Record<string, string>>;
   prequalification: {
     requireActiveMember: boolean;
     minimumMembershipMonths: number;

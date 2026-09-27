@@ -1,0 +1,661 @@
+[
+    {
+        "title":  "General Information",
+        "fields":  [
+                       {
+                           "label":  "Product Name",
+                           "description":  "The official name used to identify the loan product in the system, reports, and member communications."
+                       },
+                       {
+                           "label":  "Product Code",
+                           "description":  "A unique alphanumeric identifier used internally by the system for configuration, accounting, and reporting."
+                       },
+                       {
+                           "label":  "Product Description",
+                           "description":  "A clear statement of the product\u0027s purpose, target users, and general conditions."
+                       },
+                       {
+                           "label":  "Product Category",
+                           "description":  "Classification of the product (e.g., development loan, emergency loan, asset financing, education loan)."
+                       },
+                       {
+                           "label":  "Currency",
+                           "description":  "The legal tender in which the loan is denominated and repaid."
+                       },
+                       {
+                           "label":  "Effective Date",
+                           "description":  "The date from which the product becomes available for disbursement."
+                       },
+                       {
+                           "label":  "Review Date",
+                           "description":  "The date on which the product terms will be reviewed for relevance and profitability."
+                       },
+                       {
+                           "label":  "Status",
+                           "description":  "The current lifecycle state of the product (draft, pending approval, active, suspended, retired)."
+                       }
+                   ]
+    },
+    {
+        "title":  "Membership \u0026 Share Requirements",
+        "fields":  [
+                       {
+                           "label":  "Membership Required",
+                           "description":  "Indicates whether the applicant must be a registered member of the SACCO before applying."
+                       },
+                       {
+                           "label":  "Minimum Membership Duration",
+                           "description":  "The minimum period a member must have been active before qualifying for the loan."
+                       },
+                       {
+                           "label":  "Minimum Shares Needed",
+                           "description":  "The minimum number of shares a member must hold before applying for the loan."
+                       },
+                       {
+                           "label":  "Share Value",
+                           "description":  "The monetary value of one share as defined by the SACCO constitution."
+                       },
+                       {
+                           "label":  "Minimum Share Balance",
+                           "description":  "The minimum monetary value of shares a member must maintain throughout the loan period."
+                       },
+                       {
+                           "label":  "Share Ratio",
+                           "description":  "The relationship between the amount a member can borrow and the value of shares held."
+                       },
+                       {
+                           "label":  "Share Balance by Loan Amount",
+                           "description":  "A tiered schedule that defines the minimum share balance required for each loan amount band."
+                       },
+                       {
+                           "label":  "Share Lock-in Period",
+                           "description":  "The period during which shares cannot be withdrawn or transferred while a loan is active."
+                       },
+                       {
+                           "label":  "Consequences of Share Withdrawal",
+                           "description":  "The action taken if a member\u0027s share balance falls below the required minimum during the loan period."
+                       },
+                       {
+                           "label":  "Share Top-up Requirement",
+                           "description":  "Whether a member must purchase additional shares to qualify for a higher loan amount."
+                       }
+                   ]
+    },
+    {
+        "title":  "Loan Terms \u0026 Structure",
+        "fields":  [
+                       {
+                           "label":  "Loan Type",
+                           "description":  "The structural nature of the loan (term loan, revolving credit, overdraft, emergency advance)."
+                       },
+                       {
+                           "label":  "Minimum Principal Amount",
+                           "description":  "The lowest amount that can be disbursed under this product."
+                       },
+                       {
+                           "label":  "Maximum Principal Amount",
+                           "description":  "The highest amount that can be disbursed under this product."
+                       },
+                       {
+                           "label":  "Minimum Tenor",
+                           "description":  "The shortest repayment period allowed."
+                       },
+                       {
+                           "label":  "Maximum Tenor",
+                           "description":  "The longest repayment period allowed."
+                       },
+                       {
+                           "label":  "Restricted Loan Term",
+                           "description":  "Conditions that limit the tenor based on loan type, collateral, or category."
+                       },
+                       {
+                           "label":  "Repayment Frequency",
+                           "description":  "How often installments are due (monthly, bi-weekly, weekly, bullet)."
+                       },
+                       {
+                           "label":  "Amortization Method",
+                           "description":  "The method used to calculate principal and interest split over the loan period."
+                       },
+                       {
+                           "label":  "Grace Period",
+                           "description":  "A period before the first installment is due."
+                       },
+                       {
+                           "label":  "Moratorium",
+                           "description":  "A period during which only interest is paid, or no payment is made."
+                       },
+                       {
+                           "label":  "Installment Due Date",
+                           "description":  "The specific day of the month or week on which repayments are due."
+                       },
+                       {
+                           "label":  "Loan Cycle Limit",
+                           "description":  "The maximum number of concurrent loans a member can hold under this product."
+                       }
+                   ]
+    },
+    {
+        "title":  "Eligible Loan Categories",
+        "fields":  [
+                       {
+                           "label":  "Category Restriction",
+                           "description":  "Indicates whether the loan is limited to specific member categories."
+                       },
+                       {
+                           "label":  "Category Code",
+                           "description":  "A unique identifier for each eligible category."
+                       },
+                       {
+                           "label":  "Category Name",
+                           "description":  "The name of the member category eligible for the loan."
+                       },
+                       {
+                           "label":  "Category Description",
+                           "description":  "A definition of who belongs to the category."
+                       },
+                       {
+                           "label":  "Category Loan Ceiling",
+                           "description":  "The maximum amount a member in that category can borrow."
+                       },
+                       {
+                           "label":  "Category Tenor Ceiling",
+                           "description":  "The maximum tenor available to that category."
+                       },
+                       {
+                           "label":  "Category Interest Adjustment",
+                           "description":  "Any interest rate variation applied to that category."
+                       },
+                       {
+                           "label":  "Category Verification Requirement",
+                           "description":  "The documents or proof needed to confirm category eligibility."
+                       },
+                       {
+                           "label":  "Category Priority",
+                           "description":  "The order in which categories are served if funds are limited."
+                       }
+                   ]
+    },
+    {
+        "title":  "Gender Tying",
+        "fields":  [
+                       {
+                           "label":  "Gender Restriction",
+                           "description":  "Indicates whether the product is open to all genders, restricted, or preferential."
+                       },
+                       {
+                           "label":  "Eligible Genders",
+                           "description":  "The gender categories allowed to access the product."
+                       },
+                       {
+                           "label":  "Gender-Based Conditions",
+                           "description":  "Any special terms applied to a specific gender."
+                       },
+                       {
+                           "label":  "Affirmative Action Allocation",
+                           "description":  "The percentage of loan funds reserved for a specific gender."
+                       },
+                       {
+                           "label":  "Gender-Based Pricing Adjustment",
+                           "description":  "Any interest rate or fee adjustment applied based on gender."
+                       },
+                       {
+                           "label":  "Gender Verification Requirement",
+                           "description":  "The documentation required to confirm gender eligibility."
+                       },
+                       {
+                           "label":  "Gender Reporting Requirement",
+                           "description":  "Whether the system must produce gender-disaggregated reports."
+                       }
+                   ]
+    },
+    {
+        "title":  "District Isolation",
+        "fields":  [
+                       {
+                           "label":  "District Isolation Applied",
+                           "description":  "Indicates whether the product is restricted to specific geographic areas."
+                       },
+                       {
+                           "label":  "Operational Districts",
+                           "description":  "The list of districts where the product is available."
+                       },
+                       {
+                           "label":  "Branch Mapping",
+                           "description":  "The branch or office responsible for each operational district."
+                       },
+                       {
+                           "label":  "Residency Requirement",
+                           "description":  "The minimum period an applicant must have lived in the district."
+                       },
+                       {
+                           "label":  "Proof of Residence",
+                           "description":  "The documents accepted as evidence of residence."
+                       },
+                       {
+                           "label":  "Non-Operational District Rule",
+                           "description":  "The action taken when an applicant resides outside an operational district."
+                       },
+                       {
+                           "label":  "Cross-District Borrowing",
+                           "description":  "Whether a member from one district can borrow in another."
+                       },
+                       {
+                           "label":  "District Loan Cap",
+                           "description":  "The maximum percentage of the loan portfolio that can be allocated to one district."
+                       },
+                       {
+                           "label":  "District Reporting Requirement",
+                           "description":  "Whether the system must produce district-level portfolio reports."
+                       }
+                   ]
+    },
+    {
+        "title":  "Interest \u0026 Pricing",
+        "fields":  [
+                       {
+                           "label":  "Interest Rate Type",
+                           "description":  "Whether the rate is fixed or variable over the loan period."
+                       },
+                       {
+                           "label":  "Nominal Annual Interest Rate",
+                           "description":  "The stated annual rate used to calculate interest."
+                       },
+                       {
+                           "label":  "Effective Interest Rate",
+                           "description":  "The true cost of the loan after compounding."
+                       },
+                       {
+                           "label":  "Interest Calculation Basis",
+                           "description":  "The day-count convention used for interest computation."
+                       },
+                       {
+                           "label":  "Interest Accrual Method",
+                           "description":  "How interest is accrued over the repayment period."
+                       },
+                       {
+                           "label":  "Pricing Tiers",
+                           "description":  "Risk-based or category-based rate bands."
+                       },
+                       {
+                           "label":  "Tier Criteria",
+                           "description":  "The conditions that qualify a borrower for each tier."
+                       },
+                       {
+                           "label":  "Interest Adjustment Rules",
+                           "description":  "Conditions under which the interest rate may change."
+                       },
+                       {
+                           "label":  "Interest Capitalization",
+                           "description":  "Whether unpaid interest is added to the principal balance."
+                       }
+                   ]
+    },
+    {
+        "title":  "Early Repayment \u0026 Interest Forgiveness",
+        "fields":  [
+                       {
+                           "label":  "Early Repayment Allowed",
+                           "description":  "Indicates whether a borrower may repay before the scheduled maturity."
+                       },
+                       {
+                           "label":  "Early Repayment Penalty",
+                           "description":  "Any charge applied for repaying ahead of schedule."
+                       },
+                       {
+                           "label":  "Interest Forgiveness Rule",
+                           "description":  "A condition where interest is waived for borrowers who meet defined performance criteria."
+                       },
+                       {
+                           "label":  "Qualifying Performance Criteria",
+                           "description":  "The standards a borrower must meet to qualify for interest forgiveness."
+                       },
+                       {
+                           "label":  "Qualifying Period",
+                           "description":  "The portion of the loan tenor during which the borrower must perform well."
+                       },
+                       {
+                           "label":  "Forgiveness Scope",
+                           "description":  "The portion of interest that is waived."
+                       },
+                       {
+                           "label":  "Forfeiture Conditions",
+                           "description":  "Events that disqualify a borrower from interest forgiveness."
+                       },
+                       {
+                           "label":  "Application Method",
+                           "description":  "Whether forgiveness is applied automatically or upon request."
+                       },
+                       {
+                           "label":  "Accounting Treatment",
+                           "description":  "How forgiven interest is recorded in the general ledger."
+                       }
+                   ]
+    },
+    {
+        "title":  "Fees \u0026 Charges",
+        "fields":  [
+                       {
+                           "label":  "Loan Application Form Fee",
+                           "description":  "A fee paid before the application process begins."
+                       },
+                       {
+                           "label":  "Application Form Fee Refundable",
+                           "description":  "Whether the form fee is refunded if the loan is not approved."
+                       },
+                       {
+                           "label":  "Loan Application Fee",
+                           "description":  "A fee charged for processing the application, paid at disbursement."
+                       },
+                       {
+                           "label":  "Application Fee Deduction Method",
+                           "description":  "Whether the fee is deducted from the principal or paid separately."
+                       }
+                   ]
+    },
+    {
+        "title":  "Collateral \u0026 Security",
+        "fields":  [
+                       {
+                           "label":  "Collateral Required",
+                           "description":  "Indicates whether the loan requires security."
+                       },
+                       {
+                           "label":  "Collateral Category Code",
+                           "description":  "A unique identifier for each collateral type."
+                       },
+                       {
+                           "label":  "Collateral Category Name",
+                           "description":  "The name of the collateral type."
+                       },
+                       {
+                           "label":  "Collateral Description",
+                           "description":  "A definition of what falls under the category."
+                       },
+                       {
+                           "label":  "Maximum Loan-to-Value Ratio",
+                           "description":  "The maximum percentage of collateral value that can be lent."
+                       },
+                       {
+                           "label":  "Valuation Requirement",
+                           "description":  "Whether a professional valuation is required."
+                       },
+                       {
+                           "label":  "Valuation Frequency",
+                           "description":  "How often collateral must be revalued."
+                       },
+                       {
+                           "label":  "Collateral Documentation",
+                           "description":  "The documents required to perfect the security."
+                       },
+                       {
+                           "label":  "Collateral Insurance",
+                           "description":  "Whether insurance is mandatory for the collateral."
+                       },
+                       {
+                           "label":  "Collateral Registry",
+                           "description":  "Whether the collateral must be registered with a public registry."
+                       },
+                       {
+                           "label":  "Collateral Release Condition",
+                           "description":  "The conditions under which collateral is released to the borrower."
+                       },
+                       {
+                           "label":  "Collateral Substitution",
+                           "description":  "Whether collateral can be replaced during the loan period."
+                       }
+                   ]
+    },
+    {
+        "title":  "Guarantor Requirements",
+        "fields":  [
+                       {
+                           "label":  "Guarantor Required",
+                           "description":  "Indicates whether the loan requires one or more guarantors."
+                       },
+                       {
+                           "label":  "Minimum Number of Guarantors",
+                           "description":  "The least number of guarantors acceptable."
+                       },
+                       {
+                           "label":  "Maximum Number of Guarantors",
+                           "description":  "The highest number of guarantors allowed."
+                       },
+                       {
+                           "label":  "Guarantor Types Accepted",
+                           "description":  "The categories of guarantors permitted."
+                       },
+                       {
+                           "label":  "Member Guarantor Requirements",
+                           "description":  "The conditions a SACCO member must meet to guarantee."
+                       },
+                       {
+                           "label":  "Non-Member Guarantor Requirements",
+                           "description":  "The conditions a non-member must meet to guarantee."
+                       },
+                       {
+                           "label":  "National ID Attachment",
+                           "description":  "Whether a signed copy of the national ID must be attached."
+                       },
+                       {
+                           "label":  "Guarantor Verification",
+                           "description":  "The process of confirming the guarantor\u0027s identity and capacity."
+                       },
+                       {
+                           "label":  "Amount Guaranteed",
+                           "description":  "The specific monetary value each guarantor covers."
+                       },
+                       {
+                           "label":  "Guarantor Liability Type",
+                           "description":  "Whether liability is joint, several, or proportional."
+                       },
+                       {
+                           "label":  "Guarantor Exposure Limit",
+                           "description":  "The maximum amount a guarantor can cover across all loans."
+                       },
+                       {
+                           "label":  "Guarantor Release Condition",
+                           "description":  "The conditions under which a guarantor is released."
+                       },
+                       {
+                           "label":  "Guarantor Substitution",
+                           "description":  "Whether a guarantor can be replaced during the loan period."
+                       },
+                       {
+                           "label":  "Guarantor Default Consequence",
+                           "description":  "The action taken against a guarantor if the borrower defaults."
+                       }
+                   ]
+    },
+    {
+        "title":  "Eligibility \u0026 Underwriting Criteria",
+        "fields":  [
+                       {
+                           "label":  "Minimum Age",
+                           "description":  "The youngest age at which a member can borrow."
+                       },
+                       {
+                           "label":  "Maximum Age at Maturity",
+                           "description":  "The oldest age at which a borrower must have repaid the loan."
+                       },
+                       {
+                           "label":  "Employment Status",
+                           "description":  "The required employment condition of the borrower."
+                       },
+                       {
+                           "label":  "Minimum Income",
+                           "description":  "The lowest income level required to qualify."
+                       },
+                       {
+                           "label":  "Credit Score Requirement",
+                           "description":  "The minimum credit score acceptable."
+                       },
+                       {
+                           "label":  "Debt-to-Income Ratio",
+                           "description":  "The maximum proportion of income that can go to debt repayment."
+                       },
+                       {
+                           "label":  "Membership Duration",
+                           "description":  "The minimum period of active membership required."
+                       },
+                       {
+                           "label":  "Savings History",
+                           "description":  "The savings behavior required before qualifying."
+                       },
+                       {
+                           "label":  "Repayment History",
+                           "description":  "The past repayment performance required."
+                       },
+                       {
+                           "label":  "Documentation Required",
+                           "description":  "The documents the applicant must submit."
+                       },
+                       {
+                           "label":  "Underwriting Approval Level",
+                           "description":  "The authority level required to approve the loan."
+                       },
+                       {
+                           "label":  "Exception Handling",
+                           "description":  "The process for approving loans outside standard criteria."
+                       }
+                   ]
+    },
+    {
+        "title":  "Disbursement \u0026 Repayment",
+        "fields":  [
+                       {
+                           "label":  "Disbursement Method",
+                           "description":  "How the loan funds are released to the borrower."
+                       },
+                       {
+                           "label":  "Disbursement Timing",
+                           "description":  "The time between approval and release of funds."
+                       },
+                       {
+                           "label":  "Disbursement Authorization",
+                           "description":  "The officer or system level that authorizes disbursement."
+                       },
+                       {
+                           "label":  "Application Fee Confirmation",
+                           "description":  "Whether the application fee must be confirmed before disbursement."
+                       },
+                       {
+                           "label":  "Repayment Method",
+                           "description":  "How the borrower repays the loan."
+                       },
+                       {
+                           "label":  "Repayment Source",
+                           "description":  "The account or income source from which repayment is made."
+                       },
+                       {
+                           "label":  "Auto-Debit Setup",
+                           "description":  "Whether automatic deduction is configured."
+                       },
+                       {
+                           "label":  "Repayment Allocation Order",
+                           "description":  "The order in which payments are applied to fees, interest, and principal."
+                       },
+                       {
+                           "label":  "Prepayment Handling",
+                           "description":  "How early payments are treated."
+                       },
+                       {
+                           "label":  "Restructuring Policy",
+                           "description":  "The conditions under which a loan can be restructured."
+                       },
+                       {
+                           "label":  "Refinancing Policy",
+                           "description":  "The conditions under which a loan can be refinanced."
+                       },
+                       {
+                           "label":  "Write-off Policy",
+                           "description":  "The conditions under which a loan is written off."
+                       }
+                   ]
+    },
+    {
+        "title":  "Accounting \u0026 Operations",
+        "fields":  [
+                       {
+                           "label":  "Principal Ledger Account",
+                           "description":  "The general ledger account that holds the loan principal."
+                       },
+                       {
+                           "label":  "Interest Income Account",
+                           "description":  "The general ledger account for interest earned."
+                       },
+                       {
+                           "label":  "Fee Income Account",
+                           "description":  "The general ledger account for fees earned."
+                       },
+                       {
+                           "label":  "Penalty Income Account",
+                           "description":  "The general ledger account for penalties earned."
+                       },
+                       {
+                           "label":  "Loan Loss Provision Account",
+                           "description":  "The general ledger account for provisioning."
+                       },
+                       {
+                           "label":  "Write-off Account",
+                           "description":  "The general ledger account for written-off loans."
+                       },
+                       {
+                           "label":  "Provisioning Policy",
+                           "description":  "The rules for setting aside funds for expected losses."
+                       },
+                       {
+                           "label":  "Provisioning Matrix",
+                           "description":  "The percentage provisioned based on days past due."
+                       },
+                       {
+                           "label":  "Income Recognition Policy",
+                           "description":  "When interest and fees are recognized as income."
+                       },
+                       {
+                           "label":  "Suspense Account",
+                           "description":  "The account used for unallocated or unidentified payments."
+                       },
+                       {
+                           "label":  "Reversal Policy",
+                           "description":  "The conditions under which transactions can be reversed."
+                       },
+                       {
+                           "label":  "Audit Trail Requirement",
+                           "description":  "The level of detail the system must record for audit purposes."
+                       }
+                   ]
+    },
+    {
+        "title":  "Approval Workflow",
+        "fields":  [
+                       {
+                           "label":  "Prepared By",
+                           "description":  "The officer who drafts the product definition."
+                       },
+                       {
+                           "label":  "Reviewed By",
+                           "description":  "The risk officer who reviews the product for risk exposure."
+                       },
+                       {
+                           "label":  "Approved By",
+                           "description":  "The authority that grants final approval."
+                       },
+                       {
+                           "label":  "Approval Date",
+                           "description":  "The date the product is approved."
+                       },
+                       {
+                           "label":  "Approval Reference",
+                           "description":  "The reference number of the approval."
+                       },
+                       {
+                           "label":  "Version Number",
+                           "description":  "The version of the product definition."
+                       },
+                       {
+                           "label":  "Change Log",
+                           "description":  "A record of changes made to the product over time."
+                       }
+                   ]
+    }
+]

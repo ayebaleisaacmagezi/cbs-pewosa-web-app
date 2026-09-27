@@ -54,6 +54,7 @@ export class DashboardWidgetComponent implements AfterViewInit, OnChanges, OnDes
   private destroyRef = inject(DestroyRef);
 
   @Input({ required: true }) widget!: AnalyticsWidgetDefinition;
+  @Input() compact = false;
   @Input() state?: AnalyticsWidgetState;
 
   @ViewChild('chartCanvas')

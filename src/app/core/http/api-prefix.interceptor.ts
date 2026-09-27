@@ -14,6 +14,8 @@ import { HttpEvent, HttpInterceptor, HttpHandler, HttpRequest } from '@angular/c
 import { Observable } from 'rxjs';
 
 /** Environment Configuration */
+import { Logger } from 'app/core/logger/logger.service';
+const dashboardLog = new Logger('Dashboard URL');
 import { SettingsService } from 'app/settings/settings.service';
 
 /**
@@ -43,6 +45,13 @@ export class ApiPrefixInterceptor implements HttpInterceptor {
      */
     if (!request.url.includes('http:') && !request.url.includes('https:')) {
       request = request.clone({ url: baseUrl + request.url });
+    }
+    if (
+      /\/(runreports|pewosa\/loan-applications\/approval-queue|offices|users|jobs|audits|notifications)(\/|\?|$)/.test(
+        request.url
+      )
+    ) {
+      dashboardLog.info('Resolved API URL', { method: request.method, url: request.url.split('?')[0], baseUrl });
     }
     return next.handle(request);
   }

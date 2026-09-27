@@ -19,16 +19,6 @@
   >
     <fa-icon icon="edit" class="m-r-10"></fa-icon>{{ 'labels.buttons.Edit' | translate }}
   </button>
-  @if (loanProductService.isLoanProduct) {
-    <button
-      mat-raised-button
-      [routerLink]="['/products/loan-management-policy']"
-      [queryParams]="{ loanProductId: loanProduct.id }"
-      *mifosxHasPermission="'READ_PEWOSALOANPOLICY'"
-    >
-      {{ 'labels.buttons.Configure Loan Policy' | translate }}
-    </button>
-  }
 </div>
 
 <mifosx-loan-product-summary

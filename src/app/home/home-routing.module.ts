@@ -7,8 +7,9 @@
  */
 
 /** Angular Imports */
-import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { NgModule, inject } from '@angular/core';
+import { Routes, RouterModule, Router } from '@angular/router';
+import { AuthenticationService } from '../core/authentication/authentication.service';
 
 /** Routing Imports */
 import { Route } from '../core/route/route.service';
@@ -30,6 +31,12 @@ const routes: Routes = [
     {
       path: 'home',
       component: HomeComponent,
+      canActivate: [() => {
+        const credentials = inject(AuthenticationService).getCredentials();
+        return credentials?.permissions?.includes('ALL_FUNCTIONS')
+          ? inject(Router).createUrlTree(['/dashboard'])
+          : true;
+      }],
       data: { title: 'Home' }
     },
     {

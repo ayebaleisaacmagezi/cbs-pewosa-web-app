@@ -29,7 +29,7 @@
   >
     {{ 'labels.buttons.Cancel' | translate }}
   </button>
-  <button mat-raised-button color="primary" [disabled]="!isValid" (click)="submitEvent.emit()">
+  <button mat-raised-button color="primary" [disabled]="!isValid || saving" (click)="submitEvent.emit()">
     {{ 'labels.buttons.Submit' | translate }}
   </button>
 </div>

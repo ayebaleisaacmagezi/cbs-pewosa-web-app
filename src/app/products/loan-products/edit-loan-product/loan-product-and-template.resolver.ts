@@ -32,7 +32,7 @@ export class LoanProductAndTemplateResolver {
    */
   resolve(route: ActivatedRouteSnapshot): Observable<any> {
     const loanProductId = route.parent.paramMap.get('productId');
-    const productType = route.queryParams['productType'];
+    const productType = route.queryParams['productType'] || 'loan';
     if (productType === 'loan') {
       this.loanProductService.initialize(LOAN_PRODUCT_TYPE.LOAN);
     } else {
