@@ -28,6 +28,22 @@ export class LoanManagementPolicyService {
     return this.http.get<LoanManagementPolicyResponse>(`/pewosa/loan-policies/${loanProductId}`);
   }
 
+  getAccountingSetup(loanProductId: number): Observable<{
+    loanPortfolioAccountId: number;
+    receivableInterestAccountId: number;
+    receivableFeeAccountId: number;
+    receivablePenaltyAccountId: number;
+    overpaymentLiabilityAccountId: number;
+  }> {
+    return this.http.get<{
+      loanPortfolioAccountId: number;
+      receivableInterestAccountId: number;
+      receivableFeeAccountId: number;
+      receivablePenaltyAccountId: number;
+      overpaymentLiabilityAccountId: number;
+    }>(`/pewosa/loan-policies/${loanProductId}/accounting`);
+  }
+
   updatePolicy(
     loanProductId: number,
     request: SaveLoanManagementPolicyRequest

@@ -6,190 +6,212 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<div class="container">
-  @if (loanProductService.isLoanProduct) {
-    <mifosx-loan-product-selector></mifosx-loan-product-selector>
+<main class="product-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Loan products</p>
+      <h1>Create a loan product</h1>
+      <p>Set the loan terms and the rules the system will apply to member applications.</p>
+    </div>
+  </header>
+
+  @if (loadingPolicy) {
+    <p class="notice">Loading product policy...</p>
   }
-  <mat-stepper
-    orientation="vertical"
-    [linear]="false"
-    class="mat-elevation-z8"
-    labelPosition="bottom"
-    #loanProductStepper
-  >
-    <ng-template matStepperIcon="number">
-      <fa-icon icon="pencil-alt" size="sm"></fa-icon>
-    </ng-template>
+  @if (errorKey) {
+    <p class="notice error" role="alert">{{ errorKey | translate }}</p>
+  }
+  @if (!canWritePolicy) {
+    <p class="notice error">Your account cannot save loan product policies.</p>
+  }
 
-    <ng-template matStepperIcon="edit">
-      <fa-icon icon="pencil-alt" size="sm"></fa-icon>
-    </ng-template>
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">01</span><div><h2>General information</h2><p>Identify this product clearly for staff and members.</p></div></div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Product name</mat-label><input matInput formControlName="name" required /><mat-hint>Short enough to fit the branch portfolio ledger account.</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Currency</mat-label><mat-select formControlName="currencyCode" required>@for (currency of nativeTemplate.currencyOptions || []; track currency.code) { <mat-option [value]="currency.code">{{ currency.code }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline" class="wide"><mat-label>Description</mat-label><textarea matInput formControlName="description" rows="2"></textarea></mat-form-field>
+        </div>
+        <p class="quiet">The required four-character Fineract short name is generated automatically.</p>
+      </mat-card-content>
+    </mat-card>
 
-    <ng-template matStepperIcon="done">
-      <fa-icon icon="check" size="sm"></fa-icon>
-    </ng-template>
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">02</span><div><h2>Loan terms and structure</h2><p>Set the allowed amount, number of repayments and schedule.</p></div></div>
+        <h3>Loan amount</h3>
+        <div class="field-grid thirds">
+          <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minPrincipal" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Usual amount</mat-label><input matInput type="number" min="1" formControlName="principal" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxPrincipal" required /></mat-form-field>
+        </div>
+        <h3>Number of repayments</h3>
+        <div class="field-grid thirds">
+          <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minNumberOfRepayments" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Usual number</mat-label><input matInput type="number" min="1" formControlName="numberOfRepayments" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxNumberOfRepayments" required /></mat-form-field>
+        </div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Repay every</mat-label><input matInput type="number" min="1" formControlName="repaymentEvery" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Frequency</mat-label><mat-select formControlName="repaymentFrequencyType" required>@for (option of nativeTemplate.repaymentFrequencyTypeOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.value }}</mat-option> }</mat-select></mat-form-field>
+        </div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Principal grace installments</mat-label><input matInput type="number" min="0" formControlName="graceOnPrincipalPayment" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Interest grace installments</mat-label><input matInput type="number" min="0" formControlName="graceOnInterestPayment" /></mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
 
-    <ng-template matStepperIcon="error">
-      <fa-icon icon="exclamation-triangle" size="lg"></fa-icon>
-    </ng-template>
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">03</span><div><h2>Interest and pricing</h2><p>Choose the interest calculation used by Fineract.</p></div></div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Interest rate (%)</mat-label><input matInput type="number" min="0" step="0.01" formControlName="interestRatePerPeriod" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Rate period</mat-label><mat-select formControlName="interestRateFrequencyType" required>@for (option of nativeTemplate.interestRateFrequencyTypeOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.value }}</mat-option> }</mat-select></mat-form-field>
+        </div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Interest method</mat-label><mat-select formControlName="interestType" required>@for (option of nativeTemplate.interestTypeOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.value }}</mat-option> }</mat-select></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Amortization</mat-label><mat-select formControlName="amortizationType" required>@for (option of nativeTemplate.amortizationTypeOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.value }}</mat-option> }</mat-select></mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
 
-    <ng-template matStepperIcon="preview">
-      <fa-icon icon="eye" size="sm"></fa-icon>
-    </ng-template>
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">04</span><div><h2>Membership and shares</h2><p>These rules are checked against the member's current accounts when they apply.</p></div></div>
+        <mat-checkbox formControlName="requireActiveMember">Require an active SACCO member</mat-checkbox>
+        <div class="field-grid section-fields">
+          <mat-form-field appearance="outline"><mat-label>Minimum membership (months)</mat-label><input matInput type="number" min="0" formControlName="minimumMembershipMonths" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Minimum approved shares</mat-label><input matInput type="number" min="0" formControlName="minimumApprovedShares" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Minimum shareholding value</mat-label><input matInput type="number" min="0" formControlName="minimumSharesBalance" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Shares relative to loan amount (%)</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="minimumSharesPercent" /><mat-hint>20 means shares worth at least 20% of the requested loan.</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Minimum savings balance</mat-label><input matInput type="number" min="0" formControlName="minimumSavingsBalance" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Savings relative to loan amount (%)</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="minimumSavingsPercent" /></mat-form-field>
+        </div>
+        <p class="quiet">Share unit price is read from existing share products; it is not set here.</p>
+        <div class="section-fields"><mat-checkbox formControlName="blockShareRedemption">{{ 'Protect the required shares while the loan is active' | translate }}</mat-checkbox></div>
+        <h3>{{ 'Share requirements by requested loan amount' | translate }}</h3>
+        <div formArrayName="shareBands" class="document-list">
+          @for (band of shareBands.controls; track band; let i = $index) {
+            <div [formGroupName]="i" class="document-row compact-row">
+              <mat-form-field appearance="outline"><mat-label>{{ 'Loan amount from' | translate }}</mat-label><input matInput type="number" min="0" formControlName="fromLoanAmount" required /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>{{ 'Minimum share balance' | translate }}</mat-label><input matInput type="number" min="0" formControlName="minimumShareBalance" required /></mat-form-field>
+              <button mat-button type="button" (click)="removeShareBand(i)">{{ 'labels.buttons.Remove' | translate }}</button>
+            </div>
+          }
+        </div>
+        <button mat-button type="button" (click)="addShareBand()">{{ 'Add share requirement' | translate }}</button>
+      </mat-card-content>
+    </mat-card>
 
-    <mat-step [stepControl]="loanProductDetailsForm">
-      <ng-template matStepLabel
-        ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.heading.General information' | translate }}</ng-template
-      >
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">05</span><div><h2>Eligibility and underwriting</h2><p>Use limits that the prequalification and appraisal services can enforce.</p></div></div>
+        <div class="field-grid thirds">
+          <mat-form-field appearance="outline"><mat-label>Minimum age (years)</mat-label><input matInput type="number" min="0" formControlName="minimumAgeYears" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum active loans</mat-label><input matInput type="number" min="0" formControlName="maximumConcurrentLoans" /><mat-hint>0 means no limit.</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Minimum monthly income</mat-label><input matInput type="number" min="0" formControlName="minimumMonthlyIncome" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum existing debt / income (%)</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="maximumDebtToIncomePercent" /></mat-form-field>
+        </div>
+        <mat-checkbox formControlName="disallowExistingDefaultedLoan">Block members with an existing defaulted loan</mat-checkbox>
+        <h3>{{ 'Member restrictions' | translate }}</h3>
+        <div class="field-grid thirds">
+          <mat-form-field appearance="outline"><mat-label>{{ 'Allowed member classifications' | translate }}</mat-label><mat-select formControlName="clientClassificationIds" multiple>@for (option of policyTemplate?.options?.clientClassificationOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.name }}</mat-option> }</mat-select><mat-hint>{{ 'Leave empty to allow all classifications.' | translate }}</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'Allowed genders' | translate }}</mat-label><mat-select formControlName="genderIds" multiple>@for (option of policyTemplate?.options?.genderOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.name }}</mat-option> }</mat-select><mat-hint>{{ 'Leave empty to allow all genders.' | translate }}</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>{{ 'Allowed districts' | translate }}</mat-label><mat-select formControlName="districts" multiple>@for (district of policyTemplate?.options?.districtOptions || []; track district) { <mat-option [value]="district">{{ district }}</mat-option> }</mat-select><mat-hint>{{ 'Leave empty to allow all districts.' | translate }}</mat-hint></mat-form-field>
+        </div>
+        <h3>{{ 'Interest forgiveness' | translate }}</h3>
+        <mat-checkbox formControlName="interestForgivenessEnabled">{{ 'Allow a Branch Manager to waive interest' | translate }}</mat-checkbox>
+        @if (form.get('interestForgivenessEnabled')?.value) {
+          <mat-form-field appearance="outline" class="compact-field"><mat-label>{{ 'Maximum outstanding interest that may be waived (%)' | translate }}</mat-label><input matInput type="number" min="0.01" max="100" step="0.01" formControlName="maximumInterestForgivenessPercent" /></mat-form-field>
+        }
+      </mat-card-content>
+    </mat-card>
 
-      <mifosx-loan-product-details-step
-        [loanProductsTemplate]="loanProductsTemplate"
-      ></mifosx-loan-product-details-step>
-    </mat-step>
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">06</span><div><h2>Collateral and guarantors</h2><p>Optional requirements appear only when enabled.</p></div></div>
+        <mat-checkbox formControlName="guarantorsRequired">Require guarantors</mat-checkbox>
+        @if (form.get('guarantorsRequired')?.value) {
+          <div class="field-grid section-fields">
+            <mat-form-field appearance="outline"><mat-label>Minimum guarantors</mat-label><input matInput type="number" min="1" formControlName="minimumGuarantors" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Maximum guarantors</mat-label><input matInput type="number" min="1" formControlName="maximumGuarantors" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Minimum amount guaranteed (%)</mat-label><input matInput type="number" min="0" max="100" formControlName="minimumGuaranteeCoveragePercent" /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'Maximum exposure per guarantor' | translate }}</mat-label><input matInput type="number" min="0" formControlName="maximumGuarantorExposure" /><mat-hint>{{ '0 means no product limit.' | translate }}</mat-hint></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'Accepted guarantor types' | translate }}</mat-label><mat-select formControlName="acceptedGuarantorTypeIds" multiple>@for (option of policyTemplate?.options?.guarantorTypeOptions || []; track option.id) { <mat-option [value]="option.id">{{ option.name }}</mat-option> }</mat-select><mat-hint>{{ 'Leave empty to accept every type.' | translate }}</mat-hint></mat-form-field>
+          </div>
+        }
+        <div class="section-fields"><mat-checkbox formControlName="collateralRequired">Require collateral</mat-checkbox></div>
+        @if (form.get('collateralRequired')?.value) {
+          <div class="field-grid section-fields">
+            <mat-form-field appearance="outline"><mat-label>Require above loan amount</mat-label><input matInput type="number" min="0" formControlName="collateralRequiredAboveAmount" /><mat-hint>Leave empty to require collateral for every amount.</mat-hint></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'Accepted collateral types' | translate }}</mat-label><mat-select formControlName="acceptedCollateralTypes" multiple>@for (option of policyTemplate?.options?.collateralTypeOptions || []; track option.id) { <mat-option [value]="option.id.toString()">{{ option.name }}</mat-option> }</mat-select><mat-hint>{{ 'Leave empty to accept every type.' | translate }}</mat-hint></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>{{ 'Maximum loan to collateral value (%)' | translate }}</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="maximumLoanToValuePercent" /><mat-hint>{{ '0 means no product limit.' | translate }}</mat-hint></mat-form-field>
+            <div class="check-field"><mat-checkbox formControlName="valuationRequired">Require valuation</mat-checkbox></div>
+            <div class="check-field"><mat-checkbox formControlName="releaseCollateralOnFullRepayment">{{ 'Release collateral after full repayment' | translate }}</mat-checkbox></div>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
 
-    @if (loanProductService.isLoanProduct) {
-      <mat-step>
-        <ng-template matStepLabel>{{ 'labels.heading.Loan product rules' | translate }}</ng-template>
-        <mifosx-loan-management-policy></mifosx-loan-management-policy>
-        <mifosx-stepper-buttons></mifosx-stepper-buttons>
-      </mat-step>
-    }
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">07</span><div><h2>Required documents</h2><p>Each requirement has a stage at which independent verification must be complete.</p></div></div>
+        <div formArrayName="documents" class="document-list">
+          @for (document of documents.controls; track document; let i = $index) {
+            <div [formGroupName]="i" class="document-row">
+              <mat-form-field appearance="outline"><mat-label>Document code</mat-label><input matInput formControlName="code" required /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Document name</mat-label><input matInput formControlName="name" /></mat-form-field>
+              <mat-form-field appearance="outline"><mat-label>Required before</mat-label><mat-select formControlName="requiredBefore">@for (stage of stages; track stage) { <mat-option [value]="stage">{{ stage }}</mat-option> }</mat-select></mat-form-field>
+              <mat-checkbox formControlName="required">Required</mat-checkbox>
+              <button mat-button type="button" (click)="removeDocument(i)">Remove</button>
+            </div>
+          }
+        </div>
+        <button mat-button type="button" (click)="addDocument()">Add document requirement</button>
+      </mat-card-content>
+    </mat-card>
 
-    <mat-step [stepControl]="loanProductCurrencyForm">
-      <ng-template matStepLabel
-        ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.CURRENCY' | translate }}</ng-template
-      >
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">08</span><div><h2>Fees and charges</h2><p>Attach an existing Fineract charge. Fee settlement is part of the loan policy.</p></div></div>
+        @if (nativeTemplate.chargeOptions?.length) {
+          <div class="option-list">@for (charge of nativeTemplate.chargeOptions; track charge.id) { <mat-checkbox [checked]="chargeEnabled(charge.id)" (change)="toggleCharge(charge.id, $event.checked)">{{ charge.name }}</mat-checkbox> }</div>
+        } @else { <p class="quiet">No loan charges are available in Fineract.</p> }
+        <h3>How application charges are settled</h3>
+        <mat-radio-group formControlName="feeSettlementMode" class="radio-list"><mat-radio-button value="DEDUCT_FROM_DISBURSEMENT">Deduct from disbursement</mat-radio-button><mat-radio-button value="PAY_SEPARATELY">Pay separately</mat-radio-button></mat-radio-group>
+      </mat-card-content>
+    </mat-card>
 
-      <mifosx-loan-product-currency-step
-        [loanProductsTemplate]="loanProductsTemplate"
-      ></mifosx-loan-product-currency-step>
-    </mat-step>
+    <mat-card class="form-section">
+      <mat-card-content>
+        <div class="section-heading"><span class="section-number">09</span><div><h2>Approval and disbursement</h2><p>Fineract selects the authority from these contiguous amount ranges.</p></div></div>
+        <div class="field-grid">
+          <mat-form-field appearance="outline"><mat-label>Branch Manager approves up to</mat-label><input matInput type="number" min="1" formControlName="branchMaximum" required /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Credit Committee approves up to</mat-label><input matInput type="number" min="1" formControlName="committeeMaximum" required /></mat-form-field>
+        </div>
+        <p class="quiet">The Board handles amounts above the Credit Committee limit, as the current backend requires.</p>
+        <h3>Allowed payout methods</h3>
+        <div class="option-list">@for (method of payoutMethods; track method) { <mat-checkbox [checked]="methodEnabled(method)" (change)="toggleMethod(method, $event.checked)">{{ method.replace('_', ' ') }}</mat-checkbox> }</div>
+        <mat-form-field appearance="outline" class="compact-field"><mat-label>Default payout method</mat-label><mat-select formControlName="defaultMethod">@for (method of payoutMethods; track method) { @if (methodEnabled(method)) { <mat-option [value]="method">{{ method.replace('_', ' ') }}</mat-option> } }</mat-select></mat-form-field>
+      </mat-card-content>
+    </mat-card>
 
-    <mat-step [stepControl]="loanProductSettingsForm">
-      <ng-template matStepLabel
-        ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.SETTINGS' | translate }}</ng-template
-      >
+    <mat-expansion-panel class="form-section accounting-section">
+      <mat-expansion-panel-header><mat-panel-title><span class="section-number">10</span><span>Accounting and operations</span></mat-panel-title><mat-panel-description>Required ledger mappings</mat-panel-description></mat-expansion-panel-header>
+      <p class="quiet">{{ 'The loan portfolio and receivable accounts are linked automatically when the product is saved.' | translate }}</p>
+      <div formGroupName="accounting" class="field-grid">
+        @for (field of glFields; track field.key) {
+          <mat-form-field appearance="outline"><mat-label>{{ field.label }}</mat-label><mat-select [formControlName]="field.key" required>@for (account of options(field.kind); track account.id) { <mat-option [value]="account.id">{{ account.glCode || account.code }} · {{ account.name }}</mat-option> }</mat-select></mat-form-field>
+        }
+      </div>
+    </mat-expansion-panel>
 
-      <mifosx-loan-product-settings-step
-        [loanProductsTemplate]="loanProductsTemplate"
-        [isLinkedToFloatingInterestRates]="
-          loanProductService.isLoanProduct ? loanProductTermsForm.get('isLinkedToFloatingInterestRates') : null
-        "
-        (advancePaymentStrategy)="advancePaymentStrategy($event)"
-      >
-      </mifosx-loan-product-settings-step>
-    </mat-step>
-
-    @if (isAdvancedPaymentStrategy) {
-      <mat-step [stepControl]="loanProductInterestRefundForm">
-        <ng-template matStepLabel
-          ><strong>{{ getProductTypeLabel(true) }} : </strong
-          >{{ 'labels.inputs.INTEREST REFUND' | translate }}</ng-template
-        >
-        <mifosx-loan-product-interest-refund-step
-          [loanProductsTemplate]="loanProductsTemplate"
-          (supportedInterestRefundTypes)="setSupportedInterestRefundTypes($event)"
-        >
-        </mifosx-loan-product-interest-refund-step>
-        <mifosx-stepper-buttons></mifosx-stepper-buttons>
-      </mat-step>
-    }
-
-    @if (loanProductService.isWorkingCapital || (loanProductService.isLoanProduct && isAdvancedPaymentStrategy)) {
-      <mat-step>
-        <ng-template matStepLabel
-          ><strong>{{ getProductTypeLabel(true) }} : </strong
-          >{{ 'labels.inputs.PAYMENT ALLOCATION' | translate }}</ng-template
-        >
-        <mifosx-loan-product-payment-strategy-step
-          [advancedPaymentAllocations]="advancedPaymentAllocations"
-          [advancedCreditAllocations]="loanProductService.isLoanProduct ? advancedCreditAllocations : []"
-          [advancedPaymentAllocationTransactionTypes]="loanProductsTemplate.advancedPaymentAllocationTransactionTypes"
-          [paymentAllocationOrderDefault]="loanProductsTemplate.advancedPaymentAllocationTypes"
-          [advancedCreditAllocationTransactionTypes]="loanProductsTemplate.creditAllocationTransactionTypes"
-          [creditAllocationOrderDefault]="loanProductsTemplate.creditAllocationAllocationTypes"
-          (setPaymentAllocation)="setPaymentAllocation($event)"
-          (setCreditAllocation)="setCreditAllocation($event)"
-        >
-        </mifosx-loan-product-payment-strategy-step>
-        <mifosx-stepper-buttons></mifosx-stepper-buttons>
-      </mat-step>
-    }
-
-    <mat-step [stepControl]="loanProductTermsForm">
-      <ng-template matStepLabel
-        ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.TERMS' | translate }}</ng-template
-      >
-
-      <mifosx-loan-product-terms-step [loanProductsTemplate]="loanProductsTemplate"></mifosx-loan-product-terms-step>
-    </mat-step>
-
-    @if (loanProductService.isLoanProduct) {
-      <mat-step>
-        <ng-template matStepLabel
-          ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.CHARGES' | translate }}</ng-template
-        >
-
-        <mifosx-loan-product-charges-step
-          [loanProductsTemplate]="loanProductsTemplate"
-          [currencyCode]="loanProductCurrencyForm.get('currencyCode')"
-          [multiDisburseLoan]="
-            loanProductService.isLoanProduct ? loanProductSettingsForm.get('multiDisburseLoan') : null
-          "
-        >
-        </mifosx-loan-product-charges-step>
-      </mat-step>
-    }
-
-    @if (isAdvancedPaymentStrategy) {
-      <mat-step [stepControl]="loanIncomeCapitalizationForm">
-        <ng-template matStepLabel
-          ><strong>{{ getProductTypeLabel(true) }} : </strong
-          >{{ 'labels.inputs.DEFERRED INCOME RECOGNITION' | translate }}</ng-template
-        >
-        <mifosx-loan-product-capitalized-income-step
-          [deferredIncomeRecognition]="deferredIncomeRecognition"
-          [capitalizedIncomeCalculationTypeOptions]="loanProductsTemplate.capitalizedIncomeCalculationTypeOptions"
-          [capitalizedIncomeStrategyOptions]="loanProductsTemplate.capitalizedIncomeStrategyOptions"
-          [capitalizedIncomeTypeOptions]="loanProductsTemplate.capitalizedIncomeTypeOptions"
-          [buyDownFeeCalculationTypeOptions]="loanProductsTemplate.buyDownFeeCalculationTypeOptions"
-          [buyDownFeeStrategyOptions]="loanProductsTemplate.buyDownFeeStrategyOptions"
-          [buyDownFeeIncomeTypeOptions]="loanProductsTemplate.buyDownFeeIncomeTypeOptions"
-          (setViewChildForm)="setViewChildForm($event)"
-        >
-        </mifosx-loan-product-capitalized-income-step>
-        <mifosx-stepper-buttons></mifosx-stepper-buttons>
-      </mat-step>
-    }
-
-    <mat-step>
-      <ng-template matStepLabel
-        ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.ACCOUNTING' | translate }}</ng-template
-      >
-
-      <mifosx-loan-product-accounting-step
-        [loanProductsTemplate]="loanProductsTemplate"
-        [accountingRuleData]="accountingRuleData"
-        [loanProductFormValid]="loanProductFormValid"
-        [deferredIncomeRecognition]="deferredIncomeRecognition"
-      >
-      </mifosx-loan-product-accounting-step>
-    </mat-step>
-
-    @if (loanProductFormValid) {
-      <mat-step state="preview" completed>
-        <ng-template matStepLabel
-          ><strong>{{ getProductTypeLabel(true) }} : </strong>{{ 'labels.inputs.PREVIEW' | translate }}</ng-template
-        >
-        <mifosx-loan-product-preview-step
-          [loanProductsTemplate]="loanProductsTemplate"
-          [accountingRuleData]="accountingRuleData"
-          [loanProduct]="loanProduct"
-          [saving]="savingProduct"
-          (submitEvent)="submit()"
-        >
-        </mifosx-loan-product-preview-step>
-      </mat-step>
-    }
-  </mat-stepper>
-</div>
+    <div class="action-row">
+      <button mat-button type="button" [routerLink]="['../']">Cancel</button>
+      <button mat-flat-button type="submit" [disabled]="saving || loadingPolicy || !canWritePolicy">{{ saving ? 'Saving product and policy…' : 'Create loan product' }}</button>
+    </div>
+  </form>
+</main>

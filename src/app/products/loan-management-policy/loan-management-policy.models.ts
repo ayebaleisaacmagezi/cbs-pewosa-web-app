@@ -65,6 +65,19 @@ export interface LoanManagementPolicyDefinition {
     minimumMonthlyIncome: number;
     maximumDebtToIncomeRatio: number;
   };
+  shareProtection?: {
+    blockRedemptionBelowMinimum: boolean;
+    minimumShareBalanceBands: Array<{ fromLoanAmount: number; minimumShareBalance: number }>;
+  };
+  eligibilityRestrictions?: {
+    clientClassificationIds: number[];
+    genderIds: number[];
+    districts: string[];
+  };
+  interestForgiveness?: {
+    enabled: boolean;
+    maximumOutstandingInterestPercent: number;
+  };
   creditScoring: {
     factors: LoanPolicyCreditFactor[];
     bands: LoanPolicyRiskBand[];
@@ -77,12 +90,15 @@ export interface LoanManagementPolicyDefinition {
     minimumGuarantors: number;
     maximumGuarantors: number;
     minimumGuaranteeCoveragePercent: number;
+    maximumExposurePerMember?: number;
+    acceptedGuarantorTypeIds?: number[];
     allowSavingsAsSecurity: boolean;
     allowSharesAsSecurity: boolean;
     collateralRequired: boolean;
     collateralRequiredAboveAmount: number | null;
     acceptedCollateralTypes: string[];
     valuationRequired: boolean;
+    maximumLoanToValuePercent?: number;
     releaseOnFullRepayment: boolean;
   };
   disbursement: {
@@ -117,6 +133,16 @@ export interface LoanManagementPolicyOptions {
   mobileMoneyAvailable: boolean;
   groupRoleCodes?: string[];
   groupRecoverySources?: string[];
+  clientClassificationOptions?: LoanPolicyLookupOption[];
+  genderOptions?: LoanPolicyLookupOption[];
+  districtOptions?: string[];
+  guarantorTypeOptions?: LoanPolicyLookupOption[];
+  collateralTypeOptions?: LoanPolicyLookupOption[];
+}
+
+export interface LoanPolicyLookupOption {
+  id: number;
+  name: string;
 }
 
 export interface LoanManagementPolicyTemplate {
