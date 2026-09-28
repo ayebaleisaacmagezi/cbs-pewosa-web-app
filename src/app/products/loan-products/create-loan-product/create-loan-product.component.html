@@ -40,18 +40,24 @@
 
     <mat-card class="form-section">
       <mat-card-content>
-        <div class="section-heading"><span class="section-number">02</span><div><h2>Loan terms and structure</h2><p>Set the allowed amount, number of repayments and schedule.</p></div></div>
+        <div class="section-heading"><span class="section-number">02</span><div><h2>Loan terms and structure</h2><p>Set defaults, then add limits only when this product needs them.</p></div></div>
         <h3>Loan amount</h3>
+        <mat-checkbox formControlName="amountLimitsEnabled">Set minimum and maximum loan amount</mat-checkbox>
         <div class="field-grid thirds">
-          <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minPrincipal" required /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Usual amount</mat-label><input matInput type="number" min="1" formControlName="principal" required /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxPrincipal" required /></mat-form-field>
+          @if (form.get('amountLimitsEnabled')?.value) {
+            <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minPrincipal" required /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxPrincipal" required /></mat-form-field>
+          }
         </div>
         <h3>Number of repayments</h3>
+        <mat-checkbox formControlName="repaymentLimitsEnabled">Set minimum and maximum repayments</mat-checkbox>
         <div class="field-grid thirds">
-          <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minNumberOfRepayments" required /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Usual number</mat-label><input matInput type="number" min="1" formControlName="numberOfRepayments" required /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxNumberOfRepayments" required /></mat-form-field>
+          @if (form.get('repaymentLimitsEnabled')?.value) {
+            <mat-form-field appearance="outline"><mat-label>Minimum</mat-label><input matInput type="number" min="1" formControlName="minNumberOfRepayments" required /></mat-form-field>
+            <mat-form-field appearance="outline"><mat-label>Maximum</mat-label><input matInput type="number" min="1" formControlName="maxNumberOfRepayments" required /></mat-form-field>
+          }
         </div>
         <div class="field-grid">
           <mat-form-field appearance="outline"><mat-label>Repay every</mat-label><input matInput type="number" min="1" formControlName="repaymentEvery" required /></mat-form-field>
@@ -86,9 +92,9 @@
           <mat-form-field appearance="outline"><mat-label>Minimum membership (months)</mat-label><input matInput type="number" min="0" formControlName="minimumMembershipMonths" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Minimum approved shares</mat-label><input matInput type="number" min="0" formControlName="minimumApprovedShares" /></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Minimum shareholding value</mat-label><input matInput type="number" min="0" formControlName="minimumSharesBalance" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Shares relative to loan amount (%)</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="minimumSharesPercent" /><mat-hint>20 means shares worth at least 20% of the requested loan.</mat-hint></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum loan against shares (×)</mat-label><input matInput type="number" min="0" step="0.01" formControlName="maximumLoanToSharesMultiplier" /><mat-hint>3 means a member can borrow up to three times their shares. Leave 0 for no rule.</mat-hint></mat-form-field>
           <mat-form-field appearance="outline"><mat-label>Minimum savings balance</mat-label><input matInput type="number" min="0" formControlName="minimumSavingsBalance" /></mat-form-field>
-          <mat-form-field appearance="outline"><mat-label>Savings relative to loan amount (%)</mat-label><input matInput type="number" min="0" max="100" step="0.01" formControlName="minimumSavingsPercent" /></mat-form-field>
+          <mat-form-field appearance="outline"><mat-label>Maximum loan against savings (×)</mat-label><input matInput type="number" min="0" step="0.01" formControlName="maximumLoanToSavingsMultiplier" /><mat-hint>5 means a member can borrow up to five times their savings. Leave 0 for no rule.</mat-hint></mat-form-field>
         </div>
         <p class="quiet">Share unit price is read from existing share products; it is not set here.</p>
         <div class="section-fields"><mat-checkbox formControlName="blockShareRedemption">{{ 'Protect the required shares while the loan is active' | translate }}</mat-checkbox></div>

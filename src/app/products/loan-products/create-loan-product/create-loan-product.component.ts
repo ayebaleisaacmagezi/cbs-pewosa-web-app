@@ -73,12 +73,14 @@ export class CreateLoanProductComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(42)]],
       description: ['', Validators.maxLength(500)],
       currencyCode: ['', Validators.required],
-      minPrincipal: [null, [Validators.required, Validators.min(1)]],
+      amountLimitsEnabled: [false],
+      minPrincipal: [null, Validators.min(1)],
       principal: [null, [Validators.required, Validators.min(1)]],
-      maxPrincipal: [null, [Validators.required, Validators.min(1)]],
-      minNumberOfRepayments: [null, [Validators.required, Validators.min(1)]],
+      maxPrincipal: [null, Validators.min(1)],
+      repaymentLimitsEnabled: [false],
+      minNumberOfRepayments: [null, Validators.min(1)],
       numberOfRepayments: [null, [Validators.required, Validators.min(1)]],
-      maxNumberOfRepayments: [null, [Validators.required, Validators.min(1)]],
+      maxNumberOfRepayments: [null, Validators.min(1)],
       repaymentEvery: [1, [Validators.required, Validators.min(1)]],
       repaymentFrequencyType: [null, Validators.required],
       interestRatePerPeriod: [null, [Validators.required, Validators.min(0)]],
@@ -92,9 +94,9 @@ export class CreateLoanProductComponent implements OnInit {
       minimumAgeYears: [0, Validators.min(0)],
       minimumApprovedShares: [0, Validators.min(0)],
       minimumSharesBalance: [0, Validators.min(0)],
-      minimumSharesPercent: [0, [Validators.min(0), Validators.max(100)]],
+      maximumLoanToSharesMultiplier: [0, Validators.min(0)],
       minimumSavingsBalance: [0, Validators.min(0)],
-      minimumSavingsPercent: [0, [Validators.min(0), Validators.max(100)]],
+      maximumLoanToSavingsMultiplier: [0, Validators.min(0)],
       blockShareRedemption: [false],
       shareBands: formBuilder.array([]),
       maximumConcurrentLoans: [0, Validators.min(0)],
@@ -140,9 +142,9 @@ export class CreateLoanProductComponent implements OnInit {
   get valid(): boolean {
     const v = this.form.getRawValue();
     return this.form.valid && this.policyTemplate !== null && !this.loadingPolicy && this.canWritePolicy &&
-      Number(v.minPrincipal) <= Number(v.principal) && Number(v.principal) <= Number(v.maxPrincipal) &&
-      Number(v.minNumberOfRepayments) <= Number(v.numberOfRepayments) &&
-      Number(v.numberOfRepayments) <= Number(v.maxNumberOfRepayments) &&
+      (!v.amountLimitsEnabled || (Number(v.minPrincipal) <= Number(v.principal) && Number(v.principal) <= Number(v.maxPrincipal))) &&
+      (!v.repaymentLimitsEnabled || (Number(v.minNumberOfRepayments) <= Number(v.numberOfRepayments) &&
+        Number(v.numberOfRepayments) <= Number(v.maxNumberOfRepayments))) &&
       Number(v.graceOnPrincipalPayment) < Number(v.numberOfRepayments) &&
       Number(v.graceOnInterestPayment) < Number(v.numberOfRepayments) &&
       Number(v.committeeMaximum) > Number(v.branchMaximum) &&
@@ -172,9 +174,11 @@ export class CreateLoanProductComponent implements OnInit {
           requireActiveMember: p.requireActiveMember, minimumMembershipMonths: p.minimumMembershipMonths,
           minimumAgeYears: p.minimumAgeYears, minimumApprovedShares: p.minimumApprovedShares,
           minimumSharesBalance: p.minimumSharesBalance,
-          minimumSharesPercent: (p.minimumSharesToRequestedAmountRatio || 0) * 100,
+          maximumLoanToSharesMultiplier: p.maximumLoanToSharesMultiplier ||
+            (p.minimumSharesToRequestedAmountRatio ? 1 / p.minimumSharesToRequestedAmountRatio : 0),
           minimumSavingsBalance: p.minimumSavingsBalance,
-          minimumSavingsPercent: (p.minimumSavingsToRequestedAmountRatio || 0) * 100,
+          maximumLoanToSavingsMultiplier: p.maximumLoanToSavingsMultiplier ||
+            (p.minimumSavingsToRequestedAmountRatio ? 1 / p.minimumSavingsToRequestedAmountRatio : 0),
           blockShareRedemption: shareProtection?.blockRedemptionBelowMinimum || false,
           maximumConcurrentLoans: p.maximumConcurrentLoans,
           disallowExistingDefaultedLoan: p.disallowExistingDefaultedLoan,
@@ -300,9 +304,11 @@ export class CreateLoanProductComponent implements OnInit {
       minimumAgeYears: Number(v.minimumAgeYears),
       minimumApprovedShares: Number(v.minimumApprovedShares),
       minimumSharesBalance: Number(v.minimumSharesBalance),
-      minimumSharesToRequestedAmountRatio: Number(v.minimumSharesPercent) / 100,
+      minimumSharesToRequestedAmountRatio: 0,
+      maximumLoanToSharesMultiplier: Number(v.maximumLoanToSharesMultiplier),
       minimumSavingsBalance: Number(v.minimumSavingsBalance),
-      minimumSavingsToRequestedAmountRatio: Number(v.minimumSavingsPercent) / 100,
+      minimumSavingsToRequestedAmountRatio: 0,
+      maximumLoanToSavingsMultiplier: Number(v.maximumLoanToSavingsMultiplier),
       maximumConcurrentLoans: Number(v.maximumConcurrentLoans),
       disallowExistingDefaultedLoan: !!v.disallowExistingDefaultedLoan
     };
@@ -376,15 +382,18 @@ export class CreateLoanProductComponent implements OnInit {
       currencyCode: v.currencyCode,
       digitsAfterDecimal: currency?.decimalPlaces ?? 2,
       inMultiplesOf: currency?.inMultiplesOf || 0,
-      minPrincipal: Number(v.minPrincipal), principal: Number(v.principal), maxPrincipal: Number(v.maxPrincipal),
-      minNumberOfRepayments: Number(v.minNumberOfRepayments),
+      ...(v.amountLimitsEnabled ? { minPrincipal: Number(v.minPrincipal), maxPrincipal: Number(v.maxPrincipal) } : {}),
+      principal: Number(v.principal),
+      ...(v.repaymentLimitsEnabled ? {
+        minNumberOfRepayments: Number(v.minNumberOfRepayments), maxNumberOfRepayments: Number(v.maxNumberOfRepayments)
+      } : {}),
       numberOfRepayments: Number(v.numberOfRepayments),
-      maxNumberOfRepayments: Number(v.maxNumberOfRepayments),
       repaymentEvery: Number(v.repaymentEvery), repaymentFrequencyType: Number(v.repaymentFrequencyType),
       interestRatePerPeriod: Number(v.interestRatePerPeriod),
       interestRateFrequencyType: Number(v.interestRateFrequencyType),
       amortizationType: Number(v.amortizationType), interestType: Number(v.interestType),
       interestCalculationPeriodType: template.interestCalculationPeriodType?.id,
+      isInterestRecalculationEnabled: template.isInterestRecalculationEnabled ?? false,
       transactionProcessingStrategyCode: strategy?.code,
       graceOnPrincipalPayment: Number(v.graceOnPrincipalPayment),
       graceOnInterestPayment: Number(v.graceOnInterestPayment),

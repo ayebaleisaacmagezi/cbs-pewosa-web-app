@@ -58,6 +58,8 @@ export interface LoanManagementPolicyDefinition {
     minimumSharesBalance: number;
     minimumSavingsToRequestedAmountRatio: number;
     minimumSharesToRequestedAmountRatio: number;
+    maximumLoanToSavingsMultiplier?: number;
+    maximumLoanToSharesMultiplier?: number;
     disallowExistingDefaultedLoan: boolean;
     disallowAnyActiveLoan: boolean;
   };
