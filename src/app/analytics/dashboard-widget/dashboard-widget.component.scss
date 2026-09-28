@@ -145,6 +145,27 @@
     0 1px 2px rgb(15 23 42 / 6%),
     0 8px 24px rgb(15 23 42 / 7%);
 }
+.featured-metric-card {
+  min-height: 152px;
+  padding: 16px;
+  gap: 12px;
+  border-radius: 0;
+  box-shadow: none;
+}
+.featured-metric-card .manager-metric-icon {
+  flex-basis: 24px;
+  font-size: 20px;
+  color: var(--mat-sys-primary, #2457a7);
+}
+.featured-metric-card .manager-metric-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant, #68758c);
+}
+.featured-metric-card .manager-metric-value {
+  font-size: 28px;
+  color: var(--mat-sys-primary, #2457a7);
+}
 .manager-metric-icon {
   flex: 0 0 40px;
   font-size: 32px;

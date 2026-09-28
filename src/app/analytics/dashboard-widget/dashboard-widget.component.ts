@@ -55,6 +55,7 @@ export class DashboardWidgetComponent implements AfterViewInit, OnChanges, OnDes
 
   @Input({ required: true }) widget!: AnalyticsWidgetDefinition;
   @Input() compact = false;
+  @Input() featured = false;
   @Input() state?: AnalyticsWidgetState;
 
   @ViewChild('chartCanvas')
@@ -118,7 +119,9 @@ export class DashboardWidgetComponent implements AfterViewInit, OnChanges, OnDes
     const datasets: any[] = this.state.datasets.map((dataset) => ({
       ...dataset,
       label: this.translateService.instant(dataset.labelKey),
-      borderRadius: this.widget.chartType === 'bar' ? 8 : 0
+      borderRadius: this.widget.chartType === 'bar' ? 8 : 0,
+      tension: this.widget.chartType === 'line' ? 0.25 : 0,
+      fill: this.widget.chartType === 'line'
     }));
 
     const config: any = {
@@ -142,7 +145,7 @@ export class DashboardWidgetComponent implements AfterViewInit, OnChanges, OnDes
           }
         },
         scales:
-          this.widget.chartType === 'bar'
+          this.widget.chartType === 'bar' || this.widget.chartType === 'line'
             ? {
                 x: {
                   ticks: {

@@ -94,6 +94,28 @@ export class DashboardEngineComponent implements OnInit, OnChanges, OnDestroy {
       (widget) => widget.type === type && (widget.area || (widget.section ? 'system' : 'reports')) === area
     );
   }
+  connectedWidgetsForArea(area: string): AnalyticsWidgetDefinition[] {
+    const connected = this.widgetsForArea(area, 'metric').filter((widget) => widget.adapter !== 'not-connected');
+    const featuredIds: Record<string, string[]> = {
+      executive: ['executive-4', 'executive-5', 'executive-6', 'executive-7'],
+      savings: ['savings-0', 'savings-1', 'savings-10', 'savings-15'],
+      members: ['members-0', 'members-1', 'members-3', 'members-18'],
+      risk: ['risk-0', 'risk-5', 'risk-6']
+    };
+    return featuredIds[area] ? connected.filter((widget) => featuredIds[area].includes(widget.id)) : connected;
+  }
+  additionalConnectedWidgetsForArea(area: string): AnalyticsWidgetDefinition[] {
+    const featured = new Set(this.connectedWidgetsForArea(area).map((widget) => widget.id));
+    return this.widgetsForArea(area, 'metric').filter(
+      (widget) => widget.adapter !== 'not-connected' && !featured.has(widget.id)
+    );
+  }
+  unconnectedWidgetsForArea(area: string): AnalyticsWidgetDefinition[] {
+    return this.widgetsForArea(area, 'metric').filter((widget) => widget.adapter === 'not-connected');
+  }
+  isFeaturedArea(area: string): boolean {
+    return ['executive', 'savings', 'members', 'risk'].includes(area);
+  }
   selectArea(area: string): void {
     this.activeArea = area;
     this.reloadDashboard();
@@ -192,7 +214,13 @@ export class DashboardEngineComponent implements OnInit, OnChanges, OnDestroy {
     const widgets = this.activeWidgets;
     this.lastChecked = undefined;
     const started = Date.now();
-    log.info('Reload started', { filters, forceRefresh, widgets: widgets.length });
+    log.info('Reload started', {
+      filters,
+      forceRefresh,
+      widgets: widgets.length,
+      connected: widgets.filter((widget) => widget.adapter !== 'not-connected').length,
+      notConnected: widgets.filter((widget) => widget.adapter === 'not-connected').length
+    });
     this.widgetStateMap = widgets.reduce(
       (accumulator, widget) => ({
         ...accumulator,
@@ -217,12 +245,12 @@ export class DashboardEngineComponent implements OnInit, OnChanges, OnDestroy {
     ).subscribe({
       next: (result) => {
         this.widgetStateMap = { ...this.widgetStateMap, [result.widgetId]: result.state };
-        log.info('Widget rendered', {
-          widget: result.widgetId,
-          error: !!result.state.error,
-          empty: result.state.empty,
-          elapsedMs: Date.now() - started
-        });
+        if (result.state.error)
+          log.warn('Widget unavailable', {
+            widget: result.widgetId,
+            reason: 'API request or data error',
+            elapsedMs: Date.now() - started
+          });
         this.changeDetector.markForCheck();
       },
       error: (error) => {
@@ -243,7 +271,13 @@ export class DashboardEngineComponent implements OnInit, OnChanges, OnDestroy {
       complete: () => {
         this.lastChecked = new Date();
         this.changeDetector.markForCheck();
-        log.info('Reload complete', { elapsedMs: Date.now() - started });
+        const states = Object.values(this.widgetStateMap);
+        log.info('Reload complete', {
+          elapsedMs: Date.now() - started,
+          loaded: states.filter((state) => !state.error && !state.unavailable && !state.empty).length,
+          unavailable: states.filter((state) => state.unavailable).length,
+          errors: states.filter((state) => state.error).length
+        });
       }
     });
   }

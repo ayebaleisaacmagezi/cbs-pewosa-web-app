@@ -7,7 +7,7 @@
 -->
 
 @if (compact && widget.type === 'metric') {
-  <mat-card class="manager-metric-card">
+  <mat-card class="manager-metric-card" [class.featured-metric-card]="featured">
     <fa-icon class="manager-metric-icon" [icon]="widget.icon"></fa-icon>
     <div class="manager-metric-copy">
       <strong class="manager-metric-title">{{ widget.titleKey | translate }}</strong>
@@ -76,6 +76,8 @@
         <div class="widget-placeholder"></div>
       } @else if (state?.error) {
         <div class="widget-empty" role="status">{{ 'labels.superAdmin.Source unavailable' | translate }}</div>
+      } @else if (state?.unavailable) {
+        <div class="widget-empty" role="status">{{ state.noteText || (state.noteKey | translate) }}</div>
       } @else if (state?.empty) {
         <div class="widget-empty">
           {{ 'labels.text.No Data' | translate }}
@@ -119,6 +121,9 @@
       }
       @if (state?.noteKey) {
         <small>{{ state.noteKey | translate }}</small>
+      }
+      @if (state?.noteText) {
+        <small>{{ state.noteText }}</small>
       }
       @if (widget.link) {
         <a mat-button [routerLink]="widget.link">{{ 'labels.superAdmin.View details' | translate }}</a>

@@ -37,6 +37,38 @@ export class AnalyticsDataSourceService {
   loadWidget(widget: AnalyticsWidgetDefinition, filters: AnalyticsFilters): Observable<AnalyticsWidgetState> {
     log.info('Widget load', { widget: widget.id, adapter: widget.adapter, filters });
     return defer(() => this.loadWidgetSource(widget, filters)).pipe(
+      map((state) => {
+        if (widget.type !== 'chart' || !state.rows?.length || state.error || state.unavailable) return state;
+        if (widget.adapter === 'savings-by-product') {
+          const currencies = new Set(state.rows.map((row) => row.detail?.split(' ')[0]));
+          if (currencies.size !== 1 || currencies.has(undefined))
+            return {
+              loading: false,
+              empty: false,
+              unavailable: true,
+              noteText: 'Select a single currency to compare savings products.'
+            };
+        }
+        const values = state.rows.map((row) => row.value);
+        if (values.some((value) => typeof value !== 'number' || !Number.isFinite(value)))
+          throw new Error('Invalid dashboard chart values');
+        return {
+          ...state,
+          noteText:
+            widget.adapter === 'savings-by-product'
+              ? 'Balances in ' + state.rows[0].detail?.split(' ')[0]
+              : state.noteText,
+          labels: state.rows.map((row) => row.title),
+          datasets: [
+            {
+              labelKey: widget.titleKey,
+              data: values as number[],
+              backgroundColor: ['#2457a7', '#3a8cba', '#42a88a', '#e5a84d', '#aa6eb7', '#d56a72'],
+              borderWidth: 0
+            }
+          ]
+        };
+      }),
       tap((state) => {
         if (state.error) log.warn('Widget source unavailable', { widget: widget.id });
       }),
@@ -44,7 +76,8 @@ export class AnalyticsDataSourceService {
         log.error('Widget failed before request or during transformation', {
           widget: widget.id,
           type: error?.name,
-          status: error?.status
+          status: error?.status,
+          message: error?.message
         });
         return of({ loading: false, empty: false, error: true });
       })
@@ -937,7 +970,8 @@ export class AnalyticsDataSourceService {
             empty: visible.length === 0,
             rows: visible.map((group) => ({
               title: group.title,
-              detail: group.currency + ' ' + group.amount.toLocaleString('en-UG', { maximumFractionDigits: 2 })
+              detail: group.currency + ' ' + group.amount.toLocaleString('en-UG', { maximumFractionDigits: 2 }),
+              value: group.amount
             })),
             noteKey:
               widget.adapter === 'savings-top-members'
@@ -1388,7 +1422,8 @@ export class AnalyticsDataSourceService {
                 path,
                 elapsedMs: Date.now() - started,
                 status: error?.status,
-                type: error?.name
+                type: error?.name,
+                message: error?.message
               })
           })
         );

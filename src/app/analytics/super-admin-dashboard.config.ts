@@ -8,20 +8,20 @@
 
 import { AnalyticsWidgetDefinition } from './models/analytics-dashboard.model';
 export const SUPER_ADMIN_DASHBOARD_AREAS = [
+  { id: 'executive', titleKey: 'labels.superAdmin.Executive overview' },
+  { id: 'savings', titleKey: 'labels.superAdmin.Savings and shares' },
+  { id: 'members', titleKey: 'labels.superAdmin.Member services' },
+  { id: 'risk', titleKey: 'labels.superAdmin.Risk and compliance' },
   { id: 'overview', titleKey: 'labels.superAdmin.Institution at a glance' },
   { id: 'reports', titleKey: 'labels.superAdmin.Trends and collections' },
-  { id: 'system', titleKey: 'labels.superAdmin.System operations' },
-  { id: 'executive', titleKey: 'labels.superAdmin.Executive overview' },
   { id: 'daily', titleKey: 'labels.superAdmin.Daily operations' },
   { id: 'credit', titleKey: 'labels.superAdmin.Credit performance' },
   { id: 'finance', titleKey: 'labels.superAdmin.Finance' },
   { id: 'branch', titleKey: 'labels.superAdmin.Branch performance' },
   { id: 'teller', titleKey: 'labels.superAdmin.Teller oversight' },
-  { id: 'risk', titleKey: 'labels.superAdmin.Risk and compliance' },
-  { id: 'members', titleKey: 'labels.superAdmin.Member services' },
+  { id: 'system', titleKey: 'labels.superAdmin.System operations' },
   { id: 'monitoring', titleKey: 'labels.superAdmin.System monitoring' },
   { id: 'products', titleKey: 'labels.superAdmin.Loan products' },
-  { id: 'savings', titleKey: 'labels.superAdmin.Savings and shares' },
   { id: 'alerts', titleKey: 'labels.superAdmin.Alerts and notifications' }
 ];
 export const SUPER_ADMIN_DASHBOARD_WIDGETS: AnalyticsWidgetDefinition[] = [
@@ -2805,6 +2805,94 @@ export const SUPER_ADMIN_DASHBOARD_WIDGETS: AnalyticsWidgetDefinition[] = [
     adapter: 'members-today',
     icon: 'tasks',
     area: 'alerts',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-branch-ranking',
+    titleKey: 'labels.superAdmin.Branch ranking',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'bar',
+    adapter: 'portfolio-branch-ranking',
+    icon: 'chart-line',
+    area: 'executive',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-top-loan-products',
+    titleKey: 'labels.superAdmin.Top 5 loan products',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'bar',
+    adapter: 'portfolio-top-products',
+    icon: 'chart-line',
+    area: 'executive',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-par-ageing',
+    titleKey: 'labels.superAdmin.PAR by ageing',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'bar',
+    adapter: 'portfolio-ageing',
+    icon: 'chart-line',
+    area: 'risk',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-loan-classification',
+    titleKey: 'labels.superAdmin.Loan classification',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'doughnut',
+    adapter: 'portfolio-classification',
+    icon: 'chart-line',
+    area: 'risk',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-members-category',
+    titleKey: 'labels.superAdmin.Members by category',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'doughnut',
+    adapter: 'members-by-category',
+    icon: 'chart-line',
+    area: 'members',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-members-gender',
+    titleKey: 'labels.superAdmin.Members by gender',
+    type: 'chart',
+    layout: 'half',
+    chartType: 'doughnut',
+    adapter: 'members-by-gender',
+    icon: 'chart-line',
+    area: 'members',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-member-loan-trend',
+    titleKey: 'labels.inputs.Client Trends',
+    type: 'chart',
+    layout: 'wide',
+    chartType: 'line',
+    adapter: 'client-loan-trends',
+    icon: 'chart-line',
+    area: 'members',
+    visibleTo: { superAdminOnly: true }
+  },
+  {
+    id: 'chart-savings-products',
+    titleKey: 'labels.superAdmin.Savings by product',
+    type: 'chart',
+    layout: 'wide',
+    chartType: 'bar',
+    adapter: 'savings-by-product',
+    icon: 'chart-line',
+    area: 'savings',
     visibleTo: { superAdminOnly: true }
   }
 ];

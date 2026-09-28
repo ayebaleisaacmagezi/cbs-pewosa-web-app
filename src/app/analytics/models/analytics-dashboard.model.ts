@@ -21,7 +21,7 @@ export interface AnalyticsVisibilityRule {
 }
 export type AnalyticsWidgetLayout = 'metric' | 'wide' | 'half';
 export type AnalyticsWidgetType = 'metric' | 'chart' | 'list';
-export type AnalyticsChartType = 'bar' | 'doughnut';
+export type AnalyticsChartType = 'bar' | 'doughnut' | 'line';
 export type AnalyticsWidgetAdapter =
   | 'client-total'
   | 'loan-total'

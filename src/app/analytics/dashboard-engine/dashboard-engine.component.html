@@ -66,14 +66,15 @@
     } @else {
       @if (isSuperAdmin && activeArea === 'all') {
         @for (area of dashboardAreas; track area.id) {
-          <section class="analytics-area">
+          <section class="analytics-area" [class.featured-area]="isFeaturedArea(area.id)">
             <h2>{{ area.titleKey | translate }}</h2>
-            <div class="summary-grid manager-style-grid">
-              @for (widget of widgetsForArea(area.id, 'metric'); track widget.id) {
+            <div class="summary-grid manager-style-grid" [class.featured-metrics]="isFeaturedArea(area.id)">
+              @for (widget of connectedWidgetsForArea(area.id); track widget.id) {
                 <mifosx-dashboard-widget
                   [widget]="widget"
                   [state]="widgetStateMap[widget.id]"
                   [compact]="true"
+                  [featured]="isFeaturedArea(area.id)"
                 ></mifosx-dashboard-widget>
               }
             </div>
@@ -93,6 +94,34 @@
                 </div>
               }
             </div>
+            @if (additionalConnectedWidgetsForArea(area.id).length) {
+              <details class="additional-indicators">
+                <summary>More figures ({{ additionalConnectedWidgetsForArea(area.id).length }})</summary>
+                <div class="summary-grid manager-style-grid">
+                  @for (widget of additionalConnectedWidgetsForArea(area.id); track widget.id) {
+                    <mifosx-dashboard-widget
+                      [widget]="widget"
+                      [state]="widgetStateMap[widget.id]"
+                      [compact]="true"
+                    ></mifosx-dashboard-widget>
+                  }
+                </div>
+              </details>
+            }
+            @if (unconnectedWidgetsForArea(area.id).length) {
+              <details class="additional-indicators">
+                <summary>Other indicators ({{ unconnectedWidgetsForArea(area.id).length }})</summary>
+                <div class="summary-grid manager-style-grid">
+                  @for (widget of unconnectedWidgetsForArea(area.id); track widget.id) {
+                    <mifosx-dashboard-widget
+                      [widget]="widget"
+                      [state]="widgetStateMap[widget.id]"
+                      [compact]="true"
+                    ></mifosx-dashboard-widget>
+                  }
+                </div>
+              </details>
+            }
           </section>
         }
       } @else {
