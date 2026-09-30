@@ -15,7 +15,13 @@ import {
   MatDialogActions,
   MatDialogClose
 } from '@angular/material/dialog';
-import { UntypedFormGroup, UntypedFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  UntypedFormGroup,
+  UntypedFormBuilder,
+  ReactiveFormsModule,
+  UntypedFormControl,
+  Validators
+} from '@angular/forms';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { STANDALONE_SHARED_IMPORTS } from 'app/standalone-shared.module';
 
@@ -56,9 +62,28 @@ export class EditGuarantorDialogComponent implements OnInit {
       mobileNumber: [guarantor.mobileNumber || ''],
       housePhoneNumber: [guarantor.housePhoneNumber || '']
     });
+    if (Number(guarantor.guarantorType?.id) === 3) {
+      for (const key of [
+        'firstname',
+        'lastname',
+        'addressLine1',
+        'mobileNumber'
+      ]) {
+        this.editGuarantorForm.get(key).setValidators(Validators.required);
+        this.editGuarantorForm.get(key).updateValueAndValidity();
+      }
+      this.editGuarantorForm.addControl(
+        'amount',
+        new UntypedFormControl(guarantor.amount ?? null, Validators.min(0.01))
+      );
+    }
   }
 
   submit() {
+    if (this.editGuarantorForm.invalid) {
+      this.editGuarantorForm.markAllAsTouched();
+      return;
+    }
     this.dialogRef.close(this.editGuarantorForm.value);
   }
 }

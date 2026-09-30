@@ -72,6 +72,7 @@ export interface LoanManagementPolicyDefinition {
     minimumShareBalanceBands: Array<{ fromLoanAmount: number; minimumShareBalance: number }>;
   };
   eligibilityRestrictions?: {
+    clientTypeIds?: number[];
     clientClassificationIds: number[];
     genderIds: number[];
     districts: string[];
@@ -136,6 +137,7 @@ export interface LoanManagementPolicyOptions {
   groupRoleCodes?: string[];
   groupRecoverySources?: string[];
   clientClassificationOptions?: LoanPolicyLookupOption[];
+  clientTypeOptions?: LoanPolicyLookupOption[];
   genderOptions?: LoanPolicyLookupOption[];
   districtOptions?: string[];
   guarantorTypeOptions?: LoanPolicyLookupOption[];

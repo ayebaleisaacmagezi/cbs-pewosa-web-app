@@ -101,12 +101,7 @@ export class CreateLoanProductComponent implements OnInit {
         '',
         Validators.required
       ],
-      amountLimitsEnabled: [false],
       minPrincipal: [
-        null,
-        Validators.min(1)
-      ],
-      principal: [
         null,
         [
           Validators.required,
@@ -115,23 +110,10 @@ export class CreateLoanProductComponent implements OnInit {
       ],
       maxPrincipal: [
         null,
-        Validators.min(1)
-      ],
-      repaymentLimitsEnabled: [false],
-      minNumberOfRepayments: [
-        null,
-        Validators.min(1)
-      ],
-      numberOfRepayments: [
-        null,
         [
           Validators.required,
           Validators.min(1)
         ]
-      ],
-      maxNumberOfRepayments: [
-        null,
-        Validators.min(1)
       ],
       repaymentEvery: [
         1,
@@ -184,14 +166,6 @@ export class CreateLoanProductComponent implements OnInit {
         0,
         Validators.min(0)
       ],
-      minimumSharesBalance: [
-        0,
-        Validators.min(0)
-      ],
-      maximumLoanToSharesMultiplier: [
-        0,
-        Validators.min(0)
-      ],
       minimumSavingsBalance: [
         0,
         Validators.min(0)
@@ -201,13 +175,12 @@ export class CreateLoanProductComponent implements OnInit {
         Validators.min(0)
       ],
       blockShareRedemption: [false],
-      shareBands: this.formBuilder.array([]),
       maximumConcurrentLoans: [
         0,
         Validators.min(0)
       ],
       disallowExistingDefaultedLoan: [true],
-      clientClassificationIds: [[]],
+      clientTypeIds: [[]],
       genderIds: [[]],
       districts: [[]],
       minimumMonthlyIncome: [
@@ -300,9 +273,6 @@ export class CreateLoanProductComponent implements OnInit {
   get documents(): FormArray {
     return this.form.get('documents') as FormArray;
   }
-  get shareBands(): FormArray {
-    return this.form.get('shareBands') as FormArray;
-  }
   get accounting(): FormGroup {
     return this.form.get('accounting') as FormGroup;
   }
@@ -321,13 +291,7 @@ export class CreateLoanProductComponent implements OnInit {
       this.policyTemplate !== null &&
       !this.loadingPolicy &&
       this.canWritePolicy &&
-      (!v.amountLimitsEnabled ||
-        (Number(v.minPrincipal) <= Number(v.principal) && Number(v.principal) <= Number(v.maxPrincipal))) &&
-      (!v.repaymentLimitsEnabled ||
-        (Number(v.minNumberOfRepayments) <= Number(v.numberOfRepayments) &&
-          Number(v.numberOfRepayments) <= Number(v.maxNumberOfRepayments))) &&
-      Number(v.graceOnPrincipalPayment) < Number(v.numberOfRepayments) &&
-      Number(v.graceOnInterestPayment) < Number(v.numberOfRepayments) &&
+      Number(v.minPrincipal) <= Number(v.maxPrincipal) &&
       Number(v.committeeMaximum) > Number(v.branchMaximum) &&
       v.allowedMethods.length > 0 &&
       v.allowedMethods.includes(v.defaultMethod) &&
@@ -366,10 +330,6 @@ export class CreateLoanProductComponent implements OnInit {
             minimumMembershipMonths: p.minimumMembershipMonths,
             minimumAgeYears: p.minimumAgeYears,
             minimumApprovedShares: p.minimumApprovedShares,
-            minimumSharesBalance: p.minimumSharesBalance,
-            maximumLoanToSharesMultiplier:
-              p.maximumLoanToSharesMultiplier ||
-              (p.minimumSharesToRequestedAmountRatio ? 1 / p.minimumSharesToRequestedAmountRatio : 0),
             minimumSavingsBalance: p.minimumSavingsBalance,
             maximumLoanToSavingsMultiplier:
               p.maximumLoanToSavingsMultiplier ||
@@ -377,7 +337,7 @@ export class CreateLoanProductComponent implements OnInit {
             blockShareRedemption: shareProtection?.blockRedemptionBelowMinimum || false,
             maximumConcurrentLoans: p.maximumConcurrentLoans,
             disallowExistingDefaultedLoan: p.disallowExistingDefaultedLoan,
-            clientClassificationIds: restrictions?.clientClassificationIds || [],
+            clientTypeIds: restrictions?.clientTypeIds || [],
             genderIds: restrictions?.genderIds || [],
             districts: restrictions?.districts || [],
             minimumMonthlyIncome: u?.minimumMonthlyIncome || 0,
@@ -404,7 +364,6 @@ export class CreateLoanProductComponent implements OnInit {
             committeeMaximum:
               policy.approvalRouting.find((r) => r.authority === 'CREDIT_COMMITTEE')?.maximumAmount || 20000000
           });
-          (shareProtection?.minimumShareBalanceBands || []).forEach((band) => this.addShareBand(band));
           policy.documentRequirements.forEach((doc) => this.addDocument(doc));
         },
         error: () => (this.errorKey = 'Loan policy configuration could not be loaded.')
@@ -439,29 +398,6 @@ export class CreateLoanProductComponent implements OnInit {
           ]]
       })
     );
-  }
-  addShareBand(band?: { fromLoanAmount: number; minimumShareBalance: number }): void {
-    this.shareBands.push(
-      this.formBuilder.group({
-        fromLoanAmount: [
-          band?.fromLoanAmount ?? null,
-          [
-            Validators.required,
-            Validators.min(0)
-          ]
-        ],
-        minimumShareBalance: [
-          band?.minimumShareBalance ?? null,
-          [
-            Validators.required,
-            Validators.min(0)
-          ]
-        ]
-      })
-    );
-  }
-  removeShareBand(index: number): void {
-    this.shareBands.removeAt(index);
   }
   removeDocument(index: number): void {
     this.documents.removeAt(index);
@@ -559,26 +495,8 @@ export class CreateLoanProductComponent implements OnInit {
     if (!this.policyTemplate) return 'Loan policy configuration did not load. Refresh the page and try again.';
     if (!this.canWritePolicy) return 'Your account cannot save loan product policies.';
     const v = this.form.getRawValue();
-    if (
-      v.amountLimitsEnabled &&
-      !(Number(v.minPrincipal) <= Number(v.principal) && Number(v.principal) <= Number(v.maxPrincipal))
-    ) {
-      return 'Loan amount limits must contain the usual amount: minimum ≤ usual amount ≤ maximum.';
-    }
-    if (
-      v.repaymentLimitsEnabled &&
-      !(
-        Number(v.minNumberOfRepayments) <= Number(v.numberOfRepayments) &&
-        Number(v.numberOfRepayments) <= Number(v.maxNumberOfRepayments)
-      )
-    ) {
-      return 'Repayment limits must contain the usual repayment count: minimum ≤ usual number ≤ maximum.';
-    }
-    if (
-      Number(v.graceOnPrincipalPayment) >= Number(v.numberOfRepayments) ||
-      Number(v.graceOnInterestPayment) >= Number(v.numberOfRepayments)
-    ) {
-      return 'Each grace period must be shorter than the usual number of repayments.';
+    if (Number(v.minPrincipal) > Number(v.maxPrincipal)) {
+      return 'The maximum loan amount must be at least the minimum loan amount.';
     }
     if (Number(v.committeeMaximum) <= Number(v.branchMaximum)) {
       return 'The Credit Committee limit must be higher than the Branch Manager limit.';
@@ -589,8 +507,8 @@ export class CreateLoanProductComponent implements OnInit {
     const labels: Record<string, string> = {
       name: 'Product name',
       currencyCode: 'Currency',
-      principal: 'Usual loan amount',
-      numberOfRepayments: 'Usual number of repayments',
+      minPrincipal: 'Minimum loan amount',
+      maxPrincipal: 'Maximum loan amount',
       repaymentEvery: 'Repay every',
       repaymentFrequencyType: 'Repayment frequency',
       interestRatePerPeriod: 'Interest rate',
@@ -643,16 +561,7 @@ export class CreateLoanProductComponent implements OnInit {
       policyReady: this.policyTemplate !== null && !this.loadingPolicy,
       canWritePolicy: this.canWritePolicy,
       formValid: this.form.valid,
-      amountLimitsOk:
-        !v.amountLimitsEnabled ||
-        (Number(v.minPrincipal) <= Number(v.principal) && Number(v.principal) <= Number(v.maxPrincipal)),
-      repaymentLimitsOk:
-        !v.repaymentLimitsEnabled ||
-        (Number(v.minNumberOfRepayments) <= Number(v.numberOfRepayments) &&
-          Number(v.numberOfRepayments) <= Number(v.maxNumberOfRepayments)),
-      gracePeriodsOk:
-        Number(v.graceOnPrincipalPayment) < Number(v.numberOfRepayments) &&
-        Number(v.graceOnInterestPayment) < Number(v.numberOfRepayments),
+      amountLimitsOk: Number(v.minPrincipal) <= Number(v.maxPrincipal),
       approvalRangeOk: Number(v.committeeMaximum) > Number(v.branchMaximum),
       payoutMethodsOk: (v.allowedMethods?.length || 0) > 0 && v.allowedMethods.includes(v.defaultMethod),
       guarantorRangeOk:
@@ -699,9 +608,9 @@ export class CreateLoanProductComponent implements OnInit {
       minimumMembershipMonths: Number(v.minimumMembershipMonths),
       minimumAgeYears: Number(v.minimumAgeYears),
       minimumApprovedShares: Number(v.minimumApprovedShares),
-      minimumSharesBalance: Number(v.minimumSharesBalance),
+      minimumSharesBalance: 0,
       minimumSharesToRequestedAmountRatio: 0,
-      maximumLoanToSharesMultiplier: Number(v.maximumLoanToSharesMultiplier),
+      maximumLoanToSharesMultiplier: 0,
       minimumSavingsBalance: Number(v.minimumSavingsBalance),
       minimumSavingsToRequestedAmountRatio: 0,
       maximumLoanToSavingsMultiplier: Number(v.maximumLoanToSavingsMultiplier),
@@ -714,13 +623,11 @@ export class CreateLoanProductComponent implements OnInit {
     };
     policy.shareProtection = {
       blockRedemptionBelowMinimum: !!v.blockShareRedemption,
-      minimumShareBalanceBands: v.shareBands.map((band: any) => ({
-        fromLoanAmount: Number(band.fromLoanAmount),
-        minimumShareBalance: Number(band.minimumShareBalance)
-      }))
+      minimumShareBalanceBands: []
     };
     policy.eligibilityRestrictions = {
-      clientClassificationIds: v.clientClassificationIds.map(Number),
+      clientTypeIds: v.clientTypeIds.map(Number),
+      clientClassificationIds: [],
       genderIds: v.genderIds.map(Number),
       districts: v.districts
     };
@@ -784,15 +691,11 @@ export class CreateLoanProductComponent implements OnInit {
       currencyCode: v.currencyCode,
       digitsAfterDecimal: currency?.decimalPlaces ?? 2,
       inMultiplesOf: currency?.inMultiplesOf || 0,
-      ...(v.amountLimitsEnabled ? { minPrincipal: Number(v.minPrincipal), maxPrincipal: Number(v.maxPrincipal) } : {}),
-      principal: Number(v.principal),
-      ...(v.repaymentLimitsEnabled
-        ? {
-            minNumberOfRepayments: Number(v.minNumberOfRepayments),
-            maxNumberOfRepayments: Number(v.maxNumberOfRepayments)
-          }
-        : {}),
-      numberOfRepayments: Number(v.numberOfRepayments),
+      minPrincipal: Number(v.minPrincipal),
+      maxPrincipal: Number(v.maxPrincipal),
+      // Core Fineract requires defaults; the loan application supplies its actual terms.
+      principal: Number(v.minPrincipal),
+      numberOfRepayments: Math.max(1, Number(v.graceOnPrincipalPayment) + 1, Number(v.graceOnInterestPayment) + 1),
       repaymentEvery: Number(v.repaymentEvery),
       repaymentFrequencyType: Number(v.repaymentFrequencyType),
       interestRatePerPeriod: Number(v.interestRatePerPeriod),

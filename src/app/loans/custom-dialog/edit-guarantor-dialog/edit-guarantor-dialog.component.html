@@ -52,10 +52,18 @@
       <mat-label>{{ 'labels.inputs.Residence Phone' | translate }} #</mat-label>
       <input type="tel" matInput formControlName="housePhoneNumber" />
     </mat-form-field>
+    @if (editGuarantorForm.get('amount')) {
+      <mat-form-field>
+        <mat-label>Guaranteed amount</mat-label>
+        <input type="number" min="0.01" matInput formControlName="amount" />
+      </mat-form-field>
+    }
   </form>
 </div>
 
 <mat-dialog-actions class="layout-row layout-xs-column layout-align-center gap-2percent">
   <button mat-raised-button mat-dialog-close>{{ 'labels.buttons.Cancel' | translate }}</button>
-  <button mat-raised-button color="primary" (click)="submit()">{{ 'labels.buttons.Submit' | translate }}</button>
+  <button mat-raised-button color="primary" (click)="submit()" [disabled]="editGuarantorForm.invalid">
+    {{ 'labels.buttons.Submit' | translate }}
+  </button>
 </mat-dialog-actions>

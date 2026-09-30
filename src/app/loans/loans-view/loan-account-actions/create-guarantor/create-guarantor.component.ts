@@ -102,25 +102,55 @@ export class CreateGuarantorComponent extends LoanAccountActionsBaseComponent im
     this.newGuarantorForm
       .get('existingClient')
       .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.showClientDetailsForm = !this.showClientDetailsForm;
+      .subscribe((existingClient: boolean) => {
+        this.showClientDetailsForm = !existingClient;
         if (this.showClientDetailsForm) {
-          this.newGuarantorForm.addControl('firstname', new UntypedFormControl(''));
-          this.newGuarantorForm.addControl('lastname', new UntypedFormControl(''));
+          this.newGuarantorForm.addControl(
+            'firstname',
+            new UntypedFormControl('', [
+              Validators.required,
+              Validators.maxLength(50)
+            ])
+          );
+          this.newGuarantorForm.addControl(
+            'lastname',
+            new UntypedFormControl('', [
+              Validators.required,
+              Validators.maxLength(50)
+            ])
+          );
           this.newGuarantorForm.addControl('dob', new UntypedFormControl(''));
-          this.newGuarantorForm.addControl('addressLine1', new UntypedFormControl(''));
+          this.newGuarantorForm.addControl(
+            'addressLine1',
+            new UntypedFormControl('', [
+              Validators.required,
+              Validators.maxLength(500)
+            ])
+          );
           this.newGuarantorForm.addControl('addressLine2', new UntypedFormControl(''));
           this.newGuarantorForm.addControl('city', new UntypedFormControl(''));
           this.newGuarantorForm.addControl('zip', new UntypedFormControl(''));
-          this.newGuarantorForm.addControl('mobileNumber', new UntypedFormControl(''));
+          this.newGuarantorForm.addControl(
+            'mobileNumber',
+            new UntypedFormControl('', [
+              Validators.required,
+              Validators.maxLength(20)
+            ])
+          );
           this.newGuarantorForm.addControl('housePhoneNumber', new UntypedFormControl(''));
           this.newGuarantorForm.removeControl('name');
           this.newGuarantorForm.removeControl('savingsId');
-          this.newGuarantorForm.removeControl('amount');
+          this.newGuarantorForm.get('amount').setValidators([
+            Validators.required,
+            Validators.min(0.01)
+          ]);
+          this.newGuarantorForm.get('amount').updateValueAndValidity();
         } else {
-          this.newGuarantorForm.addControl('name', new UntypedFormControl(''));
+          this.newGuarantorForm.addControl('name', new UntypedFormControl('', Validators.required));
           this.newGuarantorForm.addControl('savingsId', new UntypedFormControl(''));
-          this.newGuarantorForm.addControl('amount', new UntypedFormControl(''));
+          this.newGuarantorForm.get('amount').clearValidators();
+          this.newGuarantorForm.get('amount').setValue('');
+          this.newGuarantorForm.get('amount').updateValueAndValidity();
           this.newGuarantorForm.removeControl('firstname');
           this.newGuarantorForm.removeControl('lastname');
           this.newGuarantorForm.removeControl('dob');
@@ -143,7 +173,7 @@ export class CreateGuarantorComponent extends LoanAccountActionsBaseComponent im
         .get('name')
         .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((value: string) => {
-          if (value.length >= 2) {
+          if (typeof value === 'string' && value.length >= 2) {
             this.clientsService.getFilteredClients('displayName', 'ASC', true, value).subscribe((data: any) => {
               this.clientsData = data.pageItems;
             });
@@ -170,14 +200,19 @@ export class CreateGuarantorComponent extends LoanAccountActionsBaseComponent im
 
   /** Submits the new guarantor details form */
   submit() {
+    if (this.newGuarantorForm.invalid) {
+      this.newGuarantorForm.markAllAsTouched();
+      return;
+    }
     const newGuarantorFormData = this.newGuarantorForm.value;
     const locale = this.settingsService.language.code;
     const dateFormat = this.settingsService.dateFormat;
 
     const prevdob: Date = this.newGuarantorForm.value.dob;
     const guarantorTypeId: number = this.newGuarantorForm.value.existingClient
-      ? this.dataObject.guarantorTypeOptions[0].id
-      : this.dataObject.guarantorTypeOptions[2].id;
+      ? this.dataObject.guarantorTypeOptions.find((option: any) => option.code === 'guarantor.existing.customer')?.id
+      : this.dataObject.guarantorTypeOptions.find((option: any) => option.code === 'guarantor.external')?.id;
+    if (!guarantorTypeId) return;
     const data = {
       ...newGuarantorFormData,
       locale,
@@ -186,6 +221,7 @@ export class CreateGuarantorComponent extends LoanAccountActionsBaseComponent im
     };
 
     if (this.newGuarantorForm.value.existingClient) {
+      if (!this.newGuarantorForm.controls.name.value?.id) return;
       data['entityId'] = this.newGuarantorForm.controls.name.value.id;
     } else {
       if (newGuarantorFormData.dob instanceof Date) {

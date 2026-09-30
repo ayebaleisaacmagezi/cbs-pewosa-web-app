@@ -51,6 +51,7 @@ export class LoanManagementPolicyComponent implements OnInit {
   private readonly translateService = inject(TranslateService);
 
   policyVersion = 0;
+  membershipCategoryOptions: Array<{ id: number; name: string }> = [];
   configured = false;
   loading = false;
   saving = false;
@@ -64,7 +65,7 @@ export class LoanManagementPolicyComponent implements OnInit {
   private readonly configuredElsewhere: Record<string, string> = {
     'Product Name': 'General information',
     'Product Description': 'General information',
-    'Currency': 'Currency',
+    Currency: 'Currency',
     'Membership Required': 'Pre-qualification rules',
     'Minimum Membership Duration': 'Pre-qualification rules',
     'Minimum Shares Needed': 'Pre-qualification rules',
@@ -115,6 +116,7 @@ export class LoanManagementPolicyComponent implements OnInit {
   ];
 
   policyForm = this.formBuilder.group({
+    clientTypeIds: this.formBuilder.control<number[]>([], { nonNullable: true }),
     loanProductId: this.formBuilder.control<number | null>(null, Validators.required),
     active: [true],
     effectiveFrom: this.formBuilder.control<string | null>(null),
@@ -384,6 +386,7 @@ export class LoanManagementPolicyComponent implements OnInit {
       )
       .subscribe({
         next: ({ template, existing, definition }) => {
+          this.membershipCategoryOptions = template.options.clientTypeOptions || [];
           this.definitionSections = definition;
           this.resetPolicy(existing ? existing.policy : template.policy, this.productId || 0);
           this.policyVersion = existing?.version || 0;
@@ -493,13 +496,21 @@ export class LoanManagementPolicyComponent implements OnInit {
     this.definitionControls = {};
     for (const section of this.definitionSections) {
       for (const field of section.fields) {
-        if (this.fieldLocation(field.label) || ['Product Code', 'Effective Date', 'Review Date', 'Moratorium'].includes(field.label)) {
+        if (this.fieldLocation(field.label) || [
+            'Product Code',
+            'Effective Date',
+            'Review Date',
+            'Moratorium'
+          ].includes(field.label)) {
           continue;
         }
         const key = this.fieldKey(section.title, field.label);
-        this.definitionControls[key] = new FormControl<string>(policy.productDefinition?.[section.title]?.[field.label] || '', {
-          nonNullable: true
-        });
+        this.definitionControls[key] = new FormControl<string>(
+          policy.productDefinition?.[section.title]?.[field.label] || '',
+          {
+            nonNullable: true
+          }
+        );
         if (!this.canWrite) this.definitionControls[key].disable();
       }
     }
@@ -508,6 +519,7 @@ export class LoanManagementPolicyComponent implements OnInit {
       loanProductId,
       active: true,
       effectiveFrom: null,
+      clientTypeIds: policy.eligibilityRestrictions?.clientTypeIds || [],
       prequalification: { ...defaults.prequalification, ...policy.prequalification },
       underwriting: { ...defaults.underwriting, ...policy.underwriting },
       loanOfficerCanApprove: policy.loanOfficerCanApprove ?? defaults.loanOfficerCanApprove,
@@ -607,7 +619,9 @@ export class LoanManagementPolicyComponent implements OnInit {
   }
 
   private toPolicyDefinition(raw: ReturnType<typeof this.policyForm.getRawValue>): LoanManagementPolicyDefinition {
-    const productDefinition: Record<string, Record<string, string>> = { ...(this.loadedPolicy?.productDefinition || {}) };
+    const productDefinition: Record<string, Record<string, string>> = {
+      ...(this.loadedPolicy?.productDefinition || {})
+    };
     for (const section of this.definitionSections) {
       const values = { ...(productDefinition[section.title] || {}) };
       for (const field of section.fields) {
@@ -619,7 +633,22 @@ export class LoanManagementPolicyComponent implements OnInit {
     return {
       ...(this.loadedPolicy || {}),
       productDefinition,
-      prequalification: raw.prequalification,
+      prequalification: {
+        ...raw.prequalification,
+        minimumSharesBalance: 0,
+        minimumSharesToRequestedAmountRatio: 0,
+        maximumLoanToSharesMultiplier: 0
+      },
+      shareProtection: {
+        blockRedemptionBelowMinimum: this.loadedPolicy?.shareProtection?.blockRedemptionBelowMinimum || false,
+        minimumShareBalanceBands: []
+      },
+      eligibilityRestrictions: {
+        clientClassificationIds: this.loadedPolicy?.eligibilityRestrictions?.clientClassificationIds || [],
+        genderIds: this.loadedPolicy?.eligibilityRestrictions?.genderIds || [],
+        districts: this.loadedPolicy?.eligibilityRestrictions?.districts || [],
+        clientTypeIds: raw.clientTypeIds
+      },
       underwriting: raw.underwriting,
       creditScoring: {
         factors: raw.creditScoring.factors.map(({ code, enabled, weight, fullScoreAt, zeroScoreAt }) => ({

@@ -40,7 +40,11 @@
                     } @else {
                       <mat-form-field appearance="outline">
                         <mat-label>{{ field.label }}</mat-label>
-                        <textarea matInput rows="2" [formControl]="definitionControls[fieldKey(section.title, field.label)]"></textarea>
+                        <textarea
+                          matInput
+                          rows="2"
+                          [formControl]="definitionControls[fieldKey(section.title, field.label)]"
+                        ></textarea>
                         <mat-hint>{{ field.description }}</mat-hint>
                       </mat-form-field>
                     }
@@ -101,17 +105,18 @@
               ><mat-label>{{ 'labels.inputs.Minimum savings balance' | translate }}</mat-label
               ><input matInput type="number" formControlName="minimumSavingsBalance" min="0"
             /></mat-form-field>
-            <mat-form-field appearance="outline"
-              ><mat-label>{{ 'labels.inputs.Minimum shares balance' | translate }}</mat-label
-              ><input matInput type="number" formControlName="minimumSharesBalance" min="0"
-            /></mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Allowed membership categories</mat-label>
+              <mat-select [formControl]="policyForm.controls.clientTypeIds" multiple>
+                @for (category of membershipCategoryOptions; track category.id) {
+                  <mat-option [value]="category.id">{{ category.name }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint>Leave empty to allow all membership categories.</mat-hint>
+            </mat-form-field>
             <mat-form-field appearance="outline"
               ><mat-label>{{ 'labels.inputs.Minimum savings to loan ratio' | translate }}</mat-label
               ><input matInput type="number" formControlName="minimumSavingsToRequestedAmountRatio" min="0" step="0.01"
-            /></mat-form-field>
-            <mat-form-field appearance="outline"
-              ><mat-label>{{ 'labels.inputs.Minimum shares to loan ratio' | translate }}</mat-label
-              ><input matInput type="number" formControlName="minimumSharesToRequestedAmountRatio" min="0" step="0.01"
             /></mat-form-field>
           </div>
           <div class="check-grid">

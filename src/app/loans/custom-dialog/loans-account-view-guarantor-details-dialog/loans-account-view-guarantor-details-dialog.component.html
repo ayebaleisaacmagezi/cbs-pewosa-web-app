@@ -29,6 +29,20 @@
       <span class="flex-40">{{ 'labels.inputs.Guarantor Type' | translate }}:</span>
       <span class="flex-60">{{ data.guarantorData.guarantorType?.value }}</span>
     </div>
+    @if (data.guarantorData.guarantorType?.id === 3) {
+      <div class="flex-fill">
+        <span class="flex-40">Phone number:</span><span class="flex-60">{{ data.guarantorData.mobileNumber }}</span>
+      </div>
+      <div class="flex-fill">
+        <span class="flex-40">Address:</span><span class="flex-60">{{ data.guarantorData.addressLine1 }}</span>
+      </div>
+      <div class="flex-fill">
+        <span class="flex-40">Guaranteed amount:</span
+        ><span class="flex-60">{{
+          data.guarantorData.amount == null ? 'Not recorded' : (data.guarantorData.amount | formatNumber)
+        }}</span>
+      </div>
+    }
 
     <div class="flex-fill">
       <span class="flex-40">{{ 'labels.inputs.Status' | translate }}:</span>
