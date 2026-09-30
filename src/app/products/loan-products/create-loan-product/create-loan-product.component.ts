@@ -175,12 +175,14 @@ export class CreateLoanProductComponent implements OnInit {
         Validators.min(0)
       ],
       blockShareRedemption: [false],
+      shareBands: this.formBuilder.array([]),
       maximumConcurrentLoans: [
         0,
         Validators.min(0)
       ],
       disallowExistingDefaultedLoan: [true],
       clientTypeIds: [[]],
+      clientClassificationIds: [[]],
       genderIds: [[]],
       districts: [[]],
       minimumMonthlyIncome: [
@@ -273,6 +275,9 @@ export class CreateLoanProductComponent implements OnInit {
   get documents(): FormArray {
     return this.form.get('documents') as FormArray;
   }
+  get shareBands(): FormArray {
+    return this.form.get('shareBands') as FormArray;
+  }
   get accounting(): FormGroup {
     return this.form.get('accounting') as FormGroup;
   }
@@ -338,6 +343,7 @@ export class CreateLoanProductComponent implements OnInit {
             maximumConcurrentLoans: p.maximumConcurrentLoans,
             disallowExistingDefaultedLoan: p.disallowExistingDefaultedLoan,
             clientTypeIds: restrictions?.clientTypeIds || [],
+            clientClassificationIds: restrictions?.clientClassificationIds || [],
             genderIds: restrictions?.genderIds || [],
             districts: restrictions?.districts || [],
             minimumMonthlyIncome: u?.minimumMonthlyIncome || 0,
@@ -364,6 +370,7 @@ export class CreateLoanProductComponent implements OnInit {
             committeeMaximum:
               policy.approvalRouting.find((r) => r.authority === 'CREDIT_COMMITTEE')?.maximumAmount || 20000000
           });
+          (shareProtection?.minimumShareBalanceBands || []).forEach((band) => this.addShareBand(band));
           policy.documentRequirements.forEach((doc) => this.addDocument(doc));
         },
         error: () => (this.errorKey = 'Loan policy configuration could not be loaded.')
@@ -377,6 +384,29 @@ export class CreateLoanProductComponent implements OnInit {
   fieldError(name: string): boolean {
     const control = this.form.get(name);
     return !!control && control.invalid && control.touched;
+  }
+  addShareBand(band?: { fromLoanAmount: number; minimumShareBalance: number }): void {
+    this.shareBands.push(
+      this.formBuilder.group({
+        fromLoanAmount: [
+          band?.fromLoanAmount ?? null,
+          [
+            Validators.required,
+            Validators.min(0)
+          ]
+        ],
+        minimumShareBalance: [
+          band?.minimumShareBalance ?? null,
+          [
+            Validators.required,
+            Validators.min(0)
+          ]
+        ]
+      })
+    );
+  }
+  removeShareBand(index: number): void {
+    this.shareBands.removeAt(index);
   }
   addDocument(doc?: LoanPolicyDocumentRequirement): void {
     this.documents.push(
@@ -623,11 +653,14 @@ export class CreateLoanProductComponent implements OnInit {
     };
     policy.shareProtection = {
       blockRedemptionBelowMinimum: !!v.blockShareRedemption,
-      minimumShareBalanceBands: []
+      minimumShareBalanceBands: v.shareBands.map((band: any) => ({
+        fromLoanAmount: Number(band.fromLoanAmount),
+        minimumShareBalance: Number(band.minimumShareBalance)
+      }))
     };
     policy.eligibilityRestrictions = {
       clientTypeIds: v.clientTypeIds.map(Number),
-      clientClassificationIds: [],
+      clientClassificationIds: v.clientClassificationIds.map(Number),
       genderIds: v.genderIds.map(Number),
       districts: v.districts
     };

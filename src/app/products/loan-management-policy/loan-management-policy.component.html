@@ -133,6 +133,40 @@
         </mat-card-content>
       </mat-card>
 
+      <mat-card class="policy-section" formGroupName="shareProtection">
+        <mat-card-content>
+          <div class="section-heading">
+            <div>
+              <h2>Share requirements by requested loan amount</h2>
+              <p>Set the minimum share balance required from each loan-amount threshold.</p>
+            </div>
+          </div>
+          <mat-checkbox formControlName="blockRedemptionBelowMinimum">
+            {{ 'Protect the required shares while the loan is active' | translate }}
+          </mat-checkbox>
+          <div formArrayName="minimumShareBalanceBands" class="document-list">
+            @for (band of shareBands.controls; track band; let i = $index) {
+              <div [formGroupName]="i" class="document-row compact-row">
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Loan amount from' | translate }}</mat-label>
+                  <input matInput type="number" min="0" formControlName="fromLoanAmount" required />
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>{{ 'Minimum share balance' | translate }}</mat-label>
+                  <input matInput type="number" min="0" formControlName="minimumShareBalance" required />
+                </mat-form-field>
+                <button mat-button type="button" (click)="removeShareBand(i)">
+                  {{ 'labels.buttons.Remove' | translate }}
+                </button>
+              </div>
+            }
+          </div>
+          <button mat-button type="button" (click)="addShareBand()">
+            {{ 'Add share requirement' | translate }}
+          </button>
+        </mat-card-content>
+      </mat-card>
+
       <mat-card class="policy-section" formGroupName="underwriting">
         <mat-card-content>
           <div class="section-heading">

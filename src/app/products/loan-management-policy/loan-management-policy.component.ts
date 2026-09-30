@@ -185,6 +185,10 @@ export class LoanManagementPolicyComponent implements OnInit {
       disallowExistingDefaultedLoan: [true],
       disallowAnyActiveLoan: [false]
     }),
+    shareProtection: this.formBuilder.group({
+      blockRedemptionBelowMinimum: [false],
+      minimumShareBalanceBands: this.formBuilder.array<FormGroup>([])
+    }),
     underwriting: this.formBuilder.group({
       minimumMonthlyIncome: [
         0,
@@ -355,6 +359,10 @@ export class LoanManagementPolicyComponent implements OnInit {
     return this.policyForm.controls.documentRequirements;
   }
 
+  get shareBands(): FormArray<FormGroup> {
+    return this.policyForm.controls.shareProtection.controls.minimumShareBalanceBands;
+  }
+
   get policyStatusLabel(): string {
     if (!this.configured) return 'labels.inputs.Not configured';
     return this.policyForm.controls.active.value ? 'labels.inputs.Active' : 'labels.inputs.Inactive';
@@ -451,6 +459,25 @@ export class LoanManagementPolicyComponent implements OnInit {
     this.documentRequirements.removeAt(index);
   }
 
+  addShareBand(band?: { fromLoanAmount: number; minimumShareBalance: number }): void {
+    this.shareBands.push(
+      this.formBuilder.group({
+        fromLoanAmount: [
+          band?.fromLoanAmount ?? null,
+          [Validators.required, Validators.min(0)]
+        ],
+        minimumShareBalance: [
+          band?.minimumShareBalance ?? null,
+          [Validators.required, Validators.min(0)]
+        ]
+      })
+    );
+  }
+
+  removeShareBand(index: number): void {
+    this.shareBands.removeAt(index);
+  }
+
   methodEnabled(method: LoanPolicyDisbursementMethod): boolean {
     return this.policyForm.controls.disbursement.controls.allowedMethods.value.includes(method);
   }
@@ -521,6 +548,9 @@ export class LoanManagementPolicyComponent implements OnInit {
       effectiveFrom: null,
       clientTypeIds: policy.eligibilityRestrictions?.clientTypeIds || [],
       prequalification: { ...defaults.prequalification, ...policy.prequalification },
+      shareProtection: {
+        blockRedemptionBelowMinimum: policy.shareProtection?.blockRedemptionBelowMinimum ?? false
+      },
       underwriting: { ...defaults.underwriting, ...policy.underwriting },
       loanOfficerCanApprove: policy.loanOfficerCanApprove ?? defaults.loanOfficerCanApprove,
       guarantorCollateral: { ...defaults.guarantorCollateral, ...policy.guarantorCollateral },
@@ -528,6 +558,8 @@ export class LoanManagementPolicyComponent implements OnInit {
       feeSettlementMode: policy.feeSettlementMode ?? defaults.feeSettlementMode,
       groupLending: { ...defaults.groupLending, ...policy.groupLending }
     });
+    this.shareBands.clear();
+    (policy.shareProtection?.minimumShareBalanceBands || []).forEach((band) => this.addShareBand(band));
     this.scoringFactors.clear();
     (policy.creditScoring?.factors || []).forEach((factor) =>
       this.scoringFactors.push(
@@ -640,8 +672,13 @@ export class LoanManagementPolicyComponent implements OnInit {
         maximumLoanToSharesMultiplier: 0
       },
       shareProtection: {
-        blockRedemptionBelowMinimum: this.loadedPolicy?.shareProtection?.blockRedemptionBelowMinimum || false,
-        minimumShareBalanceBands: []
+        blockRedemptionBelowMinimum: raw.shareProtection.blockRedemptionBelowMinimum,
+        minimumShareBalanceBands: raw.shareProtection.minimumShareBalanceBands.map(
+          ({ fromLoanAmount, minimumShareBalance }) => ({
+            fromLoanAmount: Number(fromLoanAmount),
+            minimumShareBalance: Number(minimumShareBalance)
+          })
+        )
       },
       eligibilityRestrictions: {
         clientClassificationIds: this.loadedPolicy?.eligibilityRestrictions?.clientClassificationIds || [],
@@ -696,6 +733,10 @@ export class LoanManagementPolicyComponent implements OnInit {
         minimumSharesToRequestedAmountRatio: 0,
         disallowExistingDefaultedLoan: true,
         disallowAnyActiveLoan: false
+      },
+      shareProtection: {
+        blockRedemptionBelowMinimum: false,
+        minimumShareBalanceBands: []
       },
       underwriting: { minimumMonthlyIncome: 0, maximumDebtToIncomeRatio: 0 },
       creditScoring: {
