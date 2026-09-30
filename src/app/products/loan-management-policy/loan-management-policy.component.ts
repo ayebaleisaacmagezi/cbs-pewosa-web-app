@@ -182,6 +182,13 @@ export class LoanManagementPolicyComponent implements OnInit {
           Validators.min(0)
         ]
       ],
+      maximumLoanToSharesMultiplier: [
+        0,
+        [
+          Validators.required,
+          Validators.min(0)
+        ]
+      ],
       disallowExistingDefaultedLoan: [true],
       disallowAnyActiveLoan: [false]
     }),
@@ -668,8 +675,8 @@ export class LoanManagementPolicyComponent implements OnInit {
       prequalification: {
         ...raw.prequalification,
         minimumSharesBalance: 0,
-        minimumSharesToRequestedAmountRatio: 0,
-        maximumLoanToSharesMultiplier: 0
+        minimumSharesToRequestedAmountRatio: Number(raw.prequalification.minimumSharesToRequestedAmountRatio),
+        maximumLoanToSharesMultiplier: Number(raw.prequalification.maximumLoanToSharesMultiplier)
       },
       shareProtection: {
         blockRedemptionBelowMinimum: raw.shareProtection.blockRedemptionBelowMinimum,

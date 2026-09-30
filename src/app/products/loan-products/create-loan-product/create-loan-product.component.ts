@@ -166,6 +166,10 @@ export class CreateLoanProductComponent implements OnInit {
         0,
         Validators.min(0)
       ],
+      maximumLoanToSharesMultiplier: [
+        0,
+        Validators.min(0)
+      ],
       minimumSavingsBalance: [
         0,
         Validators.min(0)
@@ -335,6 +339,9 @@ export class CreateLoanProductComponent implements OnInit {
             minimumMembershipMonths: p.minimumMembershipMonths,
             minimumAgeYears: p.minimumAgeYears,
             minimumApprovedShares: p.minimumApprovedShares,
+            maximumLoanToSharesMultiplier:
+              p.maximumLoanToSharesMultiplier ||
+              (p.minimumSharesToRequestedAmountRatio ? 1 / p.minimumSharesToRequestedAmountRatio : 0),
             minimumSavingsBalance: p.minimumSavingsBalance,
             maximumLoanToSavingsMultiplier:
               p.maximumLoanToSavingsMultiplier ||
@@ -640,7 +647,7 @@ export class CreateLoanProductComponent implements OnInit {
       minimumApprovedShares: Number(v.minimumApprovedShares),
       minimumSharesBalance: 0,
       minimumSharesToRequestedAmountRatio: 0,
-      maximumLoanToSharesMultiplier: 0,
+      maximumLoanToSharesMultiplier: Number(v.maximumLoanToSharesMultiplier),
       minimumSavingsBalance: Number(v.minimumSavingsBalance),
       minimumSavingsToRequestedAmountRatio: 0,
       maximumLoanToSavingsMultiplier: Number(v.maximumLoanToSavingsMultiplier),
